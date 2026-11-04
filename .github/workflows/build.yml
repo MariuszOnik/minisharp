@@ -24,3 +24,22 @@ jobs:
         with:
           name: MiniSharp-3dsx
           path: MiniSharp.3dsx
+
+  # A tag like v0.2.0 publishes a GitHub Release with the .3dsx, once the tests pass.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test-pc, build-3ds]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: MiniSharp-3dsx
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: MiniSharp.3dsx
+          generate_release_notes: true
+          body: |
+            **Instalacja:** skopiuj `MiniSharp.3dsx` do `sdmc:/3ds/` i uruchom z Homebrew Launchera.
+            Przy pierwszym starcie aplikacja tworzy `sdmc:/minisharp/` z przykładami (A uruchamia, START wraca do menu).
