@@ -1,0 +1,62 @@
+> 1 + 2
+3
+> Math.Sqrt(2)
+1.414214
+> var x = 5
+> x * 10
+50
+> x++;
+> x
+6
+> int y = x + 1, z = 7;
+> y + z
+14
+> var s = "abc";
+> s.ToUpper() + x
+ABC6
+> var list = new List<int>();
+> for (int i = 0; i < 4; i++) list.Add(i * i);
+> list.Count
+4
+> list[3]
+9
+> var d = new Dictionary<string, int> { {"a", 1} };
+> d["b"] = 2;
+> d.Count
+2
+> var x = 9
+> x
+9
+> var x = "text"
+error: assignment: cannot convert string to int
+> float f = 3;
+> var f = 2
+> f / 4
+0.5
+> foo
+error: unknown name 'foo'
+> 1 / 0
+error: division by zero
+> list[10]
+error: index 10 is outside the list (length 4)
+> while (true) { }
+error: stopped: still running after 5 seconds (endless loop?)
+> x
+9
+> Console.WriteLine("hi")
+hi
+> Gfx.Circle(10, 10, 5, Color.Red)
+> if (x > 3) Console.WriteLine("big");
+big
+> x = 1; x
+1
+> #complete Con
+Console continue
+> #complete Math.Sq
+Sqrt
+> #complete li
+list List
+> #complete Color.R
+Red
+> #complete 12
+

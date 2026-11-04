@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 /* ================= heap ================= */
 static size_t obj_size(Obj* o) {
@@ -158,6 +159,18 @@ VM* vm_new(Program* p) {
     for (int i = 0; i < p->nstatics; i++) vm->statics[i] = p->staticDefaults[i];
     vm->nextGC = 1024 * 1024;
     return vm;
+}
+
+int vm_set_program(VM* vm, Program* p) {
+    int old = vm->p->nstatics;
+    if (p->nstatics > old) {
+        Value* s = (Value*)realloc(vm->statics, sizeof(Value) * p->nstatics);
+        if (!s) return 0;
+        vm->statics = s;
+        for (int i = old; i < p->nstatics; i++) s[i] = p->staticDefaults[i];
+    }
+    vm->p = p;
+    return 1;
 }
 
 void vm_free(VM* vm) {
@@ -531,8 +544,10 @@ static int vm_run(VM* vm, int startFp) {
                 break;
             }
             case OP_NOT: sp[-1].as.i = !sp[-1].as.i; break;
-            case OP_JMP: { int off = ARG(); ip += off; break; }
-            case OP_JZ: { int off = ARG(); if (!(--sp)->as.i) ip += off; break; }
+#define LOOP_CHECK() if (off < 0 && vm->deadline && !(++vm->loops & 0xFFFF) && time(NULL) > vm->deadline) \
+                         FAIL("stopped: still running after 5 seconds (endless loop?)")
+            case OP_JMP: { int off = ARG(); ip += off; LOOP_CHECK(); break; }
+            case OP_JZ: { int off = ARG(); if (!(--sp)->as.i) { ip += off; LOOP_CHECK(); } break; }
             case OP_JFALSE_KEEP: { int off = ARG(); if (!sp[-1].as.i) ip += off; else sp--; break; }
             case OP_JTRUE_KEEP: { int off = ARG(); if (sp[-1].as.i) ip += off; else sp--; break; }
             case OP_NULLCHK: { int d = ARG(); if (sp[-1 - d].t != V_OBJ) FAIL("null reference (calling a method on null)"); break; }

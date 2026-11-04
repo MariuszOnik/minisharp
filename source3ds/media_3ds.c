@@ -81,6 +81,7 @@ void plat_image_draw(int id, float x, float y, int sx, int sy, int sw, int sh, f
     p.depth = 0.5f;
     p.angle = angle * 3.14159265f / 180.0f;
     C2D_DrawImage(img, &p, NULL);
+    plat3ds_draws++;
 }
 
 /* ---- sounds ---- */

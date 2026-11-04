@@ -11,7 +11,9 @@ static C3D_RenderTarget* g_top;
 static C3D_RenderTarget* g_bot;
 static int g_cur;
 static C2D_TextBuf g_textbuf;
-static u32 g_held, g_down;
+static C3D_RenderTarget* g_canvas;     /* terminal: every screen draws into this texture */
+int plat3ds_draws;
+static u32 g_held, g_down, g_repeat;
 static touchPosition g_touch;
 static circlePosition g_cpad;
 static u64 g_start;
@@ -63,7 +65,7 @@ void flog(const char* fmt, ...) {
 
 void plat_print(const char* s) {
     if (g_flog && *s) {
-        fputs(s, g_flog);
+        fputs(s + (*s == LOG_INPUT[0] || *s == LOG_ERROR[0]), g_flog);
         if (strchr(s, '\n')) fflush(g_flog);
         g_flogMidLine = s[strlen(s) - 1] != '\n';
     }
@@ -78,6 +80,19 @@ void plat_print(const char* s) {
 int log_count(void) { return g_logCount; }
 const char* log_line(int i) { return g_log[(g_logHead + i) % LOG_LINES]; }
 
+/* the last maxLines lines; a line starting with LOG_INPUT / LOG_ERROR (terminal) gets its own colour */
+void log_draw(float x, float y0, int maxLines) {
+    int n = log_count();
+    int first = n > maxLines ? n - maxLines : 0;
+    for (int i = first; i < n; i++) {
+        const char* s = log_line(i);
+        uint32_t rgb = 0xD0D0D0;
+        if (*s == LOG_INPUT[0]) { s++; rgb = 0x7FB2FF; }
+        else if (*s == LOG_ERROR[0]) { s++; rgb = 0xFF6060; }
+        plat_text(x, y0 + (i - first) * 15, s, 0.5f, rgb);
+    }
+}
+
 /* ---- setup / per frame ---- */
 void plat3ds_init(C3D_RenderTarget* top, C3D_RenderTarget* bot) {
     g_top = top; g_bot = bot;
@@ -90,10 +105,13 @@ void plat3ds_input(void) {
     hidScanInput();
     g_held = hidKeysHeld();
     g_down = hidKeysDown();
+    g_repeat = hidKeysDownRepeat();
     hidTouchRead(&g_touch);
     hidCircleRead(&g_cpad);
 }
 u32 plat3ds_down(void) { return g_down; }
+u32 plat3ds_repeat(void) { return g_repeat; }
+void plat3ds_touch(int* x, int* y) { *x = g_touch.px; *y = g_touch.py; }
 u32 plat3ds_held(void) { return g_held; }
 
 /* frames per second, measured over the last full second */
@@ -114,19 +132,41 @@ void plat3ds_begin_frame(u32 clearTop, u32 clearBottom) {
 u32 plat3ds_color(uint32_t rgb) { return C2D_Color32((rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255, 255); }
 
 /* ---- drawing ---- */
-void plat_screen(int s) { g_cur = s ? 1 : 0; C2D_SceneBegin(g_cur ? g_bot : g_top); }
-void plat_clear(uint32_t rgb) { C2D_TargetClear(g_cur ? g_bot : g_top, plat3ds_color(rgb)); C2D_SceneBegin(g_cur ? g_bot : g_top); }
-void plat_rect(float x, float y, float w, float h, uint32_t rgb) { C2D_DrawRectSolid(x, y, 0.5f, w, h, plat3ds_color(rgb)); }
-void plat_circle(float x, float y, float r, uint32_t rgb) { C2D_DrawCircleSolid(x, y, 0.5f, r, plat3ds_color(rgb)); }
+static C3D_RenderTarget* cur_target(void) { return g_canvas ? g_canvas : g_cur ? g_bot : g_top; }
+void plat3ds_set_canvas(C3D_RenderTarget* t) { g_canvas = t; C2D_SceneBegin(cur_target()); }
+void plat_screen(int s) { g_cur = s ? 1 : 0; C2D_SceneBegin(cur_target()); }
+void plat_clear(uint32_t rgb) { plat3ds_draws++; C2D_TargetClear(cur_target(), plat3ds_color(rgb)); C2D_SceneBegin(cur_target()); }
+void plat_rect(float x, float y, float w, float h, uint32_t rgb) { plat3ds_draws++; C2D_DrawRectSolid(x, y, 0.5f, w, h, plat3ds_color(rgb)); }
+void plat_circle(float x, float y, float r, uint32_t rgb) { plat3ds_draws++; C2D_DrawCircleSolid(x, y, 0.5f, r, plat3ds_color(rgb)); }
 void plat_line(float x1, float y1, float x2, float y2, float w, uint32_t rgb) {
     u32 c = plat3ds_color(rgb);
+    plat3ds_draws++;
     C2D_DrawLine(x1, y1, c, x2, y2, c, w, 0.5f);
 }
 void plat_text(float x, float y, const char* s, float scale, uint32_t rgb) {
     C2D_Text t;
+    plat3ds_draws++;
     C2D_TextParse(&t, g_textbuf, s);
     C2D_TextOptimize(&t);
     C2D_DrawText(&t, C2D_WithColor, x, y, 0.5f, scale, scale, plat3ds_color(rgb));
+}
+/* sum of the characters' widths, each measured once (the system font has no kerning) */
+float plat3ds_text_width(const char* s, float scale) {
+    static float charW[128];
+    float w = 0;
+    for (; *s; s++) {
+        int ch = (unsigned char)*s < 128 ? *s : '?';
+        if (!charW[ch]) {
+            char one[2] = { (char)ch, 0 };
+            C2D_Text t;
+            float cw = 0;
+            C2D_TextParse(&t, g_textbuf, one);
+            C2D_TextGetDimensions(&t, 1.0f, 1.0f, &cw, NULL);
+            charW[ch] = cw > 0 ? cw : 0.001f;
+        }
+        w += charW[ch];
+    }
+    return w * scale;
 }
 
 /* ---- input ---- */

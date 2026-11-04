@@ -37,6 +37,16 @@ plik .cs ──► lekser ──► parser (AST) ──► sprawdzanie typów + 
 2. Uruchom z Homebrew Launchera. Przy pierwszym starcie aplikacja tworzy folder `sdmc:/minisharp/` i wrzuca tam przykłady.
 3. Wybierz plik D-padem, **A** = kompiluj i uruchom. **START** w grze wraca do menu, **START** w menu zamyka aplikację. **Y** odświeża listę plików.
 
+### Terminal (REPL)
+W menu **SELECT** otwiera terminal: piszesz linię kodu na klawiaturze dotykowej, **A** (albo *Run*) ją wykonuje.
+- Samo wyrażenie wypisuje wynik: `Math.Sqrt(2)`, `"abc".ToUpper()`. Średnik na końcu jest opcjonalny.
+- Zmienne zostają na kolejne linie: `var x = 5`, potem `x * 10`. Działa też `for`, `if`, `List`, `Dictionary` itd.
+- `Gfx.*` rysuje na płótnie na górnym ekranie, które nie czyści się między liniami (`Gfx.Clear` czyści). **X** przełącza płótno ↔ wyjście tekstowe.
+- Pasek nad klawiaturą podpowiada nazwy (np. po `Gfx.` metody Gfx); dotknięcie albo **R** wstawia pierwszą.
+- **B** kasuje, **←/→** przesuwa kursor (albo dotknij linii), **↑/↓** historia, **Y** czyści ekran, **START** wraca do menu.
+- Pętla, która działa dłużej niż ok. 5 s, zostaje przerwana z błędem.
+- Na PC: `./minisharp --repl` czyta linie ze standardowego wejścia (test `tests/repl.txt`).
+
 Własne programy wrzucasz jako pliki `.cs` do `sdmc:/minisharp/` (przez czytnik kart albo FTP, np. ftpd).
 Wyjście z `Console.WriteLine` widać na dolnym ekranie w menu.
 
@@ -131,7 +141,7 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
    - **kod → graf:** parser wczytuje `.cs` i pokazuje go jako graf; konstrukcje, których nie da się narysować, stają się węzłem „blok kodu”,
    - pozycje węzłów trzymane w komentarzach `// @node x,y`, więc plik dalej jest czystym C#,
    - **nowe węzły bez pisania C:** każda funkcja API to węzeł automatycznie, a każda metoda `static` w pliku `.cs` (np. biblioteka `nodes/*.cs`) staje się nowym węzłem.
-6. Edytor MiniSharp na konsoli: pisanie kodu na dolnym ekranie (klawiatura dotykowa), autouzupełnianie z tabeli API (tej samej co paleta węzłów), podświetlanie błędów, uruchamianie jednym przyciskiem i przełączanie kod ↔ graf. Do tego terminal (REPL) na tej samej klawiaturze: górny ekran pokazuje wynik, np. `Math.Sqrt(2)` albo `Gfx.Circle(...)` od razu.
+6. ~~Terminal (REPL) z klawiaturą dotykową i podpowiedziami~~. Dalej edytor MiniSharp na konsoli: pisanie kodu na dolnym ekranie (klawiatura dotykowa), autouzupełnianie z tabeli API (tej samej co paleta węzłów), podświetlanie błędów, uruchamianie jednym przyciskiem i przełączanie kod ↔ graf. Do tego terminal (REPL) na tej samej klawiaturze: górny ekran pokazuje wynik, np. `Math.Sqrt(2)` albo `Gfx.Circle(...)` od razu.
 7. Backend generujący natywny kod ARM (opcjonalnie, jeśli zabraknie wydajności).
 
 ## Struktura

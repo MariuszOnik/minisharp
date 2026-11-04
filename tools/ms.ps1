@@ -20,7 +20,7 @@ function Build-Pc {
     Write-Host 'Building minisharp.exe...'
     $env:Path = "$gccDir;$env:Path"
     Push-Location $root
-    & "$gccDir\gcc.exe" -O2 -std=c99 -D_DEFAULT_SOURCE -o minisharp.exe src/parser.c src/compiler.c src/vm.c src/natives.c src/disasm.c pc/main_pc.c pc/platform_pc.c -lm
+    & "$gccDir\gcc.exe" -O2 -std=c99 -D_DEFAULT_SOURCE -o minisharp.exe (Get-ChildItem src\*.c, pc\*.c | ForEach-Object { $_.FullName }) -lm
     $code = $LASTEXITCODE
     Pop-Location
     if ($code -ne 0) { throw 'gcc failed' }

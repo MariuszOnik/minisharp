@@ -27,6 +27,7 @@ check rt_imgid "$($BIN tests/rt_imgid.cs 2>&1 >/dev/null)" tests/expected/rt_img
 check rt_sndbad "$($BIN tests/rt_sndbad.cs 2>&1 >/dev/null)" tests/expected/rt_sndbad.txt
 check rt_null   "$($BIN tests/rt_null.cs 2>&1 >/dev/null)"  tests/expected/rt_null.txt
 check rt_index  "$($BIN tests/rt_index.cs 2>&1 >/dev/null)" tests/expected/rt_index.txt
+check repl "$($BIN --repl < tests/repl.txt 2>&1)" tests/expected/repl.txt
 for f in tests/errors/*.cs; do
     n=$(basename "$f" .cs)
     check "error/$n" "$($BIN "$f" 2>&1 >/dev/null)" "tests/errors/$n.expected"

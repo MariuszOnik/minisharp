@@ -3,10 +3,12 @@
  *   minisharp file.cs --frames N      run N frames
  *   minisharp file.cs --ppm out.ppm   save both screens of the last frame as an image
  *   minisharp file.cs --check         only compile, report errors
- *   minisharp file.cs --dis           print the bytecode */
+ *   minisharp file.cs --dis           print the bytecode
+ *   minisharp --repl                  terminal: run lines from stdin */
 #include "../src/ms.h"
 #include "../src/platform.h"
 #include "../src/media.h"
+#include "../src/repl.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,11 +31,35 @@ static char* read_file(const char* path) {
     return s;
 }
 
+/* terminal mode: one line of code per input line; "#complete text" lists completions instead */
+static int repl_main(void) {
+    Repl* r = repl_new();
+    if (!r) { fprintf(stderr, "out of memory\n"); return 2; }
+    char line[1024], err[300];
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\r\n")] = 0;
+        printf("> %s\n", line);
+        if (!strncmp(line, "#complete ", 10)) {
+            char out[8][REPL_WORD]; int start;
+            const char* t = line + 10;
+            int n = repl_complete(r, t, (int)strlen(t), &start, out, 8);
+            for (int i = 0; i < n; i++) printf("%s%s", i ? " " : "", out[i]);
+            printf("\n");
+            continue;
+        }
+        if (!repl_eval(r, line, err, sizeof err)) printf("error: %s\n", err);
+        fflush(stdout);
+    }
+    repl_free(r);
+    return 0;
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
     _setmode(_fileno(stdout), _O_BINARY); /* "\n" not "\r\n", so output matches tests/expected */
     _setmode(_fileno(stderr), _O_BINARY);
 #endif
+    if (argc == 2 && !strcmp(argv[1], "--repl")) return repl_main();
     if (argc < 2) { fprintf(stderr, "usage: %s file.cs [--frames N] [--ppm out.ppm] [--check] [--dis]\n", argv[0]); return 2; }
     int frames = 60, check = 0, dis = 0; const char* ppm = NULL;
     for (int i = 2; i < argc; i++) {

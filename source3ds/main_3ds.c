@@ -11,6 +11,7 @@
 #include "../src/platform.h"
 #include "../src/media.h"
 #include "platform_3ds.h"
+#include "terminal.h"
 #include "samples.h"
 
 u32 __stacksize__ = 256 * 1024;
@@ -90,11 +91,7 @@ static float text_wrapped(float x, float y, const char* s, int cols, uint32_t rg
     return y;
 }
 
-static void draw_log(float y0, int maxLines) {
-    int n = log_count();
-    int first = n > maxLines ? n - maxLines : 0;
-    for (int i = first; i < n; i++) text(6, y0 + (i - first) * 15, log_line(i), 0xD0D0D0);
-}
+static void draw_log(float y0, int maxLines) { log_draw(6, y0, maxLines); }
 
 /* ---------- message screen ---------- */
 static void message(const char* title, const char* body, uint32_t titleColor, int showLog) {
@@ -211,7 +208,7 @@ static void draw_menu(void) {
 
     plat_screen(1);
     text(8, 6, "A: run  Y: refresh  X: FPS  START: exit", 0xFFFFFF);
-    text(8, 22, "In a game: START returns here", 0xA0A0A0);
+    text(8, 22, "SELECT: terminal   In a game: START = menu", 0xA0A0A0);
     text(8, 44, "Last program output:", 0x7FB2FF);
     draw_log(62, 11);
     C3D_FrameEnd(0);
@@ -246,6 +243,7 @@ int main(void) {
             if (k & KEY_LEFT) { sel -= 10; if (sel < 0) sel = 0; }
             if (k & KEY_A) { run_file(files[sel]); continue; }
         }
+        if (k & KEY_SELECT) { terminal_run(); snprintf(status, sizeof status, "%d program(s) in %s", nfiles, APP_DIR); continue; }
         if (k & KEY_X) { showFps = !showFps; snprintf(status, sizeof status, "FPS overlay %s", showFps ? "on" : "off"); }
         if (k & KEY_Y) { scan_files(); snprintf(status, sizeof status, "%d program(s) found", nfiles); }
         draw_menu();

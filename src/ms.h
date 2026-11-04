@@ -108,6 +108,7 @@ typedef struct VM {
     ObjCoro** coros; int ncoros, capcoros;     /* started coroutines (GC roots) */
     ObjCoro* curCoro;                           /* the one running right now */
     int frameNo;                                /* counts vm_tick_coroutines calls */
+    long long deadline; unsigned loops;         /* REPL: a loop still running at time() > deadline stops (0 = never) */
 } VM;
 
 /* ---------- natives ---------- */
@@ -123,8 +124,13 @@ extern const int ms_nconsts;
 /* ---------- API ---------- */
 Program* ms_compile(const char* src, char* err, int errlen);
 void ms_free_program(Program* p);
+/* REPL: like ms_compile, but in Repl.Main a variable declared at the top level becomes a static field
+ * ("static int x; " is appended to 'decls' so the next input can declare it in the class) and an
+ * expression on its own is printed */
+Program* ms_compile_repl(const char* src, char* err, int errlen, char* decls, int declsCap);
 
 VM* vm_new(Program* p);
+int vm_set_program(VM* vm, Program* p); /* REPL: go on with a newer program whose statics start with the old ones */
 void vm_free(VM* vm);
 int vm_call(VM* vm, int func);          /* 1 = ok, 0 = runtime error or quit */
 int vm_tick_coroutines(VM* vm);         /* once per frame after Update(); same result codes */

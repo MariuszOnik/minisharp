@@ -51,6 +51,11 @@ typedef struct {
     Loop* loop;
     int lastOp, lastLabel;
     Type* dicts;                    /* every Dictionary<K,V> type made so far */
+    /* REPL: variables declared at the top of Repl.Main's body become static fields */
+    Stmt* replBody;
+    Local replVars[64]; int nreplVars;          /* slot = static slot */
+    char* replDecls; int replDeclsCap;          /* "static int x; " for each of them */
+    int replPrint;                              /* native Console.WriteLine(x) */
 } C;
 
 static void cfail(C* c, int line, const char* fmt, ...) __attribute__((noreturn));
@@ -226,6 +231,8 @@ static Res resolve(C* c, const char* n, int l) {
     Res r = { R_NONE, 0, NULL };
     int li = find_local(c, n, l);
     if (li >= 0) { r.k = R_LOCAL; r.idx = c->locals[li].slot; r.type = c->locals[li].type; return r; }
+    for (int i = 0; i < c->nreplVars; i++)
+        if (nameeq(c->replVars[i].name, c->replVars[i].nlen, n, l)) { r.k = R_STATIC; r.idx = c->replVars[i].slot; r.type = c->replVars[i].type; return r; }
     CField* f = find_field(c, c->cur, n, l);
     if (f) { r.k = f->isStatic ? R_STATIC : R_FIELD; r.idx = f->slot; r.type = f->type; return r; }
     if (find_method(c, c->cur, n, l)) { r.k = R_METHOD; return r; }
@@ -995,6 +1002,58 @@ static void expr_stmt(C* c, Expr* e) {
     if (t->k != T_VOID) emit_pop(c);
 }
 
+/* REPL: 'var x = 5;' at the top of the input makes a static field that the next inputs still see.
+ * Declaring it again with the same type just assigns it. */
+static void repl_var(C* c, Stmt* s) {
+    for (; s; s = s->els) {
+        c->line = s->line;
+        CField* f = find_field(c, c->cur, s->name, s->nlen);
+        Local* rv = NULL;
+        for (int i = 0; i < c->nreplVars; i++)
+            if (nameeq(c->replVars[i].name, c->replVars[i].nlen, s->name, s->nlen)) rv = &c->replVars[i];
+        Type* old = f ? f->type : rv ? rv->type : NULL;
+        Type* t;
+        if (s->tn) {
+            t = resolve_typenode(c, s->tn, 0);
+            if (old && old != t) cfail(c, s->line, "'%.*s' is already a %s", s->nlen, s->name, tname(c, old));
+            if (s->e) coerce(c, expr(c, s->e), t, s->line, "variable initializer");
+            else push_default(c, t);
+        } else {
+            t = expr(c, s->e);
+            if (t->k == T_VOID) cfail(c, s->line, "cannot assign a void value to a variable");
+            if (t->k == T_NULL) cfail(c, s->line, "cannot use 'var' with null; write the type");
+            if (old) { coerce(c, t, old, s->line, "assignment"); t = old; }
+        }
+        c->line = s->line;
+        int slot;
+        if (f) slot = f->slot;
+        else if (rv) slot = rv->slot;
+        else {
+            if (c->nreplVars >= 64) cfail(c, s->line, "too many variables in one line");
+            int used = (int)strlen(c->replDecls);
+            int n = snprintf(c->replDecls + used, c->replDeclsCap - used, "static %s %.*s; ", tname(c, t), s->nlen, s->name);
+            if (n >= c->replDeclsCap - used) cfail(c, s->line, "too many variables (restart the terminal)");
+            Program* P = c->P;
+            Value* d = (Value*)realloc(P->staticDefaults, sizeof(Value) * (P->nstatics + 1));
+            if (!d) cfail(c, s->line, "out of memory");
+            P->staticDefaults = d;
+            slot = P->nstatics++;
+            d[slot] = default_value(t);
+            Local* lo = &c->replVars[c->nreplVars++];
+            lo->name = s->name; lo->nlen = s->nlen; lo->type = t; lo->slot = slot;
+        }
+        op1(c, OP_SETSTATIC, slot);
+        emit_pop(c);
+    }
+}
+
+/* REPL: an expression on its own is printed, like in C# Interactive */
+static void repl_expr(C* c, Expr* e) {
+    if (e->k == E_ASSIGN || e->k == E_INCDEC) { expr_stmt(c, e); return; }
+    Type* t = expr(c, e);
+    if (t->k != T_VOID) op2(c, OP_CALLN, c->replPrint, 1);
+}
+
 static void push_loop(C* c, Loop* l, int contTarget) { memset(l, 0, sizeof *l); l->contTarget = contTarget; l->prev = c->loop; c->loop = l; }
 static void pop_loop(C* c) {
     Loop* l = c->loop;
@@ -1007,7 +1066,12 @@ static void stmt(C* c, Stmt* s) {
     switch (s->k) {
         case S_BLOCK: {
             int nl = c->nlocals, ns = c->nextSlot;
-            for (int i = 0; i < s->n; i++) stmt(c, s->list[i]);
+            for (int i = 0; i < s->n; i++) {
+                Stmt* t = s->list[i];
+                if (s == c->replBody && t->k == S_VAR) repl_var(c, t);
+                else if (s == c->replBody && t->k == S_EXPR) { c->line = t->line; repl_expr(c, t->e); }
+                else stmt(c, t);
+            }
             c->nlocals = nl; c->nextSlot = ns;
             return;
         }
@@ -1402,7 +1466,7 @@ static int find_entry(C* c, const char* name) {
     return -1;
 }
 
-Program* ms_compile(const char* src, char* err, int errlen) {
+static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {
     C* c = (C*)calloc(1, sizeof(C));
     if (!c) { snprintf(err, errlen, "out of memory"); return NULL; }
     Type* prims[] = { &tVoid, &tInt, &tFloat, &tBool, &tString, &tNull, &tAny, &tChar, &tCoro };
@@ -1420,6 +1484,14 @@ Program* ms_compile(const char* src, char* err, int errlen) {
     Token* toks = ms_lex(&c->pc, src, &ntok);
     ProgramAST* ast = ms_parse(&c->pc, toks, ntok);
     collect(c, ast);
+    if (replDecls) {
+        int ci = find_class(c, "Repl", 4);
+        CMethod* m = ci >= 0 ? find_method(c, ci, "Main", 4) : NULL;
+        if (m) c->replBody = m->decl->body;
+        c->replDecls = replDecls; c->replDeclsCap = replDeclsCap;
+        for (int i = 0; i < ms_nnatives; i++)
+            if (!strcmp(ms_natives[i].cls, "Console") && !strcmp(ms_natives[i].name, "WriteLine") && ms_natives[i].np == 1) c->replPrint = i;
+    }
     for (int i = 0; i < c->nclasses; i++) {
         compile_ctor(c, i);
         for (int j = 0; j < c->classes[i].nm; j++) compile_method(c, i, &c->classes[i].methods[j]);
@@ -1435,6 +1507,9 @@ Program* ms_compile(const char* src, char* err, int errlen) {
     free(c);
     return P;
 }
+
+Program* ms_compile(const char* src, char* err, int errlen) { return compile(src, err, errlen, NULL, 0); }
+Program* ms_compile_repl(const char* src, char* err, int errlen, char* decls, int declsCap) { return compile(src, err, errlen, decls, declsCap); }
 
 void ms_free_program(Program* p) {
     if (!p) return;
