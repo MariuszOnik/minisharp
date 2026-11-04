@@ -1,0 +1,1 @@
+compile error: line 1: cannot use instance field 'x' in a static method

@@ -1,0 +1,17 @@
+<!-- Only for IntelliSense in VS Code: lets the C# extension check games against sdk/MiniSharp.Api.cs.
+     The real compiler is MiniSharp itself (tools/ms.ps1 check). Nothing here runs on the 3DS. -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- unused fields/values are normal in small games; static Main() in a library is fine -->
+    <NoWarn>CS0169;CS0414;CS0649;CS0219;CS7022;CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="sdk/*.cs;examples/*.cs;games/*.cs" />
+  </ItemGroup>
+</Project>

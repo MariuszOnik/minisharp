@@ -1,0 +1,27 @@
+count 10 xs[3]=9
+first 42 -9 has81 True idx64 8
+remove 81: True again: False count 9
+sum 228
+ala.ma.kota.!. has 'ma': True
+cleared 0
+items 2 total 17 second shield
+grid 23 rows 3
+best 8
+letters 3
+100 200 -1
+vowel digit other space
+Tuesday / unknown sun
+loops 422
+flags 9 and 8 xor 246 not -10
+flags 32 shr 16 neg shr -8
+flags 1 prec 24 10
+False True False
+char D code 68 next E plus 69
+hi! Q ws
+x
+[Hello, World] len 12 t[1]=e
+HELLO, WORLD hello, world World Hello
+7 4 True True False
+HeLLo, WorLd abc
+parts 4 sum 60 float 5
+2147483647 -2147483648 12!True

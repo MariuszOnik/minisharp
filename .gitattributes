@@ -1,0 +1,6 @@
+# keep LF everywhere (run_tests.sh runs on Linux in CI, samples.h embeds files byte for byte)
+* text=auto eol=lf
+*.png binary
+*.wav binary
+*.jpg binary
+*.bmp binary

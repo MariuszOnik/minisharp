@@ -1,0 +1,9 @@
+build/
+*.3dsx
+*.smdh
+*.elf
+minisharp
+*.ppm
+bin/
+obj/
+*.exe

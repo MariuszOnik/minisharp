@@ -1,0 +1,16 @@
+count 2 ala 8 ola 9
+has ola True has ela False has value 9 True
+try ola 9
+try nobody False 0
+try ala 8
+ola now 20
+order c=3 a=1 b=2 
+remove a True again False count 2
+after c3d4b2
+values sum 9 keys cdb keys count 3
+id 30 item3 count 5
+the:3 cat:1 and:2 dog:1 bird:1 
+score 11
+big 3500 check 1759996 9998 False 1
+cleared 0 False
+stock pear 1

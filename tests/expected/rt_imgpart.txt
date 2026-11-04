@@ -1,0 +1,1 @@
+runtime error: line 1 (P.Main): ImagePart(60, 0, 16, 16) is outside the image (64x16)

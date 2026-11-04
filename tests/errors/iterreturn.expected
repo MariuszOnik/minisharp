@@ -1,0 +1,1 @@
+compile error: line 1: a coroutine cannot use 'return'; use 'yield break' to stop it

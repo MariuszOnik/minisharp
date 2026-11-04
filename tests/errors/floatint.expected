@@ -1,0 +1,1 @@
+compile error: line 1: variable initializer: cannot convert float to int automatically, use (int)

@@ -1,0 +1,1 @@
+compile error: line 1: 'new WaitForSeconds(...)' can only be used in 'yield return'

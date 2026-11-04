@@ -1,0 +1,12 @@
+countdown start @0
+early 1
+main done
+ticker 3 @3
+after 0.1s @6
+child A start @6
+child A end @8
+child done @8
+bat blink 0 @8
+bat blink 1 @9
+ticker stopped, ticks 9
+countdown end @10

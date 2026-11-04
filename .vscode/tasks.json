@@ -1,0 +1,52 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "MiniSharp: wyślij na 3DS",
+            "detail": "Kompiluje bieżący plik MiniSharpem i wysyła go przez FTP do sdmc:/minisharp/",
+            "type": "shell",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/ms.ps1\" deploy \"${file}\"",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": {
+                "owner": "minisharp", "source": "MiniSharp", "fileLocation": "absolute",
+                "pattern": { "regexp": "^(.*):([0-9]+): (error|warning): (.*)$", "file": 1, "line": 2, "severity": 3, "message": 4 }
+            },
+            "presentation": { "reveal": "always", "clear": true }
+        },
+        {
+            "label": "MiniSharp: sprawdź",
+            "type": "shell",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/ms.ps1\" check \"${file}\"",
+            "problemMatcher": {
+                "owner": "minisharp", "source": "MiniSharp", "fileLocation": "absolute",
+                "pattern": { "regexp": "^(.*):([0-9]+): (error|warning): (.*)$", "file": 1, "line": 2, "severity": 3, "message": 4 }
+            },
+            "presentation": { "reveal": "silent", "clear": true }
+        },
+        {
+            "label": "MiniSharp: podgląd na PC",
+            "detail": "Uruchamia 120 klatek na PC i otwiera ostatnią jako PNG",
+            "type": "shell",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/ms.ps1\" preview \"${file}\"",
+            "problemMatcher": {
+                "owner": "minisharp", "source": "MiniSharp", "fileLocation": "absolute",
+                "pattern": { "regexp": "^(.*):([0-9]+): (error|warning): (.*)$", "file": 1, "line": 2, "severity": 3, "message": 4 }
+            },
+            "presentation": { "reveal": "always", "clear": true }
+        },
+        {
+            "label": "MiniSharp: pobierz log z 3DS",
+            "type": "shell",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/ms.ps1\" log",
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "clear": true }
+        },
+        {
+            "label": "MiniSharp: zbuduj i wyślij aplikację (.3dsx)",
+            "type": "shell",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${workspaceFolder}/tools/ms.ps1\" app",
+            "problemMatcher": "$gcc",
+            "presentation": { "reveal": "always", "clear": true }
+        }
+    ]
+}

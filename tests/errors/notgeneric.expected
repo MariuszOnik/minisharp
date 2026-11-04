@@ -1,0 +1,1 @@
+compile error: line 1: 'A' is not generic (only List<T> is)
