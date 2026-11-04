@@ -7,7 +7,7 @@ minisharp: $(SRC) src/ms.h src/ast.h src/platform.h src/media.h
 	$(CC) $(CFLAGS) -o $@ $(SRC) -lm
 
 test: minisharp
-	./tests/run_tests.sh
+	sh ./tests/run_tests.sh
 
 clean:
 	rm -f minisharp
