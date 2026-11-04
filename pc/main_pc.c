@@ -1,5 +1,6 @@
 /* MiniSharp - PC host for testing the compiler and VM.
  *   minisharp file.cs                 run Main(), or 60 frames of Update()/Draw()
+ *   minisharp folder                  the same for a project (all .cs files in the folder)
  *   minisharp file.cs --frames N      run N frames
  *   minisharp file.cs --ppm out.ppm   save both screens of the last frame as an image
  *   minisharp file.cs --check         only compile, report errors
@@ -9,6 +10,7 @@
 #include "../src/platform.h"
 #include "../src/media.h"
 #include "../src/repl.h"
+#include "../src/project.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,18 +72,32 @@ int main(int argc, char** argv) {
     }
     /* Gfx.LoadImage("x.png") and Audio.Load start from the program's folder */
     char dir[256]; snprintf(dir, sizeof dir, "%s", argv[1]);
-    char* slash = strrchr(dir, '/'); char* bslash = strrchr(dir, '\\');
-    if (bslash > slash) slash = bslash;
-    if (slash) *slash = 0; else snprintf(dir, sizeof dir, ".");
+    size_t dl = strlen(dir);
+    int isProject = dl < 3 || strcmp(dir + dl - 3, ".cs");     /* a folder: all its .cs files */
+    while (isProject && dl > 1 && (dir[dl - 1] == '/' || dir[dl - 1] == '\\')) dir[--dl] = 0;
+    if (!isProject) {
+        char* slash = strrchr(dir, '/'); char* bslash = strrchr(dir, '\\');
+        if (bslash > slash) slash = bslash;
+        if (slash) *slash = 0; else snprintf(dir, sizeof dir, ".");
+    }
     ms_set_base_dir(dir);
-    char* src = read_file(argv[1]);
-    if (!src) { fprintf(stderr, "cannot read %s\n", argv[1]); return 2; }
     char err[300];
+    Project proj;
+    char* src;
+    if (isProject) {
+        if (!project_load(dir, &proj, err, sizeof err)) { fprintf(stderr, "%s\n", err); return 2; }
+        src = proj.src; proj.src = NULL;
+    } else {
+        memset(&proj, 0, sizeof proj);
+        src = read_file(argv[1]);
+        if (!src) { fprintf(stderr, "cannot read %s\n", argv[1]); return 2; }
+    }
     Program* p = ms_compile(src, err, sizeof err);
     free(src);
-    if (!p) { fprintf(stderr, "compile error: %s\n", err); return 1; }
+    project_map_error(&proj, err, sizeof err);
+    if (!p) { fprintf(stderr, "compile error: %s\n", err); project_free(&proj); return 1; }
     if (dis) ms_disassemble(p);
-    if (check) { ms_free_program(p); return 0; }
+    if (check) { ms_free_program(p); project_free(&proj); return 0; }
 
     VM* vm = vm_new(p);
     int ok = vm_call(vm, p->staticInit);
@@ -95,10 +111,15 @@ int main(int argc, char** argv) {
         }
     }
     int rc = 0;
-    if (!ok && !vm->quit) { fprintf(stderr, "runtime error: %s\n", vm->err); rc = 3; }
+    if (!ok && !vm->quit) {
+        project_map_error(&proj, vm->err, sizeof vm->err);
+        fprintf(stderr, "runtime error: %s\n", vm->err);
+        rc = 3;
+    }
     if (ppm) pc_save_ppm(ppm);
     vm_free(vm);
     plat_media_reset();
     ms_free_program(p);
+    project_free(&proj);
     return rc;
 }

@@ -12,6 +12,6 @@
     <NoWarn>CS0169;CS0414;CS0649;CS0219;CS7022;CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="sdk/*.cs;examples/*.cs;games/*.cs" />
+    <Compile Include="sdk/*.cs;examples/**/*.cs;games/**/*.cs" />
   </ItemGroup>
 </Project>

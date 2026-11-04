@@ -28,11 +28,14 @@ check rt_sndbad "$($BIN tests/rt_sndbad.cs 2>&1 >/dev/null)" tests/expected/rt_s
 check rt_null   "$($BIN tests/rt_null.cs 2>&1 >/dev/null)"  tests/expected/rt_null.txt
 check rt_index  "$($BIN tests/rt_index.cs 2>&1 >/dev/null)" tests/expected/rt_index.txt
 check repl "$($BIN --repl < tests/repl.txt 2>&1)" tests/expected/repl.txt
+for t in project project_err project_rt project_twomain; do
+    check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
+done
 for f in tests/errors/*.cs; do
     n=$(basename "$f" .cs)
     check "error/$n" "$($BIN "$f" 2>&1 >/dev/null)" "tests/errors/$n.expected"
 done
-for f in examples/*.cs; do
+for f in examples/*.cs examples/*/; do
     $BIN "$f" --frames 300 >/dev/null 2>&1 || { fail=$((fail+1)); echo "FAIL: example $f"; }
 done
 echo "passed: $pass, failed: $fail"

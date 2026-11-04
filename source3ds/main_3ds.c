@@ -10,6 +10,7 @@
 #include "../src/ms.h"
 #include "../src/platform.h"
 #include "../src/media.h"
+#include "../src/project.h"
 #include "platform_3ds.h"
 #include "terminal.h"
 #include "samples.h"
@@ -26,8 +27,15 @@ static char status[200];
 static int showFps;                     /* FPS overlay in games, toggled with X in the menu */
 
 /* ---------- files ---------- */
-static int cmpname(const void* a, const void* b) { return strcmp((const char*)a, (const char*)b); }
+/* projects ("Name/") first, then single files */
+static int is_project(const char* name) { return name[strlen(name) - 1] == '/'; }
+static int cmpname(const void* a, const void* b) {
+    int pa = is_project((const char*)a), pb = is_project((const char*)b);
+    if (pa != pb) return pb - pa;
+    return strcmp((const char*)a, (const char*)b);
+}
 
+/* .cs files, and folders with .cs files in them (projects, listed as "Name/") */
 static void scan_files(void) {
     nfiles = 0;
     DIR* d = opendir(APP_DIR);
@@ -35,7 +43,11 @@ static void scan_files(void) {
     struct dirent* e;
     while ((e = readdir(d)) && nfiles < MAX_FILES) {
         size_t n = strlen(e->d_name);
-        if (n > 3 && n < sizeof files[0] && !strcmp(e->d_name + n - 3, ".cs")) strcpy(files[nfiles++], e->d_name);
+        if (n + 2 > sizeof files[0] || e->d_name[0] == '.') continue;
+        if (n > 3 && !strcmp(e->d_name + n - 3, ".cs")) { strcpy(files[nfiles++], e->d_name); continue; }
+        char path[160];
+        snprintf(path, sizeof path, "%s/%s", APP_DIR, e->d_name);
+        if (project_count_cs(path) > 0) snprintf(files[nfiles++], sizeof files[0], "%s/", e->d_name);
     }
     closedir(d);
     qsort(files, nfiles, sizeof files[0], cmpname);
@@ -49,6 +61,8 @@ static void install_samples(void) {
         snprintf(path, sizeof path, "%s/%s", APP_DIR, ms_samples[i].name);
         FILE* f = fopen(path, "rb");
         if (f) { fclose(f); continue; }      /* never overwrite the user's files */
+        char* slash = strrchr(path, '/');    /* "Kosmos/Game.cs": a project's folder */
+        if (slash > path + strlen(APP_DIR)) { *slash = 0; mkdir(path, 0777); *slash = '/'; }
         f = fopen(path, "wb");
         if (!f) continue;
         fwrite(ms_samples[i].data, 1, ms_samples[i].len, f);     /* .cs text or a .png/.wav file */
@@ -110,24 +124,43 @@ static void message(const char* title, const char* body, uint32_t titleColor, in
 }
 
 /* ---------- running a program ---------- */
+/* 'name' is a .cs file or a project folder "Name/" (all its .cs files; images and sounds from there too) */
 static void run_file(const char* name) {
     char path[160];
     snprintf(path, sizeof path, "%s/%s", APP_DIR, name);
-    char* src = read_file(path);
-    flog("run %s", name);
-    if (!src) { snprintf(status, sizeof status, "Cannot read %s", name); flog("cannot read %s", path); return; }
-
     static char err[320];
+    static Project proj;
+    char* src;
+    flog("run %s", name);
+    if (is_project(name)) {
+        path[strlen(path) - 1] = 0;
+        if (!project_load(path, &proj, err, sizeof err)) { snprintf(status, sizeof status, "%.180s", err); flog("%s", err); return; }
+        src = proj.src; proj.src = NULL;
+        ms_set_base_dir(path);
+        flog("project: %d file(s)", proj.nfiles);
+    } else {
+        src = read_file(path);
+        if (!src) { snprintf(status, sizeof status, "Cannot read %s", name); flog("cannot read %s", path); return; }
+    }
+
     u64 t0 = osGetTime();
     Program* p = ms_compile(src, err, sizeof err);
     free(src);
-    if (!p) { flog("compile error: %s", err); message("Compile error", err, 0xFF5050, 0); snprintf(status, sizeof status, "%s: compile error", name); return; }
+    if (!p) {
+        project_map_error(&proj, err, sizeof err);
+        flog("compile error: %s", err);
+        message("Compile error", err, 0xFF5050, 0);
+        snprintf(status, sizeof status, "%s: compile error", name);
+        project_free(&proj);
+        ms_set_base_dir(APP_DIR);
+        return;
+    }
     u64 compileMs = osGetTime() - t0;
     flog("compiled in %d ms, output:", (int)compileMs);
 
     log_clear();
     VM* vm = vm_new(p);
-    if (!vm) { ms_free_program(p); snprintf(status, sizeof status, "Out of memory"); flog("out of memory (vm_new)"); return; }
+    if (!vm) { ms_free_program(p); project_free(&proj); ms_set_base_dir(APP_DIR); snprintf(status, sizeof status, "Out of memory"); flog("out of memory (vm_new)"); return; }
 
     /* static initializers and Main() run inside one frame so they may draw */
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
@@ -170,6 +203,7 @@ static void run_file(const char* name) {
     }
 
     if (!ok && !vm->quit) {
+        project_map_error(&proj, vm->err, sizeof vm->err);
         flog("runtime error: %s", vm->err);
         message("Runtime error", vm->err, 0xFF5050, 1);
         snprintf(status, sizeof status, "%s: runtime error", name);
@@ -184,6 +218,8 @@ static void run_file(const char* name) {
     C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
     C3D_FrameEnd(0);
     plat_media_reset();
+    project_free(&proj);
+    ms_set_base_dir(APP_DIR);
 }
 
 /* ---------- menu ---------- */
@@ -193,7 +229,7 @@ static void draw_menu(void) {
     plat_text(10, 6, "MiniSharp", 0.8f, 0x7FB2FF);
     text(150, 12, "C#-like language for 3DS", 0x8090A0);
     if (nfiles == 0) {
-        text(10, 50, "No .cs files in sdmc:/minisharp/", 0xFFFFFF);
+        text(10, 50, "No .cs files or projects in sdmc:/minisharp/", 0xFFFFFF);
         text(10, 68, "Copy your programs there and press Y.", 0xA0A0A0);
     }
     const int visible = 11;
@@ -202,7 +238,7 @@ static void draw_menu(void) {
     for (int i = scroll; i < nfiles && i < scroll + visible; i++) {
         float y = 40 + (i - scroll) * 16;
         if (i == sel) plat_rect(4, y - 1, 392, 16, 0x2D4A80);
-        text(12, y, files[i], i == sel ? 0xFFFFFF : 0xC0C8D0);
+        text(12, y, files[i], i == sel ? 0xFFFFFF : is_project(files[i]) ? 0xF0D080 : 0xC0C8D0);
     }
     text(10, 222, status, 0x80C080);
 

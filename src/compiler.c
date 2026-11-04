@@ -1459,11 +1459,16 @@ static void collect(C* c, ProgramAST* ast) {
 }
 
 static int find_entry(C* c, const char* name) {
+    int found = -1;
     for (int i = 0; i < c->nclasses; i++) {
         CMethod* m = find_method(c, i, name, (int)strlen(name));
-        if (m && m->isStatic && m->np == 0 && m->ret->k == T_VOID) return m->func;
+        if (!m || !m->isStatic || m->np != 0 || m->ret->k != T_VOID) continue;
+        if (found >= 0)
+            cfail(c, m->decl->line, "'static void %s()' is in two classes ('%.*s' and '%.*s'); the program can only have one",
+                  name, c->classes[found].nlen, c->classes[found].name, c->classes[i].nlen, c->classes[i].name);
+        found = i;
     }
-    return -1;
+    return found >= 0 ? find_method(c, found, name, (int)strlen(name))->func : -1;
 }
 
 static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {

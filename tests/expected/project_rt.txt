@@ -1,0 +1,2 @@
+start
+runtime error: B.cs line 4 (Lists.Boom): index 5 is outside the array (length 2)
