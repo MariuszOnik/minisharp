@@ -123,6 +123,19 @@ static int offer(char out[][REPL_WORD], int n, int max, const char* s, int slen,
 }
 
 int repl_complete(Repl* r, const char* line, int cursor, int* start, char out[][REPL_WORD], int max) {
+    /* the terminal's own variables: "static int x; " -> "x" */
+    char words[DECLS_CAP];
+    int n = 0;
+    for (const char* s = r->decls; (s = strchr(s, ';')); s++) {
+        const char* e = s;
+        while (e > r->decls && e[-1] != ' ') e--;
+        n += snprintf(words + n, sizeof words - n, "%.*s ", (int)(s - e), e);
+    }
+    words[n] = 0;
+    return ms_complete(line, cursor, start, out, max, words);
+}
+
+int ms_complete(const char* line, int cursor, int* start, char out[][REPL_WORD], int max, const char* words) {
     int ws = cursor;
     while (ws > 0 && isword((unsigned char)line[ws - 1])) ws--;
     *start = ws;
@@ -146,11 +159,12 @@ int repl_complete(Repl* r, const char* line, int cursor, int* start, char out[][
         return n;
     }
     if (plen == 0 || isdigit((unsigned char)line[ws])) return 0;
-    /* the terminal's own variables first: "static int x; " */
-    for (const char* s = r->decls; (s = strchr(s, ';')); s++) {
+    for (const char* s = words; *s; ) {                 /* the caller's names first */
+        while (*s == ' ') s++;
         const char* e = s;
-        while (e > r->decls && e[-1] != ' ') e--;
-        n = offer(out, n, max, e, (int)(s - e), pre, plen);
+        while (*e && *e != ' ') e++;
+        if (e > s) n = offer(out, n, max, s, (int)(e - s), pre, plen);
+        s = e;
     }
     for (int i = 0; i < ms_nnatives; i++)
         if (ms_natives[i].cls[0] != '.') n = offer(out, n, max, ms_natives[i].cls, (int)strlen(ms_natives[i].cls), pre, plen);

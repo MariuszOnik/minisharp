@@ -15,5 +15,7 @@ int repl_eval(Repl* r, const char* line, char* err, int errlen);
  * to where the word begins (the completion replaces line[*start..cursor]). */
 #define REPL_WORD 32
 int repl_complete(Repl* r, const char* line, int cursor, int* start, char out[][REPL_WORD], int max);
+/* the same with the caller's own names ('words', separated by spaces) instead of the terminal's variables */
+int ms_complete(const char* line, int cursor, int* start, char out[][REPL_WORD], int max, const char* words);
 
 #endif

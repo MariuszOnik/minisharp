@@ -143,12 +143,11 @@ void terminal_run(void) {
     C3D_TexSetFilter(&tex, GPU_NEAREST, GPU_NEAREST);
     /* citro2d tests depth, so the canvas needs its own depth buffer (the screen's has another size) */
     C3D_RenderTarget* canvas = C3D_RenderTargetCreateFromTex(&tex, GPU_TEXFACE_2D, 0, GPU_RB_DEPTH16);
-    if (!canvas) { C3D_TexDelete(&tex); repl_free(r); flog("terminal: cannot make the canvas"); return; }
-    if (!kbd_init()) { C3D_RenderTargetDelete(canvas); C3D_TexDelete(&tex); repl_free(r); flog("terminal: no VRAM for the keyboard"); return; }
-    flog("terminal opened");
+    if (!canvas) { C3D_TexDelete(&tex); repl_free(r); flog("terminal: cannot make the canvas"); return; }    flog("terminal opened");
 
     hidSetRepeatParameters(25, 4);      /* B / Left / Right repeat: after 25 frames, every 4 */
     kbd_reset();
+    kbd_set_enter_label("Run");
     set_line("");
     g_histPos = g_nhist;
     log_clear();
@@ -218,7 +217,6 @@ void terminal_run(void) {
     C3D_FrameEnd(0);
     C3D_RenderTargetDelete(canvas);
     C3D_TexDelete(&tex);
-    kbd_exit();
     plat_media_reset();
     log_clear();
 }

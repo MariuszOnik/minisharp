@@ -9,6 +9,7 @@
 int kbd_init(void);                     /* 0 = no VRAM for the keyboard image */
 void kbd_exit(void);                    /* after the GPU is done with the last frame */
 void kbd_reset(void);
+void kbd_set_enter_label(const char* s);   /* "Run" in the terminal, "Enter" in the editor */
 /* call once per frame after plat3ds_input(): text to insert (or KBD_BACKSPACE / KBD_ENTER), or NULL.
  * Holding a key repeats it. */
 const char* kbd_update(void);

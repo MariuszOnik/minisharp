@@ -28,6 +28,7 @@ check rt_sndbad "$($BIN tests/rt_sndbad.cs 2>&1 >/dev/null)" tests/expected/rt_s
 check rt_null   "$($BIN tests/rt_null.cs 2>&1 >/dev/null)"  tests/expected/rt_null.txt
 check rt_index  "$($BIN tests/rt_index.cs 2>&1 >/dev/null)" tests/expected/rt_index.txt
 check repl "$($BIN --repl < tests/repl.txt 2>&1)" tests/expected/repl.txt
+check ci "$($BIN --ci tests/ci 2>&1)" tests/expected/ci.txt
 for t in project project_err project_rt project_twomain; do
     check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
 done

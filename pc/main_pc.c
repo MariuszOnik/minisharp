@@ -5,12 +5,14 @@
  *   minisharp file.cs --ppm out.ppm   save both screens of the last frame as an image
  *   minisharp file.cs --check         only compile, report errors
  *   minisharp file.cs --dis           print the bytecode
- *   minisharp --repl                  terminal: run lines from stdin */
+ *   minisharp --repl                  terminal: run lines from stdin
+ *   minisharp --ci folder             editor suggestions at every ?-marker comment in the folder's files */
 #include "../src/ms.h"
 #include "../src/platform.h"
 #include "../src/media.h"
 #include "../src/repl.h"
 #include "../src/project.h"
+#include "../src/codeindex.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,12 +58,45 @@ static int repl_main(void) {
     return 0;
 }
 
+/* editor suggestions test: at every ?-marker comment in the folder's files, what the editor would offer there */
+static int ci_main(const char* dir) {
+    Project pr;
+    char err[300];
+    if (!project_load(dir, &pr, err, sizeof err)) { fprintf(stderr, "%s\n", err); return 2; }
+    const char* texts[64];
+    char* own[64];
+    for (int i = 0; i < pr.nfiles; i++) {
+        char path[512];
+        snprintf(path, sizeof path, "%s/%s", dir, pr.files[i].name);
+        texts[i] = own[i] = read_file(path);
+    }
+    CodeIndex ci = { 0 };
+    ci_build(&ci, texts, pr.nfiles);
+    for (int t = 0; t < pr.nfiles; t++)
+        for (const char* m = texts[t]; (m = strstr(m, "/*?*/")); m += 5) {
+            int pos = (int)(m - texts[t]), line = 1;
+            for (const char* q = texts[t]; q < m; q++) line += *q == '\n';
+            char out[8][REPL_WORD], type[48] = "?";
+            int start, n = ci_complete(&ci, t, pos, &start, out, 8);
+            if (start > 0 && texts[t][start - 1] == '.') ci_type_before(&ci, t, start - 1, type, sizeof type);
+            printf("%s:%d: %s ->", pr.files[t].name, line, type);
+            for (int i = 0; i < n; i++) printf(" %s", out[i]);
+            if (n < 0) printf(" (none)");
+            printf("\n");
+        }
+    ci_free(&ci);
+    for (int i = 0; i < pr.nfiles; i++) free(own[i]);
+    project_free(&pr);
+    return 0;
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
     _setmode(_fileno(stdout), _O_BINARY); /* "\n" not "\r\n", so output matches tests/expected */
     _setmode(_fileno(stderr), _O_BINARY);
 #endif
     if (argc == 2 && !strcmp(argv[1], "--repl")) return repl_main();
+    if (argc == 3 && !strcmp(argv[1], "--ci")) return ci_main(argv[2]);
     if (argc < 2) { fprintf(stderr, "usage: %s file.cs [--frames N] [--ppm out.ppm] [--check] [--dis]\n", argv[0]); return 2; }
     int frames = 60, check = 0, dis = 0; const char* ppm = NULL;
     for (int i = 2; i < argc; i++) {

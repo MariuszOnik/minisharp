@@ -13,11 +13,13 @@
 #include "../src/project.h"
 #include "platform_3ds.h"
 #include "terminal.h"
+#include "editor.h"
+#include "keyboard.h"
+#include "app.h"
 #include "samples.h"
 
 u32 __stacksize__ = 256 * 1024;
 
-#define APP_DIR "sdmc:/minisharp"
 #define LOG_PATH APP_DIR "/log.txt"
 #define MAX_FILES 128
 
@@ -125,8 +127,11 @@ static void message(const char* title, const char* body, uint32_t titleColor, in
 
 /* ---------- running a program ---------- */
 /* 'name' is a .cs file or a project folder "Name/" (all its .cs files; images and sounds from there too) */
-static void run_file(const char* name) {
+char app_run_error[320];
+
+void run_file(const char* name) {
     char path[160];
+    app_run_error[0] = 0;
     snprintf(path, sizeof path, "%s/%s", APP_DIR, name);
     static char err[320];
     static Project proj;
@@ -148,6 +153,7 @@ static void run_file(const char* name) {
     free(src);
     if (!p) {
         project_map_error(&proj, err, sizeof err);
+        snprintf(app_run_error, sizeof app_run_error, "%s", err);
         flog("compile error: %s", err);
         message("Compile error", err, 0xFF5050, 0);
         snprintf(status, sizeof status, "%s: compile error", name);
@@ -204,6 +210,7 @@ static void run_file(const char* name) {
 
     if (!ok && !vm->quit) {
         project_map_error(&proj, vm->err, sizeof vm->err);
+        snprintf(app_run_error, sizeof app_run_error, "%s", vm->err);
         flog("runtime error: %s", vm->err);
         message("Runtime error", vm->err, 0xFF5050, 1);
         snprintf(status, sizeof status, "%s: runtime error", name);
@@ -243,10 +250,11 @@ static void draw_menu(void) {
     text(10, 222, status, 0x80C080);
 
     plat_screen(1);
-    text(8, 6, "A: run  Y: refresh  X: FPS  START: exit", 0xFFFFFF);
-    text(8, 22, "SELECT: terminal   In a game: START = menu", 0xA0A0A0);
-    text(8, 44, "Last program output:", 0x7FB2FF);
-    draw_log(62, 11);
+    text(8, 6, "A: run  R: edit  L: new project", 0xFFFFFF);
+    text(8, 22, "SELECT: terminal  Y: refresh  X: FPS", 0xA0A0A0);
+    text(8, 38, "START: exit (in a game: back here)", 0xA0A0A0);
+    text(8, 58, "Last program output:", 0x7FB2FF);
+    draw_log(76, 10);
     C3D_FrameEnd(0);
 }
 
@@ -258,6 +266,7 @@ int main(void) {
     C3D_RenderTarget* top = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT);
     C3D_RenderTarget* bot = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     plat3ds_init(top, bot);
+    kbd_init();                         /* touch keyboard for the terminal, the editor and dialogs */
 
     install_samples();
     ms_set_base_dir(APP_DIR);
@@ -278,6 +287,15 @@ int main(void) {
             if (k & KEY_RIGHT) { sel += 10; if (sel >= nfiles) sel = nfiles - 1; }
             if (k & KEY_LEFT) { sel -= 10; if (sel < 0) sel = 0; }
             if (k & KEY_A) { run_file(files[sel]); continue; }
+            if (k & KEY_R) { editor_open(files[sel]); scan_files(); continue; }
+        }
+        if (k & KEY_L) {
+            char made[64];
+            if (editor_new_project(made, sizeof made)) {
+                scan_files();
+                for (int i = 0; i < nfiles; i++) if (!strcmp(files[i], made)) sel = i;
+            }
+            continue;
         }
         if (k & KEY_SELECT) { terminal_run(); snprintf(status, sizeof status, "%d program(s) in %s", nfiles, APP_DIR); continue; }
         if (k & KEY_X) { showFps = !showFps; snprintf(status, sizeof status, "FPS overlay %s", showFps ? "on" : "off"); }
@@ -289,6 +307,7 @@ int main(void) {
     flog_close();
     plat_media_reset();
     plat3ds_audio_exit();
+    kbd_exit();
     plat3ds_exit();
     C2D_Fini();
     C3D_Fini();

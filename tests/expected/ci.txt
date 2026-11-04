@@ -1,0 +1,16 @@
+Game.cs:10: Ship -> x y hp Update Draw Fire Target
+Game.cs:11: Ship -> Update
+Game.cs:12: Ship -> x y hp Update Draw Fire Target
+Game.cs:13: List<Bullet> -> Add Count RemoveAt Clear Contains IndexOf Insert Remove
+Game.cs:14: Bullet -> x y Move
+Game.cs:15: Bullet -> x y Move
+Game.cs:17: Ship -> Draw
+Game.cs:19: Ship ->
+Game.cs:20: int[] -> Length
+Game.cs:22: string -> ToUpper ToLower
+Game.cs:23: KeyValuePair<string, int> -> Key Value
+Game.cs:24: Dictionary<string, int> -> ContainsKey TryGetValue Add Remove Count Keys Values Clear
+Game.cs:25: Gfx -> Screen Clear Rect Circle Line Text Rgb LoadImage
+Game.cs:26: Gfx -> Circle
+Game.cs:27: Ship -> x y hp Update Draw Fire Target
+Ship.cs:10: Ship -> x y hp Update Draw Fire Target

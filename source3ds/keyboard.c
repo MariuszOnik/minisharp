@@ -24,6 +24,8 @@ enum { SHIFT_OFF, SHIFT_ONCE, SHIFT_LOCK };
 static int g_layer, g_shift;            /* g_layer: 0 letters, 2 symbols; capitals come from g_shift */
 static int g_pressed = -1;              /* key index (row * 16 + n) under the finger */
 static u64 g_pressTime, g_lastRepeat;
+static const char* g_enterLabel = "Run";
+static int g_drawnState = -1;           /* cur_layer() * 3 + g_shift when the texture was drawn */
 
 typedef struct { char word[8]; int x, w; } Key;
 
@@ -54,8 +56,13 @@ static const char* label(const char* w) {
     if (!strcmp(w, "SYM")) return "#+=";
     if (!strcmp(w, "ABC")) return "abc";
     if (!strcmp(w, "SPACE")) return "space";
-    if (!strcmp(w, "ENTER")) return "Run";
+    if (!strcmp(w, "ENTER")) return g_enterLabel;
     return w;
+}
+
+void kbd_set_enter_label(const char* s) {
+    if (strcmp(s, g_enterLabel)) g_drawnState = -1;     /* redraw the keys only if it changes */
+    g_enterLabel = s;
 }
 
 void kbd_reset(void) { g_layer = 0; g_shift = SHIFT_OFF; g_pressed = -1; }
@@ -123,7 +130,6 @@ static void draw_key(const Key* k, float y, int pressed) {
  * that one image and the pressed key on top. */
 static C3D_Tex g_tex;
 static C3D_RenderTarget* g_target;
-static int g_drawnState = -1;           /* cur_layer() * 3 + g_shift when the texture was drawn */
 
 int kbd_init(void) {
     if (!C3D_TexInitVRAM(&g_tex, 512, 256, GPU_RGBA8)) return 0;

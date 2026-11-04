@@ -1,0 +1,80 @@
+## Edytor
+Klawiatura dotykowa pisze w miejscu kursora. Enter robi nową linię z tym samym wcięciem.
+D-pad: kursor. L + Lewo/Prawo: początek/koniec linii. L + Góra/Dół: strona w górę/w dół.
+B: usuń znak. Y: cofnij. R: wstaw pierwszą podpowiedź. X: Help.
+SELECT: pliki projektu. START: wyjście do menu.
+Przycisk Uruchom zapisuje pliki i uruchamia program. Błąd pokazuje plik i linię, kursor tam przeskakuje.
+
+## Program
+Program to klasa z metodami static:
+static void Main() - raz na starcie.
+static void Update() - co klatkę (60 razy na sekundę), logika gry.
+static void Draw() - co klatkę po Update, rysowanie.
+Jeśli jest Update, program działa jako gra; START wraca do menu.
+
+## Projekt
+Projekt to folder: wszystkie pliki .cs w nim kompilują się razem i klasy widzą się nawzajem.
+Obrazki i dźwięki są szukane w folderze projektu.
+Tylko jedna klasa może mieć Main (i jedna Update, jedna Draw).
+Dobrze jest pisać na początku każdego pliku: namespace NazwaProjektu;
+
+## Zmienne i typy
+int (liczby całkowite), float (ułamki, 1.5f albo 1.5), bool (true/false), char ('a'), string ("tekst").
+var x = 5; - typ zgaduje kompilator.
+Tablice: int[] a = new int[10]; a.Length
+Rzutowania: (int)1.7 daje 1, (float)3.
+Pole static należy do klasy, zwykłe pole do obiektu.
+
+## Warunki
+if (x > 3) { ... } else { ... }
+x > 3 ? "duzo" : "malo"
+switch (n) { case 1: ... break; default: ... break; }
+Operatory: == != < <= > >= && || !
+
+## Pętle
+for (int i = 0; i < 10; i++) { ... }
+while (warunek) { ... }
+do { ... } while (warunek);
+foreach (var x in lista) { ... } - tablice, listy, stringi, słowniki.
+break kończy pętlę, continue przechodzi do następnego obrotu.
+
+## Klasy
+Klasa to przepis na obiekty: pola (dane) i metody (co obiekt umie).
+class Gracz {
+    public float x;              // pole: każdy gracz ma własne x
+    public static int ilu = 0;   // pole static: jedno, wspólne dla całej klasy
+    public Gracz(float x) {      // konstruktor; x to parametr z new
+        this.x = x;              // this.x to pole obiektu, samo x to parametr
+        ilu++;
+    }
+    public void Ruch() { x += 1; }   // tu nie ma parametru x, więc x to pole
+}
+var a = new Gracz(10);   // parametr x = 10, więc a.x = 10
+var b = new Gracz(50);   // b.x = 50, ilu = 2
+a.Ruch();                // a.x = 11, b.x dalej 50
+Gracz.ilu                // pole static czyta się przez nazwę klasy
+Konstruktor ma nazwę klasy, nie ma typu zwracanego i uruchamia go new.
+this to obiekt, na którym działa metoda. Bez this, gdy parametr i pole mają tę samą nazwę, x = x zmieniłoby tylko parametr.
+Jeden konstruktor na klasę. Nie ma jeszcze dziedziczenia ani interfejsów.
+
+## List<T>
+var l = new List<int>(); l.Add(5); l[0]; l.Count
+Metody: Add AddRange Insert Remove RemoveAt Clear Contains IndexOf
+Usuwanie w pętli: idź od końca, for (int i = l.Count - 1; i >= 0; i--)
+
+## Dictionary<K,V>
+var d = new Dictionary<string, int>(); d["a"] = 1;
+Metody: Add Remove ContainsKey ContainsValue Clear, .Count .Keys .Values
+if (d.TryGetValue("a", out var v)) { ... }
+foreach (var kv in d) Console.WriteLine(kv.Key + "=" + kv.Value);
+
+## string
+Łączenie: "x=" + x. s.Length, s[0] (char).
+Metody: Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower Trim Replace Split
+int.Parse("12"), float.Parse("1.5"), x.ToString(), string.IsNullOrEmpty(s)
+
+## Korutyny
+Metoda zwracająca IEnumerator, z yield:
+IEnumerator Miganie() { while (true) { widac = !widac; yield return new WaitForSeconds(0.5f); } }
+Start: StartCoroutine(Miganie()); stop: StopCoroutine(c), StopAllCoroutines().
+yield return null czeka jedną klatkę.

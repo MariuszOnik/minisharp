@@ -44,6 +44,14 @@ Projekt to folder: wszystkie pliki `.cs` w `sdmc:/minisharp/Nazwa/` kompilują s
 - W VS Code projekt trzymaj w `games/Nazwa/` (z `namespace Nazwa;` w każdym pliku, żeby nazwy klas nie gryzły się z innymi grami). Ctrl+Shift+B sprawdza cały folder i wysyła go do `sdmc:/minisharp/Nazwa/`.
 - Na PC: `./minisharp folder/`.
 
+### Edytor
+W menu **R** otwiera zaznaczony plik albo projekt w edytorze, **L** tworzy nowy projekt (folder z szablonem `Game.cs`).
+- Kod z kolorami i numerami linii na górnym ekranie, klawiatura dotykowa na dolnym. Enter zachowuje wcięcie (po `{` dodaje poziom), `}` cofa wcięcie.
+- Pasek: **Pliki** (otwórz / nowy plik / usuń w projekcie, też SELECT), **Uruchom** (zapisuje i uruchamia; przy błędzie kursor skacze do pliku i linii), **Cofnij** (też Y), **Help** (też X), **Zapisz**.
+- Podpowiedzi nazw z API i z plików projektu (dotknij albo **R**); w nawiasie wywołania widać sygnaturę, np. `void Circle(float x, float y, float r, int color)`.
+- **Help**: tematy o języku (`sdk/Help.txt`) i całe API z opisami (`sdk/MiniSharp.Api.cs`); A wstawia wybraną metodę do kodu. Po zmianie tych plików: `python3 tools/gen_help.py`.
+- D-pad: kursor, L + D-pad: początek/koniec linii, strona w górę/dół. START: wyjście (pyta o zapis).
+
 ### Terminal (REPL)
 W menu **SELECT** otwiera terminal: piszesz linię kodu na klawiaturze dotykowej, **A** (albo *Run*) ją wykonuje.
 - Samo wyrażenie wypisuje wynik: `Math.Sqrt(2)`, `"abc".ToUpper()`. Średnik na końcu jest opcjonalny.
