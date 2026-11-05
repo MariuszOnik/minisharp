@@ -1,0 +1,5 @@
+Rycerz ma 70 hp
+Za 3 sekundy przejdzie 450 pikseli
+Zyje: True
+5
+True

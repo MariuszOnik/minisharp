@@ -128,6 +128,9 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 - **Tablice:** `new int[10]`, `new int[] { 1, 2, 3 }`, `.Length`, sprawdzanie zakresu.
 - `using System;` jest akceptowane i ignorowane, więc kod z „prawdziwego" C# często wkleja się bez zmian.
 
+### Kurs dla początkujących
+W Help (X w edytorze) tematy **Kurs 1** ... **Kurs 10** prowadzą od pierwszej zmiennej do małej gry: ruch i przyciski, pętle i listy, metody, klasy, dziedziczenie, interfejsy, lambdy i zdarzenia, korutyny, słownik. Cała gra z kursu to przykład [examples/kurs.cs](examples/kurs.cs) (statek, fale nietoperzy i kamieni). Przykłady z rozdziałów 1-4 sprawdza test `tests/kurs_snippets.cs`.
+
 ### Punkty wejścia
 - `static void Main()` – wywoływane raz na starcie.
 - `static void Update()` i `static void Draw()` – wywoływane co klatkę (60 razy na sekundę). Jeśli jest `Update`, program działa jako gra.

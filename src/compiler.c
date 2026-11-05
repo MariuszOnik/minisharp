@@ -625,7 +625,7 @@ static void args_for(C* c, Expr* e, Type** params, int np, const char* what) {
     if (e->nargs != np) cfail(c, e->line, "%s takes %d argument%s, but %d were given", what, np, np == 1 ? "" : "s", e->nargs);
     for (int i = 0; i < np; i++) {
         char buf[120]; snprintf(buf, sizeof buf, "argument %d of %s", i + 1, what);
-        if (params[i]->k == T_FUNC) { expr_to(c, e->args[i], params[i], e->args[i]->line, buf); c->line = e->line; continue; }
+        if (params[i]->k == T_FUNC || (params[i]->k == T_CLASS && e->args[i]->k == E_COND)) { expr_to(c, e->args[i], params[i], e->args[i]->line, buf); c->line = e->line; continue; }
         Type* t = expr(c, e->args[i]);
         c->line = e->line;
         if (params[i]->k == T_ANY && t->k == T_CLASS) { tostr(c, t, 0, e->line); t = &tString; }   /* may call an override of ToString */
@@ -1466,6 +1466,17 @@ static void expr_to(C* c, Expr* e, Type* t, int line, const char* what) {
     if (t->k == T_FUNC && e->k == E_LAMBDA) { compile_lambda(c, e, t); return; }
     if (t->k == T_FUNC && method_group(c, e, t, line)) return;
     if (e->k == E_LAMBDA) cfail(c, line, "%s: a lambda cannot become %s", what, tname(c, t));
+    if (e->k == E_COND && (t->k == T_CLASS || t->k == T_FUNC)) {   /* c ? new Bat() : new Rock() given to a Wrog, as in C# 9 */
+        need_bool(c, expr(c, e->a), e->line, "condition of '?:'");
+        c->line = e->line;
+        int jz = jump(c, OP_JZ);
+        expr_to(c, e->b, t, line, what);
+        int je = jump(c, OP_JMP);
+        patch(c, jz);
+        expr_to(c, e->c, t, line, what);
+        patch(c, je);
+        return;
+    }
     coerce(c, expr(c, e), t, line, what);
 }
 

@@ -18,6 +18,201 @@ Obrazki i dźwięki są szukane w folderze projektu.
 Tylko jedna klasa może mieć Main (i jedna Update, jedna Draw).
 Dobrze jest pisać na początku każdego pliku: namespace NazwaProjektu;
 
+## Kurs 1: pierwszy program
+Ten kurs prowadzi od zera do małej gry. Cała gra jest w przykładzie kurs.cs (uruchom ją z menu, a potem otwórz w edytorze).
+Program to tekst, który komputer wykonuje linia po linii. Zmienna to pudełko z nazwą, w którym trzymasz wartość.
+class Game {
+    static void Main() {                  // tu program się zaczyna
+        string imie = "Rycerz";           // string: tekst
+        int hp = 100;                     // int: liczba całkowita
+        int obrazenia = 15;
+        float szybkosc = 2.5f;            // float: liczba z ułamkiem (z f na końcu)
+        bool zyje = true;                 // bool: prawda albo fałsz
+        hp = hp - obrazenia;              // hp teraz 85
+        hp -= obrazenia;                  // to samo krócej: hp teraz 70
+        Console.WriteLine(imie + " ma " + hp + " hp");    // wypisze: Rycerz ma 70 hp
+        if (hp <= 0) zyje = false;        // if: zrób coś tylko, gdy warunek jest prawdziwy
+    }
+}
+Każda instrukcja kończy się średnikiem ;. Nawiasy { } zbierają kilka instrukcji w jeden blok.
+// zaczyna komentarz: kompilator go pomija, to notatka dla ludzi.
+Wielkość liter ma znaczenie: hp i HP to dwie różne zmienne.
+
+## Kurs 2: ruch i przyciski
+Gra to pętla: 60 razy na sekundę MiniSharp woła Update (zmień stan gry) i Draw (narysuj go).
+Zmienne, które mają przetrwać między klatkami, piszemy w klasie (static), a nie w metodzie.
+class Game {
+    static float x = 200, y = 120;        // pozycja gracza
+    static int kolor = Color.Green;
+    static void Update() {
+        if (Input.Held(Btn.Left)) x -= 3;     // Held: przycisk trzymany
+        if (Input.Held(Btn.Right)) x += 3;
+        if (Input.Held(Btn.Up)) y -= 3;       // y rośnie w dół ekranu
+        if (Input.Held(Btn.Down)) y += 3;
+        if (x < 0) x = 0;                     // nie wychodź za ekran
+        if (x > 400) x = 400;
+        if (Input.Pressed(Btn.A)) kolor = Color.Red;   // Pressed: tylko w chwili wciśnięcia
+    }
+    static void Draw() {
+        Gfx.Screen(Screen.Top);           // górny ekran: 400 x 240
+        Gfx.Clear(Color.Black);           // wyczyść ekran
+        Gfx.Circle(x, y, 10, kolor);      // kółko: x, y, promień, kolor
+        Gfx.Text(5, 5, "x = " + (int)x, Color.White);
+    }
+}
+Warunki łączy się przez && (i) oraz || (lub): if (x < 0 || x > 400) ...
+Zamiast kilku if można napisać else: if (hp > 50) ... else if (hp > 0) ... else ...
+
+## Kurs 3: pętle i listy
+Pętla powtarza kod. Lista trzyma wiele wartości pod jedną nazwą. Razem rysują np. 50 gwiazd w tle.
+static List<float> gwiazdyX = new List<float>();
+static List<float> gwiazdyY = new List<float>();
+static void Main() {
+    for (int i = 0; i < 50; i++) {        // i = 0, 1, 2 ... 49
+        gwiazdyX.Add(Random.Range(0, 400));    // Add: dopisz na koniec listy
+        gwiazdyY.Add(Random.Range(0, 240));
+    }
+}
+static void Update() {
+    for (int i = 0; i < gwiazdyY.Count; i++) {     // Count: ile jest elementów
+        gwiazdyY[i] += 1;                          // [i]: element numer i (liczymy od 0)
+        if (gwiazdyY[i] > 240) gwiazdyY[i] = 0;    // spadła na dół: wraca na górę
+    }
+}
+foreach (var g in lista) przechodzi po wszystkich elementach, gdy numer nie jest potrzebny.
+while (warunek) { ... } powtarza, dopóki warunek jest prawdziwy.
+Tablica (int[] a = new int[10]) ma stałą długość; lista rośnie, gdy dodajesz.
+
+## Kurs 4: metody
+Metoda to nazwany kawałek kodu. Dzięki metodom Update nie rośnie w jeden długi tasiemiec.
+static void RysujGwiazdy() {                      // void: nic nie zwraca
+    for (int i = 0; i < gwiazdyX.Count; i++) Gfx.Rect(gwiazdyX[i], gwiazdyY[i], 2, 2, Color.White);
+}
+static float Odleglosc(float x1, float y1, float x2, float y2) {   // parametry: dane wejściowe
+    float dx = x2 - x1, dy = y2 - y1;
+    return Mathf.Sqrt(dx * dx + dy * dy);         // return: wynik metody
+}
+static bool Trafiony(float ax, float ay, float bx, float by, float promien) {
+    return Odleglosc(ax, ay, bx, by) < promien;   // metoda może wołać inne metody
+}
+Wywołanie: RysujGwiazdy();   if (Trafiony(x, y, wrogX, wrogY, 12)) hp--;
+Krótka metoda może mieć => zamiast { return ...; }: static int Podwoj(int a) => a * 2;
+
+## Kurs 5: klasy i obiekty
+Gdy pocisków jest wiele, każdy ma swoje x i y. Klasa opisuje jeden pocisk, a new robi kolejne.
+class Pocisk {
+    public float x, y;                     // każdy pocisk ma własne x, y
+    public bool zywy = true;
+    public Pocisk(float x, float y) { this.x = x; this.y = y; }   // konstruktor
+    public void Ruch() {
+        y -= 6;
+        if (y < 0) zywy = false;           // poza ekranem: do usunięcia
+    }
+    public void Rysuj() { Gfx.Rect(x - 1, y - 4, 3, 8, Color.Yellow); }
+}
+static List<Pocisk> pociski = new List<Pocisk>();
+W Update:   if (Input.Pressed(Btn.A)) pociski.Add(new Pocisk(statekX, 215));
+            foreach (Pocisk p in pociski) p.Ruch();
+            for (int i = pociski.Count - 1; i >= 0; i--) if (!pociski[i].zywy) pociski.RemoveAt(i);
+W Draw:     foreach (Pocisk p in pociski) p.Rysuj();
+Usuwamy od końca listy, bo usunięcie przesuwa dalsze elementy.
+Pole bez static należy do obiektu (każdy pocisk ma swoje), pole static jest jedno dla całej klasy.
+
+## Kurs 6: dziedziczenie
+Nietoperz i Kamień to różni wrogowie, ale mają wiele wspólnego (pozycję, hp, punkty).
+Wspólne rzeczy idą do klasy bazowej Wrog, a każdy rodzaj wroga dopisuje tylko swoje różnice.
+abstract class Wrog {                       // abstract: nie ma "zwykłego" wroga, są tylko konkretne
+    public float x, y;
+    public int hp, punkty;
+    public Wrog(float x, int hp, int punkty) { this.x = x; y = -10; this.hp = hp; this.punkty = punkty; }
+    public virtual void Ruch() { y += 1; }  // virtual: można zmienić w klasie pochodnej
+    public abstract void Rysuj();           // abstract: każdy wróg MUSI mieć swoje Rysuj
+}
+class Nietoperz : Wrog {                    // Nietoperz jest Wrogiem
+    float czas;
+    public Nietoperz(float x) : base(x, 1, 10) { }   // base(...): konstruktor Wroga
+    public override void Ruch() {           // override: własny ruch, zygzakiem
+        base.Ruch();                        // najpierw ruch Wroga (w dół)
+        czas += 0.1f;
+        x += Mathf.Sin(czas) * 2;
+    }
+    public override void Rysuj() { Gfx.Circle(x, y, 7, Color.Magenta); }
+}
+class Kamien : Wrog {
+    public Kamien(float x) : base(x, 3, 30) { }
+    public override void Ruch() { y += 0.5f; }
+    public override void Rysuj() { Gfx.Rect(x - 9, y - 9, 18, 18, Color.Gray); }
+}
+Najważniejsze: jedna lista na wszystkich wrogów, a każdy rusza się po swojemu.
+List<Wrog> wrogowie = new List<Wrog>();
+wrogowie.Add(new Nietoperz(100)); wrogowie.Add(new Kamien(300));
+foreach (Wrog w in wrogowie) { w.Ruch(); w.Rysuj(); }
+Nowy rodzaj wroga = nowa mała klasa; reszta gry się nie zmienia.
+
+## Kurs 7: interfejsy i is
+Interfejs to obietnica: "umiem to zrobić". Klasa ma jedną bazę, ale może spełniać wiele interfejsów.
+interface ITrafiany { bool Trafiony(float px, float py); }
+abstract class Wrog : ITrafiany {
+    public bool Trafiony(float px, float py) {
+        if (Mathf.Abs(px - x) > 10 || Mathf.Abs(py - y) > 10) return false;
+        hp--;
+        return true;
+    }
+    ...
+}
+class Skrzynia : ITrafiany { ... }         // skrzynia to nie wróg, ale też da się ją trafić
+Pocisk sprawdza wszystko, co jest ITrafiany, nie wiedząc, czy to wróg, czy skrzynia:
+List<ITrafiany> cele = ...;
+foreach (ITrafiany c in cele) if (c.Trafiony(p.x, p.y)) p.zywy = false;
+is sprawdza, czym obiekt jest naprawdę:
+if (w is Kamien k) k.hp = 5;               // tylko dla kamieni; k to ten sam obiekt jako Kamien
+if (w is Nietoperz) punkty += 5;
+
+## Kurs 8: lambdy i zdarzenia
+Lambda to mała funkcja zapisana w miejscu użycia: x => x.hp <= 0 znaczy "dla x: czy x.hp <= 0".
+Listy mają metody, które biorą lambdę:
+wrogowie.RemoveAll(w => w.hp <= 0);                    // usuń pokonanych
+Wrog cel = wrogowie.Find(w => w.Trafiony(p.x, p.y));   // pierwszy trafiony albo null
+wrogowie.Sort((a, b) => (int)(b.y - a.y));             // najniżej będący na początek
+bool sa = wrogowie.Exists(w => w is Kamien);
+Zdarzenie: wróg ogłasza "zginąłem", a gra decyduje, co wtedy zrobić.
+W klasie Wrog:   public Action<Wrog> onSmierc;
+                 if (hp == 0) onSmierc?.Invoke(this);    // ?. = tylko jeśli ktoś słucha
+W grze:          w.onSmierc += Nagroda;                  // metoda Nagroda(Wrog w) { wynik += w.punkty; }
+                 w.onSmierc += x => Wybuch(x.x, x.y);    // można dopiąć kilka rzeczy
+Dzięki temu klasa Wrog nic nie wie o wyniku ani o wybuchach.
+
+## Kurs 9: korutyny, czyli czekanie
+Korutyna to metoda, która może się zatrzymać i wrócić później. Idealna do fal wrogów i animacji.
+static IEnumerator Fale() {
+    while (zycia > 0) {
+        fala++;
+        komunikat = "Fala " + fala;
+        yield return new WaitForSeconds(1.5f);        // czekaj 1,5 s (gra działa dalej)
+        komunikat = "";
+        for (int i = 0; i < 3 + fala * 2; i++) {
+            Dodaj(i % 3 == 2 ? new Kamien(Random.Range(20, 380)) : new Nietoperz(Random.Range(20, 380)));
+            yield return new WaitForSeconds(0.6f);    // przerwa między wrogami
+        }
+        while (wrogowie.Count > 0) yield return null; // null: czekaj do następnej klatki
+    }
+}
+Start w Main: StartCoroutine(Fale());
+Bez korutyny trzeba by liczyć klatki w Update i pamiętać, na którym etapie jest fala.
+
+## Kurs 10: słownik i co dalej
+Słownik łączy klucz z wartością, np. nazwę wroga z liczbą pokonanych:
+static Dictionary<string, int> zabite = new Dictionary<string, int>();
+if (zabite.ContainsKey(nazwa)) zabite[nazwa]++;
+else zabite[nazwa] = 1;
+foreach (var kv in zabite) Gfx.Text(8, y, kv.Key + ": " + kv.Value, Color.Gray);
+Co dalej:
+- otwórz kurs.cs i zmień coś: szybkość statku, kolory, liczbę wrogów w fali,
+- dodaj nowego wroga: klasa pochodna od Wrog z własnym Ruch i Rysuj,
+- dodaj skrzynię z bonusem (ITrafiany), która daje dodatkowe życie,
+- obrazki i dźwięki: Gfx.LoadImage, Audio.Load (przykład sprites.cs),
+- tematy Klasy, Dziedziczenie, Lambdy i "C# a MiniSharp" opisują wszystko dokładniej.
+
 ## Zmienne i typy
 int (liczby całkowite), float (ułamki, 1.5f albo 1.5), bool (true/false), char ('a'), string ("tekst").
 var x = 5; - typ zgaduje kompilator.
