@@ -454,7 +454,7 @@ void ci_member_names(const CodeIndex* ci, const char* type, char* out, int cap) 
     int n = 0;
     out[0] = 0;
 #define ADD(s) do { int l_ = snprintf(out + n, cap - n, "%s ", (s)); if (l_ > 0 && l_ < cap - n) n += l_; } while (0)
-    if (!strncmp(type, "List<", 5)) { ADD("Add Count RemoveAt Clear Contains IndexOf Insert Remove AddRange"); return; }
+    if (!strncmp(type, "List<", 5)) { ADD("Add Count RemoveAt Clear Contains IndexOf Insert Remove AddRange Find FindAll FindIndex FindLast FindLastIndex Exists TrueForAll RemoveAll ForEach Sort Reverse"); return; }
     if (!strncmp(type, "Dictionary<", 11)) { ADD("ContainsKey TryGetValue Add Remove Count Keys Values Clear ContainsValue"); return; }
     if (!strncmp(type, "KeyValuePair<", 13)) { ADD("Key Value"); return; }
     if (!strncmp(type, "Func<", 5) || !strncmp(type, "Action", 6) || !strncmp(type, "Predicate<", 10) || !strncmp(type, "Comparison<", 11)) { ADD("Invoke"); return; }

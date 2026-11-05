@@ -159,7 +159,11 @@ Token* ms_lex(ParseCtx* c, const char* src, int* ntok) {
             case ';': t->kind = TK_SEMI; p++; break;
             case ',': t->kind = TK_COMMA; p++; break;
             case '.': t->kind = TK_DOT; p++; break;
-            case '?': t->kind = TK_QUESTION; p++; break;
+            case '?':
+                if (p[1] == '?') { t->kind = TK_QQ; p += 2; }
+                else if (p[1] == '.' && !isdigit((unsigned char)p[2])) { t->kind = TK_QDOT; p += 2; }   /* a ?.5f : 1 stays a '?' */
+                else { t->kind = TK_QUESTION; p++; }
+                break;
             case ':': t->kind = TK_COLON; p++; break;
             case '+':
                 if (p[1] == '+') { t->kind = TK_INC; p += 2; }
@@ -305,6 +309,8 @@ static int optok(P* p, int* ntok) {
 }
 
 static Expr* parse_expr(P* p);
+static int at_lambda(P* p);
+static Expr* parse_lambda(P* p);
 
 static Expr* parse_unary(P* p);
 static int looks_like_decl(P* p);
@@ -474,11 +480,12 @@ static Expr* parse_postfix(P* p) {
     Expr* e = parse_primary(p);
     for (;;) {
         Token* t = peek(p);
-        if (t->kind == TK_DOT) {
+        if (t->kind == TK_DOT || t->kind == TK_QDOT) {
             next(p);
             Token* id = expect(p, TK_IDENT);
             Expr* m = mkexpr(p, E_MEMBER, id->line);
             m->a = e; m->name = id->start; m->nlen = id->len;
+            m->prefix = t->kind == TK_QDOT;
             e = m;
         } else if (t->kind == TK_LPAREN) {
             Expr* c = mkexpr(p, E_CALL, t->line);
@@ -587,8 +594,19 @@ static Expr* parse_binary(P* p, int minprec) {
     return left;
 }
 
+/* a ?? b (right to left, between || and ?:) */
+static Expr* parse_coalesce(P* p) {
+    Expr* left = parse_binary(p, 1);
+    if (!at(p, TK_QQ)) return left;
+    Token* t = next(p);
+    Expr* e = mkexpr(p, E_COALESCE, t->line);
+    e->a = left;
+    e->b = at_lambda(p) ? parse_lambda(p) : parse_coalesce(p);
+    return e;
+}
+
 static Expr* parse_ternary(P* p) {
-    Expr* cond = parse_binary(p, 1);
+    Expr* cond = parse_coalesce(p);
     if (at(p, TK_QUESTION)) {
         Token* t = next(p);
         Expr* e = mkexpr(p, E_COND, t->line);
@@ -848,6 +866,7 @@ static void parse_method_rest(P* p, MethodDecl* m) {
             if (pa->tn->base == TK_VOID && pa->tn->dims == 0) fail(p->c, pa->tn->line, "a parameter cannot be 'void'");
             Token* pn = expect(p, TK_IDENT);
             pa->name = pn->start; pa->nlen = pn->len;
+            if (at(p, TK_ASSIGN)) fail(p->c, pn->line, "default values for parameters are not supported yet; pass every argument");
         } while (accept(p, TK_COMMA));
     }
     expect(p, TK_RPAREN);
@@ -865,6 +884,18 @@ static void parse_method_rest(P* p, MethodDecl* m) {
     }
     if (m->kind == MK_ABSTRACT) fail(p->c, m->line, "%s method '%.*s' cannot have a body; end it with ';'", p->inInterface ? "an interface" : "an abstract", m->nlen, m->name);
     p->sawYield = 0;
+    if (at(p, TK_ARROW)) {                      /* int Area() => w * h;  void Hit() => hp--; */
+        Token* t = next(p);
+        Stmt* body = mkstmt(p, S_BLOCK, t->line);
+        int isVoid = m->isCtor || (m->ret->base == TK_VOID && m->ret->dims == 0);
+        Stmt* one = mkstmt(p, isVoid ? S_EXPR : S_RETURN, t->line);
+        one->e = parse_expr(p);
+        expect(p, TK_SEMI);
+        body->list = (Stmt**)nw(p, sizeof(Stmt*));
+        body->list[0] = one; body->n = 1;
+        m->body = body;
+        return;
+    }
     m->body = parse_block(p);
     m->isIter = p->sawYield;
 }
@@ -893,6 +924,7 @@ static void parse_class(P* p, ClassDecl* cd) {
             Token* m = peek(p);
             if (accept(p, TK_STATIC) || accept(p, TK_CONST)) isStatic = 1;   /* const fields are static */
             else if (accept(p, TK_PUBLIC) || accept(p, TK_PRIVATE) || accept(p, TK_READONLY) || accept(p, TK_SEALED)) {}
+            else if (m->kind == TK_IDENT && m->len == 5 && !memcmp(m->start, "event", 5) && peekn(p, 1)->kind == TK_IDENT) next(p);   /* 'event Action x;' is a delegate field */
             else if (accept(p, TK_VIRTUAL) || accept(p, TK_OVERRIDE) || accept(p, TK_ABSTRACT)) {
                 if (cd->isInterface) fail(p->c, m->line, "interface members cannot be '%.*s'", m->len, m->start);
                 if (kind != MK_NONE) fail(p->c, m->line, "use only one of 'virtual', 'override' and 'abstract'");
@@ -929,6 +961,8 @@ static void parse_class(P* p, ClassDecl* cd) {
             parse_method_rest(p, m);
             continue;
         }
+        if (at(p, TK_LBRACE) || at(p, TK_ARROW))
+            fail(p->c, name->line, "properties ({ get; set; } or =>) are not supported yet; use a field, or methods like Get%.*s()", name->len, name->start);
         if (cd->isInterface) fail(p->c, name->line, "interfaces can only have methods (no fields)");
         if (kind != MK_NONE) fail(p->c, name->line, "a field cannot be virtual, override or abstract");
         if (tn->base == TK_VOID && tn->dims == 0) fail(p->c, name->line, "a field cannot be 'void'");

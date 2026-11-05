@@ -31,7 +31,8 @@ static const struct { const char* name; int nargs; } ops[] = {
     [OP_LIST] = {"LIST", 1}, [OP_CORO_NEW] = {"CORO_NEW", 2}, [OP_YIELD] = {"YIELD", 1}, [OP_CORO] = {"CORO", 1}, [OP_DICT] = {"DICT", 1},
     [OP_CALLV] = {"CALLV", 2}, [OP_ISINST] = {"ISINST", 2},
     [OP_BOX] = {"BOX", 0}, [OP_GETCELL] = {"GETCELL", 0}, [OP_SETCELL] = {"SETCELL", 0}, [OP_UPVAL] = {"UPVAL", 1},
-    [OP_CLOSURE] = {"CLOSURE", 3}, [OP_CALLF] = {"CALLF", 1},
+    [OP_CLOSURE] = {"CLOSURE", 3}, [OP_CALLF] = {"CALLF", 2}, [OP_DELEG] = {"DELEG", 1},
+    [OP_JNULL] = {"JNULL", 1}, [OP_JNULL_POP] = {"JNULL_POP", 1}, [OP_JNNULL] = {"JNNULL", 1}, [OP_LISTF] = {"LISTF", 1},
 };
 
 void ms_disassemble(Program* p) {
@@ -43,7 +44,7 @@ void ms_disassemble(Program* p) {
             printf("  %4d  L%-3d %-12s", ip, f->lines[ip], ops[o].name ? ops[o].name : "?");
             int n = ops[o].nargs;
             for (int k = 0; k < n; k++) printf(" %d", (int)f->code[ip + 1 + k]);
-            if (o == OP_JMP || o == OP_JZ || o == OP_JFALSE_KEEP || o == OP_JTRUE_KEEP) printf("   -> %d", ip + 2 + (int)f->code[ip + 1]);
+            if (o == OP_JMP || o == OP_JZ || o == OP_JFALSE_KEEP || o == OP_JTRUE_KEEP || o == OP_JNULL || o == OP_JNULL_POP || o == OP_JNNULL) printf("   -> %d", ip + 2 + (int)f->code[ip + 1]);
             if (o == OP_CALL) printf("   %s", p->funcs[f->code[ip + 1]].name);
             if (o == OP_CALLN) printf("   %s.%s", ms_natives[f->code[ip + 1]].cls, ms_natives[f->code[ip + 1]].name);
             if (o == OP_ISINST) printf("   %s", p->classes[f->code[ip + 1]].name);

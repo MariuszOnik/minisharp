@@ -29,7 +29,8 @@ enum {
     TK_SHR, TK_SHREQ,                   /* never made by the lexer: the parser joins '>' '>' (see optok) */
     TK_OUT,
     TK_ABSTRACT, TK_VIRTUAL, TK_OVERRIDE, TK_SEALED, TK_INTERFACE, TK_BASE, TK_IS, TK_AS,
-    TK_ARROW                            /* => */
+    TK_ARROW,                           /* => */
+    TK_QDOT, TK_QQ                      /* ?. ?? */
 };
 
 typedef struct { int kind; const char* start; int len; int line; int32_t ival; float fval; } Token;
@@ -50,7 +51,9 @@ enum {
     E_OUT,                          /* 'out x' (a = target) or 'out var x' / 'out T x' (prefix = 1, tn = type or NULL, name) */
     E_BASE,                         /* 'base' (only as base.Member) */
     E_IS, E_AS,                     /* a is T [name] / a as T: tn = type (NULL: 'is null'), name = pattern variable; op = 1 for 'is not' */
-    E_LAMBDA                        /* params / nparams (tn NULL if not written), body (block) or a (expression) */
+    E_LAMBDA,                       /* params / nparams (tn NULL if not written), body (block) or a (expression) */
+    E_COALESCE,                     /* a ?? b */
+    E_STACK                         /* compiler only: a value already on the stack (for a?.b) */
 };
 
 typedef struct Expr Expr;
@@ -61,7 +64,7 @@ struct Expr {
     Expr *a, *b, *c;
     Expr** args; int nargs;
     TypeNode* tn;
-    int prefix;                     /* ++x vs x++ ; for E_NEWARR: has initializer list */
+    int prefix;                     /* ++x vs x++ ; for E_NEWARR: has initializer list; E_MEMBER: a?.name */
     struct Param* params; int nparams; struct Stmt* body;      /* E_LAMBDA */
 };
 

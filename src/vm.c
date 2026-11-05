@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <ctype.h>
 
 /* ================= heap ================= */
 static size_t obj_size(Obj* o) {
@@ -426,6 +427,126 @@ static int coro_new(VM* vm, int fidx, int argc, Value** spp) {
     return 1;
 }
 
+/* ================= delegates ================= */
+/* Runs delegate cl(args) to its end, nested in the running VM loop (the caller has done SYNC() and keeps
+ * everything it needs on the stack). *out = its result, if it returns one. 0 = runtime error or quit. */
+static int call_delegate(VM* vm, ObjClosure* cl, const Value* args, int argc, Value* out) {
+    if (cl->kind == CL_MULTI) {
+        for (int i = 0; i < cl->nup; i++)
+            if (!call_delegate(vm, (ObjClosure*)cl->ups[i].as.o, args, argc, out)) return 0;
+        return 1;
+    }
+    Func* f = &vm->p->funcs[cl->func];
+    if (f->isIter) { snprintf(vm->err, sizeof vm->err, "a coroutine cannot be called here; use StartCoroutine"); return 0; }
+    if (vm->fp >= MS_FRAMES || vm->sp + argc + f->nlocals + 512 >= MS_STACK) { snprintf(vm->err, sizeof vm->err, "stack overflow (too much recursion?)"); return 0; }
+    int base = vm->sp, n = 0;
+    Value* st = vm->stack + base;
+    if (cl->kind != CL_STATIC) st[n++] = cl->self;
+    for (int i = 0; i < argc; i++) st[n++] = args[i];
+    for (int i = n; i < f->nlocals; i++) { st[i].t = V_NULL; st[i].as.o = NULL; }
+    int top = vm->fp;
+    Frame* fr = &vm->frames[vm->fp++];
+    fr->f = f; fr->ip = 0; fr->base = base; fr->clo = (Obj*)cl;
+    vm->sp = base + f->nlocals;
+    if (vm_run(vm, top) != 1) return 0;
+    *out = vm->stack[base];
+    vm->sp = base;
+    return 1;
+}
+
+static int deleg_same(ObjClosure* a, ObjClosure* b) {
+    if (a->func != b->func || a->kind != b->kind || a->nup != b->nup || a->self.t != b->self.t) return 0;
+    if (a->self.t == V_OBJ && a->self.as.o != b->self.as.o) return 0;
+    for (int i = 0; i < a->nup; i++) if (a->ups[i].as.o != b->ups[i].as.o) return 0;
+    return 1;
+}
+/* the single delegates in d, in call order */
+static int deleg_parts(ObjClosure* d, ObjClosure** out) {
+    if (d->kind != CL_MULTI) { out[0] = d; return 1; }
+    for (int i = 0; i < d->nup; i++) out[i] = (ObjClosure*)d->ups[i].as.o;
+    return d->nup;
+}
+
+/* a += b, a -= b (removes the last place where b's delegates are, in order, as in .NET). 0 = out of memory */
+static int deleg_op(VM* vm, int remove, Value a, Value b, Value* out) {
+    if (a.t != V_OBJ) { if (remove) out->t = V_NULL, out->as.o = NULL; else *out = b; return 1; }
+    if (b.t != V_OBJ) { *out = a; return 1; }
+    ObjClosure* da = (ObjClosure*)a.as.o; ObjClosure* db = (ObjClosure*)b.as.o;
+    int na = da->kind == CL_MULTI ? da->nup : 1, nb = db->kind == CL_MULTI ? db->nup : 1;
+    ObjClosure** pa = (ObjClosure**)malloc(sizeof(ObjClosure*) * (size_t)(na + nb));
+    if (!pa) return 0;
+    deleg_parts(da, pa);
+    ObjClosure** pb = pa + na;
+    deleg_parts(db, pb);
+    int n = na;
+    if (!remove) { n = na + nb; }
+    else {
+        int at = -1;
+        for (int i = na - nb; i >= 0 && at < 0; i--) {
+            int ok = 1;
+            for (int j = 0; j < nb && ok; j++) ok = deleg_same(pa[i + j], pb[j]);
+            if (ok) at = i;
+        }
+        if (at < 0) { free(pa); *out = a; return 1; }
+        memmove(pa + at, pa + at + nb, sizeof(ObjClosure*) * (size_t)(na - at - nb));
+        n = na - nb;
+    }
+    if (n == 0) { free(pa); out->t = V_NULL; out->as.o = NULL; return 1; }
+    if (n == 1) { out->t = V_OBJ; out->as.o = (Obj*)pa[0]; free(pa); return 1; }
+    ObjClosure* m = (ObjClosure*)alloc_obj(vm, sizeof(ObjClosure) + sizeof(Value) * (size_t)n, O_CLOSURE);   /* a and b are on the stack */
+    if (!m) { free(pa); return 0; }
+    m->func = 0; m->kind = CL_MULTI; m->nup = n; m->self.t = V_NULL; m->self.as.o = NULL;
+    for (int i = 0; i < n; i++) { m->ups[i].t = V_OBJ; m->ups[i].as.o = (Obj*)pa[i]; }
+    free(pa);
+    out->t = V_OBJ; out->as.o = (Obj*)m;
+    return 1;
+}
+
+/* ================= sorting ================= */
+static int text_compare(ObjString* a, ObjString* b) {
+    /* close to .NET's default (culture) order for ASCII: letters ignoring case first, then lower case before upper */
+    int n = a->len < b->len ? a->len : b->len;
+    for (int i = 0; i < n; i++) {
+        int x = tolower((unsigned char)a->chars[i]), y = tolower((unsigned char)b->chars[i]);
+        if (x != y) return x < y ? -1 : 1;
+    }
+    if (a->len != b->len) return a->len < b->len ? -1 : 1;
+    for (int i = 0; i < n; i++)
+        if (a->chars[i] != b->chars[i]) return islower((unsigned char)a->chars[i]) ? -1 : 1;
+    return 0;
+}
+static int value_compare(Value a, Value b) {
+    if (a.t == V_FLOAT) return a.as.f < b.as.f ? -1 : a.as.f > b.as.f ? 1 : 0;
+    if (a.t == V_INT || a.t == V_CHAR) return a.as.i < b.as.i ? -1 : a.as.i > b.as.i ? 1 : 0;
+    if (a.t != V_OBJ) return b.t != V_OBJ ? 0 : -1;         /* null first */
+    if (b.t != V_OBJ) return 1;
+    return text_compare((ObjString*)a.as.o, (ObjString*)b.as.o);
+}
+/* stable merge sort of a[0..n) using tmp[0..n); cmp NULL = the natural order. 0 = error in cmp */
+static int merge_sort(VM* vm, Value* a, Value* tmp, int n, ObjClosure* cmp) {
+    Value* src = a; Value* dst = tmp;
+    for (int w = 1; w < n; w *= 2) {
+        for (int lo = 0; lo < n; lo += 2 * w) {
+            int mid = lo + w < n ? lo + w : n, hi = lo + 2 * w < n ? lo + 2 * w : n;
+            int i = lo, j = mid, k = lo;
+            while (i < mid && j < hi) {
+                int r;
+                if (cmp) {
+                    Value args[2] = { src[i], src[j] }, res;
+                    if (!call_delegate(vm, cmp, args, 2, &res)) return 0;
+                    r = res.as.i;
+                } else r = value_compare(src[i], src[j]);
+                dst[k++] = r <= 0 ? src[i++] : src[j++];
+            }
+            while (i < mid) dst[k++] = src[i++];
+            while (j < hi) dst[k++] = src[j++];
+        }
+        Value* t = src; src = dst; dst = t;
+    }
+    if (src != a) memcpy(a, src, sizeof(Value) * (size_t)n);
+    return 1;
+}
+
 /* Runs from the top frame until the frame at startFp returns (1), yields (2) or fails (0). */
 static int vm_run(VM* vm, int startFp) {
     Program* P = vm->p;
@@ -648,10 +769,19 @@ static int vm_run(VM* vm, int startFp) {
                 break;
             }
             case OP_CALLF: {
-                int argc = ARG();
+                int argc = ARG(); int hasResult = ARG();
                 Value cv = sp[-argc - 1];
                 if (cv.t != V_OBJ) FAIL("null reference (calling a delegate that is null)");
                 ObjClosure* cl = (ObjClosure*)cv.as.o;
+                if (cl->kind == CL_MULTI) {     /* a += b: each one in turn, the last one's result */
+                    Value args[MS_MAXNATIVEARGS + 8], r; r.t = V_NULL; r.as.o = NULL;
+                    for (int i = 0; i < argc; i++) args[i] = sp[i - argc];
+                    SYNC();
+                    if (!call_delegate(vm, cl, args, argc, &r)) FAILED();
+                    sp = stack + vm->sp - argc - 1;
+                    if (hasResult) *sp++ = r;
+                    break;
+                }
                 int n = argc;
                 if (cl->kind == CL_STATIC) { memmove(sp - argc - 1, sp - argc, sizeof(Value) * (size_t)argc); sp--; }
                 else { sp[-argc - 1] = cl->self; n = argc + 1; }
@@ -668,6 +798,100 @@ static int vm_run(VM* vm, int startFp) {
                 sp = stack + base + nf->nlocals;
                 bp = stack + base;
                 code = nf->code; ip = 0;
+                break;
+            }
+            case OP_DELEG: {
+                int remove = ARG();
+                Value r;
+                SYNC();
+                if (!deleg_op(vm, remove, sp[-2], sp[-1], &r)) FAIL("out of memory");
+                sp[-2] = r; sp--;
+                break;
+            }
+            case OP_JNULL: { int off = ARG(); if (sp[-1].t == V_NULL) ip += off; break; }
+            case OP_JNULL_POP: { int off = ARG(); if (sp[-1].t == V_NULL) { sp--; ip += off; } break; }
+            case OP_JNNULL: { int off = ARG(); if (sp[-1].t != V_NULL) ip += off; else sp--; break; }
+            case OP_LISTF: {                /* list, delegate -> result */
+                int sub = ARG(), kind = sub >> 8; sub &= 255;
+                if (sp[-2].t != V_OBJ) FAIL("null reference (calling a method on a null list)");
+                if (sp[-1].t != V_OBJ) FAIL("null reference (the delegate given to the list is null)");
+                ObjList* l = (ObjList*)sp[-2].as.o;
+                ObjClosure* fn = (ObjClosure*)sp[-1].as.o;
+                Value res, arg, r; res.t = V_NULL; res.as.o = NULL;
+                SYNC();
+                switch (sub) {
+                    case LF_FIND: case LF_FINDLAST: case LF_FINDINDEX: case LF_FINDLASTINDEX: {
+                        int back = sub == LF_FINDLAST || sub == LF_FINDLASTINDEX, found = -1;
+                        for (int k = 0; k < l->len; k++) {
+                            int i = back ? l->len - 1 - k : k;
+                            arg = l->items[i];
+                            if (!call_delegate(vm, fn, &arg, 1, &r)) FAILED();
+                            if (r.as.i) { found = i; break; }
+                        }
+                        if (sub == LF_FINDINDEX || sub == LF_FINDLASTINDEX) { res.t = V_INT; res.as.i = found; }
+                        else if (found >= 0) res = l->items[found];
+                        else {                  /* default(T) */
+                            res.as.i = 0;
+                            res.t = kind == 1 ? V_INT : kind == 2 ? V_FLOAT : kind == 3 ? V_BOOL : kind == 4 ? V_CHAR : V_NULL;
+                            if (kind == 2) res.as.f = 0;
+                        }
+                        break;
+                    }
+                    case LF_EXISTS: case LF_TRUEFORALL: {
+                        int all = sub == LF_TRUEFORALL, v = all;
+                        for (int i = 0; i < l->len; i++) {
+                            arg = l->items[i];
+                            if (!call_delegate(vm, fn, &arg, 1, &r)) FAILED();
+                            if (all && !r.as.i) { v = 0; break; }
+                            if (!all && r.as.i) { v = 1; break; }
+                        }
+                        res.t = V_BOOL; res.as.i = v;
+                        break;
+                    }
+                    case LF_FINDALL: {
+                        ObjList* nl = (ObjList*)alloc_obj(vm, sizeof(ObjList), O_LIST);
+                        if (!nl) FAIL("out of memory");
+                        nl->len = 0; nl->cap = 0; nl->items = NULL;
+                        stack[vm->sp].t = V_OBJ; stack[vm->sp].as.o = (Obj*)nl; vm->sp++;     /* kept alive while the predicate runs */
+                        for (int i = 0; i < l->len; i++) {
+                            arg = l->items[i];
+                            if (!call_delegate(vm, fn, &arg, 1, &r)) FAILED();
+                            if (r.as.i) { if (!list_reserve(vm, nl)) FAIL("out of memory"); nl->items[nl->len++] = arg; }
+                        }
+                        vm->sp--;
+                        res.t = V_OBJ; res.as.o = (Obj*)nl;
+                        break;
+                    }
+                    case LF_REMOVEALL: {
+                        int j = 0, n = l->len;
+                        for (int i = 0; i < n && i < l->len; i++) {
+                            arg = l->items[i];
+                            if (!call_delegate(vm, fn, &arg, 1, &r)) FAILED();
+                            if (!r.as.i) l->items[j++] = arg;
+                        }
+                        res.t = V_INT; res.as.i = n - j;
+                        l->len = j;
+                        break;
+                    }
+                    case LF_FOREACH:
+                        for (int i = 0; i < l->len; i++) {
+                            arg = l->items[i];
+                            if (!call_delegate(vm, fn, &arg, 1, &r)) FAILED();
+                        }
+                        break;
+                    case LF_SORT: {
+                        Value t = vm_make_array(vm, l->len);   /* the buffer is a VM array, so the collector sees it */
+                        if (t.t == V_NULL) FAIL("out of memory");
+                        stack[vm->sp++] = t;
+                        int n = l->len;
+                        if (!merge_sort(vm, l->items, ((ObjArray*)t.as.o)->items, n, fn)) FAILED();
+                        vm->sp--;
+                        break;
+                    }
+                    default: FAIL("internal error: bad list op");
+                }
+                sp = stack + vm->sp - 2;
+                if (sub != LF_FOREACH && sub != LF_SORT) *sp++ = res;
                 break;
             }
             case OP_ISINST: {
@@ -776,7 +1000,7 @@ static int vm_run(VM* vm, int startFp) {
                     break;
                 }
                 /* stack: list, args...  (the list is checked for null here) */
-                int nargs = sub == L_CLEAR ? 0 : sub == L_INSERT ? 2 : 1;
+                int nargs = sub == L_CLEAR || sub == L_SORT || sub == L_REVERSE ? 0 : sub == L_INSERT ? 2 : 1;
                 Value* lv = sp - 1 - nargs;
                 if (lv->t != V_OBJ) FAIL("null reference (calling a method on a null list)");
                 ObjList* l = (ObjList*)lv->as.o;
@@ -810,6 +1034,18 @@ static int vm_run(VM* vm, int startFp) {
                         break;
                     }
                     case L_CLEAR: l->len = 0; sp--; break;
+                    case L_REVERSE:
+                        for (int i = 0, j = l->len - 1; i < j; i++, j--) { Value t = l->items[i]; l->items[i] = l->items[j]; l->items[j] = t; }
+                        sp--;
+                        break;
+                    case L_SORT: {                /* numbers, chars, strings: nothing is allocated while sorting */
+                        Value* tmp = (Value*)malloc(sizeof(Value) * (size_t)(l->len ? l->len : 1));
+                        if (!tmp) FAIL("out of memory");
+                        merge_sort(vm, l->items, tmp, l->len, NULL);
+                        free(tmp);
+                        sp--;
+                        break;
+                    }
                     case L_ADDRANGE: {            /* list, array-or-list: appends a copy of every item */
                         if (sp[-1].t != V_OBJ) FAIL("AddRange(null)");
                         Obj* src = sp[-1].as.o;

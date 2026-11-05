@@ -42,55 +42,96 @@ break kończy pętlę, continue przechodzi do następnego obrotu.
 Klasa to przepis na obiekty: pola (dane) i metody (co obiekt umie).
 class Gracz {
     public float x;              // pole: każdy gracz ma własne x
+    public int zycia = 3;        // pole z wartością początkową
     public static int ilu = 0;   // pole static: jedno, wspólne dla całej klasy
     public Gracz(float x) {      // konstruktor; x to parametr z new
         this.x = x;              // this.x to pole obiektu, samo x to parametr
         ilu++;
     }
-    public void Ruch() { x += 1; }   // tu nie ma parametru x, więc x to pole
+    public void Ruch() { x += 1; }        // tu nie ma parametru x, więc x to pole
+    public bool Zyje() => zycia > 0;      // krótka metoda: => wyrażenie
+    public static Gracz Nowy() { return new Gracz(0); }   // metoda static: bez obiektu
 }
 var a = new Gracz(10);   // parametr x = 10, więc a.x = 10
 var b = new Gracz(50);   // b.x = 50, ilu = 2
 a.Ruch();                // a.x = 11, b.x dalej 50
 Gracz.ilu                // pole static czyta się przez nazwę klasy
+Gracz c = Gracz.Nowy();  // metodę static woła się przez nazwę klasy
+Gracz d = null;          // zmienna obiektu może być pusta; d.x da błąd "null reference"
 Konstruktor ma nazwę klasy, nie ma typu zwracanego i uruchamia go new.
+Najpierw ustawiają się wartości początkowe pól, potem działa ciało konstruktora.
+Klasa bez konstruktora dostaje pusty: new Gracz().
 this to obiekt, na którym działa metoda. Bez this, gdy parametr i pole mają tę samą nazwę, x = x zmieniłoby tylko parametr.
-Jeden konstruktor na klasę. Klasa może dziedziczyć po innej (następny temat).
+public, private, protected, internal i readonly są akceptowane, ale kompilator ich nie sprawdza (wszystko jest widoczne).
+Ograniczenia: jeden konstruktor na klasę, bez przeciążania metod (dwie metody nie mogą mieć tej samej nazwy), bez właściwości get/set, bez klas zagnieżdżonych. Zobacz temat "C# a MiniSharp".
 
 ## Dziedziczenie
-Klasa pochodna dostaje pola i metody klasy bazowej i może je rozszerzać.
+Klasa pochodna (Boss) dostaje wszystkie pola i metody klasy bazowej (Wrog) i może dodać swoje.
+Jak w C#, klasa ma JEDNĄ klasę bazową (nie ma wielokrotnego dziedziczenia klas); kilka "ról" naraz daje się przez interfejsy.
 class Wrog {
-    public int hp = 10;
-    public Wrog(int hp) { this.hp = hp; }
-    public virtual void Trafiony(int ile) { hp -= ile; }   // virtual: można nadpisać
+    public string imie;
+    public int hp;
+    public Wrog(string imie, int hp) { this.imie = imie; this.hp = hp; }
+    public virtual void Trafiony(int ile) { hp -= ile; }      // virtual: klasa pochodna może to zmienić
+    public void Lecz() { hp += 5; }                            // zwykła metoda: dziedziczy się bez zmian
 }
-class Boss : Wrog {                        // Boss jest też Wrogiem
-    public Boss() : base(50) { }           // base(...) woła konstruktor Wroga
-    public override void Trafiony(int ile) {
-        base.Trafiony(ile / 2);            // wersja z klasy bazowej
+class Boss : Wrog {                          // Boss jest też Wrogiem
+    public int faza = 1;                     // nowe pole
+    public Boss() : base("Smok", 50) { }     // base(...) woła konstruktor Wroga
+    public override void Trafiony(int ile) { // override: własna wersja metody virtual
+        base.Trafiony(ile / 2);              // wersja z klasy bazowej
+        if (hp < 25) faza = 2;
     }
 }
 Wrog w = new Boss();      // zmienna typu bazowego może trzymać Bossa
-w.Trafiony(10);           // override: wywoła się wersja Bossa, hp = 45
-abstract class Ksztalt { public abstract float Pole(); }   // bez ciała, nie da się zrobić new
-public override string ToString() { return "Boss " + hp; } // używane przez Console.WriteLine i "..." + obiekt
+w.Trafiony(10);           // wywoła się wersja Bossa (bo override), hp = 45
+w.Lecz();                 // metoda z Wroga, hp = 50
+w.faza                    // BŁĄD: dla kompilatora w to Wrog; użyj if (w is Boss b) b.faza ...
+List<Wrog> wrogowie = new List<Wrog> { new Wrog("Szczur", 3), new Boss() };
+foreach (Wrog x in wrogowie) x.Trafiony(4);   // każdy dostaje swoją wersję Trafiony
+Kolejność przy new Boss(): pola Bossa, potem konstruktor Wroga, potem ciało konstruktora Bossa.
+Jeśli konstruktor bazy ma parametry, klasa pochodna musi napisać : base(...).
+Łańcuch może być dłuższy: class SuperBoss : Boss { ... } dostaje wszystko z Bossa i z Wroga.
+Metody abstrakcyjne: klasy abstract nie da się utworzyć przez new, a klasy pochodne muszą napisać override.
+abstract class Ksztalt {
+    public abstract float Pole();                          // bez ciała, kończy się ;
+    public string Opis() { return "pole " + Pole(); }      // może używać Pole()
+}
+class Kolo : Ksztalt { public float r; public override float Pole() => 3.14f * r * r; }
+Każda klasa może mieć: public override string ToString() { return "Boss " + hp; }
+ToString używają Console.WriteLine(obiekt) i "tekst" + obiekt. base.ToString() daje nazwę klasy.
+Nie wolno: tej samej nazwy pola w bazie i w pochodnej; tej samej nazwy metody bez virtual/override; override bez virtual w bazie; ukrywania metod słowem new.
 
 ## Interfejsy, is, as
-Interfejs to lista metod, które klasa obiecuje mieć. Klasa ma jedną bazę, ale wiele interfejsów.
-interface IRaniony { void Trafiony(int ile); }
-class Skrzynia : IRaniony { public void Trafiony(int ile) { ... } }
+Interfejs to lista metod, które klasa obiecuje mieć (bez ciał). Klasa ma jedną bazę, ale może mieć wiele interfejsów.
+interface IRaniony { void Trafiony(int ile); bool Martwy(); }
+interface IPodpisany { string Nazwa(); }
+interface ILeczony : IRaniony { void Lecz(int ile); }    // interfejs może rozszerzać inny
+class Skrzynia : IRaniony, IPodpisany {
+    int hp = 3;
+    public void Trafiony(int ile) { hp -= ile; }
+    public bool Martwy() => hp <= 0;
+    public string Nazwa() => "skrzynia";
+}
+class Golem : Wrog, IPodpisany { ... }   // najpierw klasa bazowa, potem interfejsy
 IRaniony r = new Skrzynia(); r.Trafiony(1);
-if (w is Boss b) b.Faza();       // czy to Boss? jeśli tak, b to ten sam obiekt jako Boss
-Boss b2 = w as Boss;             // Boss albo null
-Boss b3 = (Boss)w;               // rzutowanie: błąd, jeśli w nie jest Bossem
-if (w is null) ...   if (w is not Boss) ...
+List<IRaniony> cele = ...; foreach (var c in cele) c.Trafiony(1);  // różne klasy, ta sama metoda
+Metodę interfejsu może dać klasa bazowa. Interfejs ma tylko metody (bez pól, właściwości, metod static i domyślnych ciał).
+Sprawdzanie typu w czasie gry:
+if (w is Boss b) b.faza = 3;     // czy to Boss? jeśli tak, b to ten sam obiekt jako Boss
+if (w is IRaniony) ...           // działa też z interfejsami
+Boss b2 = w as Boss;             // Boss albo null (gdy to nie Boss)
+Boss b3 = (Boss)w;               // rzutowanie: błąd w czasie gry, gdy w nie jest Bossem
+if (w is null) ...   if (w is not Boss) ...   if (w != null) ...
+is i as działają tylko z klasami i interfejsami (nie z int, string...).
 
 ## Lambdy
 Lambda to funkcja bez nazwy, którą można trzymać w zmiennej i przekazać dalej.
 Func<int, int> razy2 = x => x * 2;           // bierze int, zwraca int
 Func<int, int, int> suma = (a, b) => a + b;   // ostatni typ to wynik
+Func<float> losowa = () => Random.Float();    // bez parametrów
 Action hej = () => Console.WriteLine("hej"); // Action: nic nie zwraca
-Action<string> pisz = s => { Console.WriteLine(s); };
+Action<string> pisz = s => { Console.WriteLine(s); };   // dłuższa: blok { }
 razy2(5)   suma(2, 3)   hej()   pisz.Invoke("x")
 Predicate<int> parzysta = n => n % 2 == 0;    // to samo co Func<int, bool>
 Comparison<string> krotsze = (a, b) => a.Length - b.Length;
@@ -100,12 +141,59 @@ Lambda widzi zmienne dookoła i dzieli je z metodą (domknięcie):
 int licznik = 0;
 Action dodaj = () => licznik++;
 dodaj(); dodaj();               // licznik == 2
-Pole typu Action działa jak zdarzenie: public Action onSmierc; ... if (onSmierc != null) onSmierc();
+Lambda potrzebuje typu: var f = x => x; nie zadziała, napisz Func<int, int> f = x => x;
+Bez yield w lambdzie i bez funkcji lokalnych.
+
+## Zdarzenia, ?. i ??
+Pole Action (albo event Action) to zdarzenie: można podpiąć kilka funkcji przez += i odpiąć przez -=.
+class Wrog {
+    public Action<Wrog> onSmierc;          // albo: public event Action<Wrog> onSmierc;
+    public void Zgin() { onSmierc?.Invoke(this); }    // ?. = tylko gdy ktoś podpiął
+}
+wrog.onSmierc += w => punkty += 10;
+wrog.onSmierc += PokazWybuch;        // metoda z parametrem Wrog
+wrog.onSmierc -= PokazWybuch;
+?. sięga do pola albo metody tylko, gdy obiekt nie jest null; inaczej wynik to null:
+string imie = cel?.imie;              // null, gdy cel == null
+cel?.Trafiony(5);                     // nic się nie dzieje, gdy cel == null
+?? daje wartość zastępczą, gdy lewa strona jest null:
+string n = imie ?? "nikt";
+int hp = cel?.hp ?? 0;                // przy int, float... ?. musi mieć ?? (nie ma typu int?)
+float m = pancerz?.Invoke(10) ?? 10;
 
 ## List<T>
 var l = new List<int>(); l.Add(5); l[0]; l.Count
-Metody: Add AddRange Insert Remove RemoveAt Clear Contains IndexOf
-Usuwanie w pętli: idź od końca, for (int i = l.Count - 1; i >= 0; i--)
+var imiona = new List<string> { "Ala", "Ola" };
+Metody: Add AddRange Insert Remove RemoveAt Clear Contains IndexOf Reverse Sort
+Z lambdą (x to kolejny element):
+l.Find(x => x > 10)          // pierwszy pasujący albo 0 / null
+l.FindLast(x => x > 10)      l.FindIndex(x => x > 10)   // -1 gdy brak
+l.FindAll(x => x > 10)       // nowa lista pasujących
+l.Exists(x => x == 7)        l.TrueForAll(x => x > 0)
+l.RemoveAll(x => x < 0)      // usuwa pasujące, zwraca ile
+l.ForEach(x => Console.WriteLine(x));
+l.Sort();                    // liczby, znaki, napisy rosnąco
+wrogowie.Sort((a, b) => a.hp - b.hp);       // wg hp rosnąco
+wrogowie.Sort((a, b) => b.hp - a.hp);       // malejąco
+Wrog cel = wrogowie.Find(w => w.hp > 0 && w != gracz);
+Usuwanie w pętli: idź od końca, for (int i = l.Count - 1; i >= 0; i--), albo użyj RemoveAll.
+
+## C# a MiniSharp
+MiniSharp to podzbiór C#. Kod MiniSharp jest poprawnym C#, ale nie każdy C# działa w MiniSharp.
+Jest: klasy, dziedziczenie (jedna baza), interfejsy, abstract/virtual/override, base, is/as/rzutowanie, ToString, metody =>, lambdy, Func/Action/Predicate/Comparison, zdarzenia +=/-=, ?. i ??, List, Dictionary, korutyny, string, char, tablice, switch, foreach.
+Nie ma jeszcze (pisz inaczej):
+- przeciążania metod i wielu konstruktorów (daj metodom różne nazwy), : this(...)
+- właściwości get/set (użyj pól albo metod GetX/SetX)
+- domyślnych wartości parametrów, ref, params, out (poza TryGetValue)
+- inicjalizatorów obiektów new Kolo { r = 2 } (ustaw pola po new albo w konstruktorze)
+- enum, struct, własnych generyków (class Pula<T>, metody <T>), klas zagnieżdżonych, partial
+- object, GetType(), typeof, nadpisywania Equals/GetHashCode, przeciążania operatorów
+- try/catch/throw, using (blok), interpolacji $"...", Linq
+- int? (typów z ? dopuszczających null), long; double działa jak float
+- ukrywania metod (new), static constructor, destruktorów, metod rozszerzających
+- sprawdzania public/private/protected (są akceptowane, ale nic nie blokują); sealed nie blokuje dziedziczenia
+- switch na typach (case Boss b:)
+Liczby float mają pojedynczą precyzję (jak w Unity), char to znak ASCII.
 
 ## Dictionary<K,V>
 var d = new Dictionary<string, int>(); d["a"] = 1;

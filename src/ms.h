@@ -34,7 +34,7 @@ typedef struct {
 typedef struct { Obj h; Value v; } ObjCell;
 /* A delegate (Func / Action): a lambda with its captured cells, or a method with its object.
  * Calling it puts 'self' in slot 0 (CL_SELF) or drops that slot (CL_STATIC, a static method). */
-enum { CL_SELF, CL_STATIC };
+enum { CL_SELF, CL_STATIC, CL_MULTI /* a += b: ups = the delegates to call in order */ };
 typedef struct { Obj h; int32_t func; uint8_t kind; int32_t nup; Value self; Value ups[]; } ObjClosure;
 
 /* A coroutine (IEnumerator). 'yield' is only allowed as a statement in the iterator method itself,
@@ -82,12 +82,16 @@ enum {
     OP_UPVAL,                           /* k: push captured cell k of the running lambda */
     OP_CLOSURE,                         /* kind (0 lambda / method, 1 static method, 2 virtual: idx = selector), idx, nup:
                                            self, cells... -> delegate */
-    OP_CALLF                            /* argc: delegate, args... -> call it */
+    OP_CALLF,                           /* argc, hasResult: delegate, args... -> call it */
+    OP_DELEG,                           /* 0 a += b, 1 a -= b */
+    OP_JNULL, OP_JNULL_POP, OP_JNNULL,  /* offset: a?.b (null stays / is popped), a ?? b (non-null stays, null is popped) */
+    OP_LISTF                            /* LF_* | default-value kind << 8: list, delegate -> result */
 };
+enum { LF_FIND, LF_FINDLAST, LF_FINDALL, LF_FINDINDEX, LF_FINDLASTINDEX, LF_EXISTS, LF_TRUEFORALL, LF_REMOVEALL, LF_FOREACH, LF_SORT };
 enum { D_NEW, D_ADD, D_REMOVE, D_CONTAINS, D_CONTAINSVAL, D_CLEAR, D_TRYGET, D_KEYS, D_VALUES, D_NEXT, D_KEYAT, D_VALAT };
 enum { Y_NEXT, Y_SECONDS, Y_CORO };
 enum { C_START, C_STOP, C_STOPALL };
-enum { L_NEW, L_ADD, L_INSERT, L_REMOVEAT, L_REMOVE, L_CLEAR, L_INDEXOF, L_ADDRANGE };
+enum { L_NEW, L_ADD, L_INSERT, L_REMOVEAT, L_REMOVE, L_CLEAR, L_INDEXOF, L_ADDRANGE, L_SORT, L_REVERSE };
 
 typedef struct {
     int32_t* code; int* lines; int len, cap;

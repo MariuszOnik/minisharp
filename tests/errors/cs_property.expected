@@ -1,0 +1,1 @@
+compile error: line 1: properties ({ get; set; } or =>) are not supported yet; use a field, or methods like GetX()

@@ -1,0 +1,34 @@
+name: nobody / orc
+target: none
+s is null: True
+target: elf len 3
+first
+orc takes 4, hp 6
+orc takes 4, hp 2
+orc takes 4, hp -2
+announce: orc died
+lambda sees orc
+deaths 1
+orc takes 0, hp 1
+deaths 1
+orc takes 3, hp -2
+lambda sees orc
+deaths 1
+calls 23
+last result 2
+12 15 0
+1 5 -1
+True False True False
+[12 20 8 15]
+sum 70
+removed 4 [12 20 8]
+[3 5 7 8 12 15 20]
+[20 15 12 8 7 5 3]
+[3 5 7 8 12 15 20]
+-1 0.25 2.5 10 
+apple Apple banana Cherry fig pear 
+fig kiwi melon banana watermelon 
+[rat(1) bat(3) ogre(25) troll(40)]
+first strong: ogre(25), none: True
+[ogre(50) troll(80)]
+2

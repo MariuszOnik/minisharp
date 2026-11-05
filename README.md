@@ -118,10 +118,11 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 - **Instrukcje:** `if`/`else`, `while`, `do`/`while`, `for`, `foreach` (tablice, listy, stringi), `switch` (int, char, string, bool; `case 1: case 2:`, `default`), `break`, `continue`, `return`, bloki, `var`, `int a = 1, b = 2;`.
 - **Wyrażenia:** `+ - * / %`, `== != < <= > >=`, `&& || !`, bitowe `& | ^ ~ << >>`, `? :`, `= += -= *= /= %= &= |= ^= <<= >>=`, `++ --` (przed i po), rzutowania `(int)` / `(float)` / `(char)` / `(Klasa)`, `is`, `as`.
 - **Lambdy i delegaty:** `Func<...>`, `Action<...>`, `Predicate<T>`, `Comparison<T>`; `x => x * 2`, `(a, b) => a + b`, `(int x) => { ... }`, `() => ...`; nazwa metody jako delegat (`Func<int, int> f = Kwadrat;`, `Action a = obiekt.Metoda;`, także wirtualna); wywołanie `f(1)` i `f.Invoke(1)`; pola, tablice i listy delegatów; domknięcia jak w C# (lambda dzieli zmienne z metodą, `foreach` daje nową zmienną w każdym obrocie, `for` jedną). Test `tests/lambdas.cs` daje wynik identyczny z .NET.
+- **Zdarzenia, `?.`, `??`:** `onSmierc += Metoda;`, `-=` (usuwa ostatnie wystąpienie, jak .NET), `public event Action x;`, `cel?.pole`, `cel?.Metoda()`, `onSmierc?.Invoke(this)`, `a ?? b`; przy `int`/`float` `?.` musi kończyć się `??` (`cel?.hp ?? 0`), bo nie ma `int?`. Metody z ciałem `=>` (`public int Pole() => w * h;`). Test `tests/listfunc.cs` identyczny z .NET.
 - **Stringi:** łączenie `+` z dowolnym typem (`"x=" + x`), `.Length`, `s[i]` (char), porównanie `==`, `Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower Trim Replace Split`, `string.IsNullOrEmpty`, `x.ToString()`.
 - **char:** literały `'A'`, `'\n'`; `char.IsDigit IsLetter IsWhiteSpace ToUpper ToLower`; `c + 1` daje `int`, `c++` zostaje `char` (jak w C#). Znaki są 8-bitowe (ASCII), polskie litery w stringach liczą się jako kilka znaków.
 - **Liczby:** `int.Parse(s)`, `float.Parse(s)`, `int.MaxValue`, `int.MinValue`.
-- **List<T>:** `new List<int>()`, `new List<string> { "a", "b" }`, `new List<T>(innaListaLubTablica)`, `Add AddRange Insert Remove RemoveAt Clear Contains IndexOf`, `.Count`, `lista[i]`, `foreach`.
+- **List<T>:** `new List<int>()`, `new List<string> { "a", "b" }`, `new List<T>(innaListaLubTablica)`, `Add AddRange Insert Remove RemoveAt Clear Contains IndexOf Reverse Sort()`, z lambdą: `Find FindLast FindAll FindIndex FindLastIndex Exists TrueForAll RemoveAll ForEach Sort((a, b) => ...)`, `.Count`, `lista[i]`, `foreach`. `Sort` jest stabilny (.NET nie gwarantuje kolejności równych elementów); napisy sortują się jak w .NET z kulturą (`apple Apple banana`).
 - **Dictionary<K,V>:** klucze `int`/`string`/`char`/obiekty, `d[k]` (też `d[k] += 1`), `Add Remove ContainsKey ContainsValue Clear`, `TryGetValue(k, out var v)`, `.Count .Keys .Values`, `foreach (var kv in d)` z `kv.Key`/`kv.Value` (kolejność jak w .NET), inicjalizacja `{ {"a", 1} }` albo `{ ["a"] = 1 }`.
 - **Korutyny (jak w Unity):** metoda zwracająca `IEnumerator` z `yield return null` (następna klatka), `yield return new WaitForSeconds(s)`, `yield return InnaKorutyna()` (czeka aż się skończy), `yield break`; `StartCoroutine(...)` (działa od razu do pierwszego `yield`), `StopCoroutine(c)`, `StopAllCoroutines()`. Wznawiane co klatkę po `Update()`, przed `Draw()`. Przykład: `examples/coroutines.cs`.
 - **Tablice:** `new int[10]`, `new int[] { 1, 2, 3 }`, `.Length`, sprawdzanie zakresu.
@@ -152,7 +153,7 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 
 ### Czego jeszcze nie ma (pomysły na kolejne wersje)
-- metody `List` z predykatami (`Find`, `RemoveAll`, `Sort`...), mini Linq, `?.` (np. `onSmierc?.Invoke()`), `+=` na delegatach,
+- mini Linq (`Where`, `Select`, `OrderBy`...), `int?`, właściwości `get`/`set`, inicjalizatory obiektów `new X { a = 1 }`,
 - `switch` na typach (`case Boss b:`), ukrywanie metod (`new`), `protected` sprawdzane przez kompilator,
 - przeciążanie własnych metod, wiele konstruktorów,
 - własne generyki, `long`, `out` poza `TryGetValue`,
@@ -165,7 +166,7 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 1. ~~Workflow w VS Code (IntelliSense, sprawdzanie, wysyłanie przez FTP, log z konsoli)~~
 2. ~~Język: `foreach`, `switch`, `List<T>`, operatory bitowe, `char` i operacje na stringach~~ (test `tests/features2.cs` daje wynik identyczny z .NET)
    - ~~2b. `Mathf` w stylu Unity, korutyny, `Dictionary<K,V>`~~ (testy `tests/coroutines.cs` i `tests/dict.cs` dają to samo co prawdziwy .NET)
-   - 2d. Język, wersja 3 (po kolei): ~~dziedziczenie i interfejsy~~, ~~lambdy, `Func`/`Action`, domknięcia~~; dalej `?.` i `+=` na delegatach (zdarzenia), metody `List` z predykatami (`Find FindAll FindIndex Exists RemoveAll ForEach Sort TrueForAll`), mini Linq (zachłanny: `Where Select OrderBy OrderByDescending First FirstOrDefault Any All Count Sum Min Max ToList`); mniejsze: `enum`, właściwości `get`/`set`, interpolacja `$"..."`, `switch` na typach (`case Boss b:`), przeciążanie metod i wiele konstruktorów.
+   - 2d. Język, wersja 3 (po kolei): ~~dziedziczenie i interfejsy~~, ~~lambdy, `Func`/`Action`, domknięcia~~, ~~`?.`, `??` i `+=` na delegatach (zdarzenia), metody `List` z predykatami~~; dalej mini Linq (zachłanny: `Where Select OrderBy OrderByDescending First FirstOrDefault Any All Count Sum Min Max ToList`); mniejsze: `enum`, właściwości `get`/`set`, interpolacja `$"..."`, `switch` na typach (`case Boss b:`), przeciążanie metod i wiele konstruktorów.
    - 2c. Debug przez Wi-Fi: VS Code wysyła kod do działającej aplikacji (bez zamykania, kompilacja i start od razu), `Console` i błędy na żywo w terminalu VS Code, później komendy (stop, restart, podgląd/zmiana zmiennych).
 3. Podgląd na PC w oknie na żywo (sterowanie klawiaturą/myszą, ta sama czcionka co na 3DS).
 4. ~~Sprite'y z PNG i dźwięk~~ (przykład `examples/sprites.cs`; Ctrl+Shift+B wysyła też obrazki i dźwięki leżące obok programu). Później: OGG/muzyka strumieniowa, sprite batching.
@@ -173,6 +174,7 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
    - **graf → kod:** graf zapisuje się jako zwykły plik `.cs`, który kompiluje MiniSharp,
    - **kod → graf:** parser wczytuje `.cs` i pokazuje go jako graf; konstrukcje, których nie da się narysować, stają się węzłem „blok kodu”,
    - pozycje węzłów trzymane w komentarzach `// @node x,y`, więc plik dalej jest czystym C#,
+   - notatki projektowe (model portów, katalog węzłów): [docs/graphs-notes.md](docs/graphs-notes.md),
    - **nowe węzły bez pisania C:** każda funkcja API to węzeł automatycznie, a każda metoda `static` w pliku `.cs` (np. biblioteka `nodes/*.cs`) staje się nowym węzłem.
 6. ~~Terminal (REPL) z klawiaturą dotykową i podpowiedziami~~, ~~projekty z wielu plików (folder = projekt)~~. Dalej edytor MiniSharp na konsoli, który umie też tworzyć projekty (nowy folder z szablonem `Game.cs`), dodawać i usuwać w nich pliki; pisanie kodu na dolnym ekranie (klawiatura dotykowa), autouzupełnianie z tabeli API (tej samej co paleta węzłów), podświetlanie błędów, uruchamianie jednym przyciskiem i przełączanie kod ↔ graf. Do tego terminal (REPL) na tej samej klawiaturze: górny ekran pokazuje wynik, np. `Math.Sqrt(2)` albo `Gfx.Circle(...)` od razu.
 7. Backend generujący natywny kod ARM (opcjonalnie, jeśli zabraknie wydajności).

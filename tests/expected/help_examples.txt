@@ -1,0 +1,13 @@
+11 50 3 True
+45
+50 Boss 50
+Szczur -1
+Smok 48
+Smok 48
+pole 0
+False skrzynia Golem
+True False False False
+bum Ork
+20 nikt 0 10
+15 -1 2 1
+Smok 48

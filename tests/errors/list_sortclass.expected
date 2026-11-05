@@ -1,0 +1,1 @@
+compile error: line 1: 'List<A>.Sort' can only sort numbers, chars and strings by itself; give it a comparison: Sort((a, b) => ...)

@@ -78,6 +78,7 @@ typedef struct {
     int fdepth; LamCtx* lam;        /* lambda nesting while compiling a method */
     NameList caps;                  /* names that lambdas in this method use from outside themselves */
     int lastBoxed;                  /* the local declare_local just made is boxed */
+    Type* stackType;                /* type of the E_STACK value (a?.b) */
     /* REPL: variables declared at the top of Repl.Main's body become static fields */
     Stmt* replBody;
     Local replVars[64]; int nreplVars;          /* slot = static slot */
@@ -706,13 +707,43 @@ static Type* call_list(C* c, Expr* e, Type* lt) {
         return &tVoid;
     }
     if (IS("IndexOf")) { args_for(c, e, &el, 1, what); op1(c, OP_LIST, L_INDEXOF); return &tInt; }
+    /* with a delegate: Find(x => ...), Sort((a, b) => ...) */
+    Type* pred = func_of(c, &el, 1, &tBool);
+    Type* act = func_of(c, &el, 1, &tVoid);
+    Type* two[2] = { el, el };
+    Type* cmp = func_of(c, two, 2, &tInt);
+    struct { const char* name; int sub; Type** param; Type* ret; } lf[] = {
+        { "Find", LF_FIND, &pred, el }, { "FindLast", LF_FINDLAST, &pred, el }, { "FindAll", LF_FINDALL, &pred, lt },
+        { "FindIndex", LF_FINDINDEX, &pred, &tInt }, { "FindLastIndex", LF_FINDLASTINDEX, &pred, &tInt },
+        { "Exists", LF_EXISTS, &pred, &tBool }, { "TrueForAll", LF_TRUEFORALL, &pred, &tBool },
+        { "RemoveAll", LF_REMOVEALL, &pred, &tInt }, { "ForEach", LF_FOREACH, &act, &tVoid },
+    };
+    for (size_t i = 0; i < sizeof lf / sizeof lf[0]; i++)
+        if (IS(lf[i].name)) {
+            args_for(c, e, lf[i].param, 1, what);
+            op1(c, OP_LISTF, lf[i].sub | default_kind(el) << 8);
+            return lf[i].ret;
+        }
+    if (IS("Sort")) {
+        if (e->nargs == 0) {
+            if (!isnum(el) && el->k != T_STRING)
+                cfail(c, e->line, "%s can only sort numbers, chars and strings by itself; give it a comparison: Sort((a, b) => ...)", what);
+            op1(c, OP_LIST, L_SORT);
+            return &tVoid;
+        }
+        args_for(c, e, &cmp, 1, what);
+        op1(c, OP_LISTF, LF_SORT);
+        return &tVoid;
+    }
+    if (IS("Reverse")) { args_for(c, e, NULL, 0, what); op1(c, OP_LIST, L_REVERSE); return &tVoid; }
     if (IS("Contains")) {
         args_for(c, e, &el, 1, what);
         op1(c, OP_LIST, L_INDEXOF); op1(c, OP_ICONST, 0); op(c, OP_IGE);
         return &tBool;
     }
     #undef IS
-    cfail(c, e->line, "List has no method '%.*s' (there is Add, Insert, Remove, RemoveAt, Clear, Contains, IndexOf, Count)", f->nlen, f->name);
+    cfail(c, e->line, "List has no method '%.*s' (there is Add, AddRange, Insert, Remove, RemoveAt, RemoveAll, Clear, Contains, IndexOf, "
+          "Find, FindLast, FindAll, FindIndex, FindLastIndex, Exists, TrueForAll, ForEach, Sort, Reverse, Count)", f->nlen, f->name);
 }
 
 /* stores the value on top of the stack into an 'out' argument and pops it */
@@ -763,12 +794,27 @@ static Type* invoke(C* c, Expr* e, Type* ft) {
     char what[110]; snprintf(what, sizeof what, "the %s", tname(c, ft));
     args_for(c, e, ft->params, ft->np, what);
     c->line = e->line;
-    op1(c, OP_CALLF, ft->np);
+    op2(c, OP_CALLF, ft->np, ft->elem->k != T_VOID);
     return ft->elem;
 }
 
 static Type* call(C* c, Expr* e) {
     Expr* f = e->a;
+    if (f->k == E_MEMBER && f->prefix) {        /* a?.M(): nothing is called when a is null */
+        Type* t = expr(c, f->a);
+        c->line = e->line;
+        if (!isref(t) || t->k == T_NULL) cfail(c, e->line, "'?.' needs something that can be null, not %s", tname(c, t));
+        int j = jump(c, OP_JNULL);
+        Expr st = *f; st.k = E_STACK; c->stackType = t;
+        Expr mf = *f; mf.prefix = 0; mf.a = &st;
+        Expr ce = *e; ce.a = &mf;
+        Type* rt = call(c, &ce);
+        if (rt->k == T_VOID) c->fn->code[j - 1] = OP_JNULL_POP;
+        else if (!isref(rt)) cfail(c, e->line, "'?.%.*s()' gives %s or null, and there is no %s? here; add a value for null: ?.%.*s() ?\? 0",
+                                   f->nlen, f->name, tname(c, rt), tname(c, rt), f->nlen, f->name);
+        patch(c, j);
+        return rt;
+    }
     if (f->k == E_NAME) {
         Res rv = resolve(c, f->name, f->nlen);
         if (rv.type && rv.type->k == T_FUNC && rv.k != R_METHOD) { expr(c, f); return invoke(c, e, rv.type); }
@@ -862,6 +908,43 @@ static Type* expr(C* c, Expr* e) {
         case E_OUT: cfail(c, e->line, "'out' is only supported in TryGetValue for now");
         case E_PAIR: cfail(c, e->line, "{ key, value } is only allowed in a Dictionary initializer");
         case E_LAMBDA: cfail(c, e->line, "a lambda needs a known type here, e.g. Func<int, int> f = x => x * 2;");
+        case E_STACK: return c->stackType;
+        case E_COALESCE: {
+            Expr* ca = e->a;
+            int condCall = ca->k == E_CALL && ca->a->k == E_MEMBER && ca->a->prefix, condMember = ca->k == E_MEMBER && ca->prefix;
+            if (condCall || condMember) {       /* a?.b ?? x, a?.F() ?? x: also for int, float... results */
+                Expr* recv = condCall ? ca->a->a : ca->a;
+                Type* t = expr(c, recv);
+                c->line = e->line;
+                if (!isref(t) || t->k == T_NULL) cfail(c, e->line, "'?.' needs something that can be null, not %s", tname(c, t));
+                int jnull = jump(c, OP_JNULL_POP);
+                Expr st = *recv; st.k = E_STACK; c->stackType = t;
+                Expr mf = condCall ? *ca->a : *ca; mf.prefix = 0; mf.a = &st;
+                Expr ce; Type* rt;
+                if (condCall) { ce = *ca; ce.a = &mf; rt = call(c, &ce); } else rt = expr(c, &mf);
+                if (rt->k == T_VOID) cfail(c, e->line, "'?\?' needs a value on its left");
+                Type* bt = e->b->k == E_LAMBDA ? rt : peek_type(c, e->b);
+                Type* T = assignable(bt, rt) ? rt : assignable(rt, bt) ? bt : NULL;
+                if (!T) cfail(c, e->line, "'?\?' needs both sides of the same type (%s vs %s)", tname(c, rt), tname(c, bt));
+                coerce(c, rt, T, e->line, "'?\?'");
+                int jend = jump(c, isref(rt) ? OP_JNNULL : OP_JMP);    /* a null result also takes the right side */
+                patch(c, jnull);
+                expr_to(c, e->b, T, e->line, "right side of '?\?'");
+                patch(c, jend);
+                return T;
+            }
+            Type* lt = peek_type(c, e->a);
+            Type* rt = e->b->k == E_LAMBDA ? lt : peek_type(c, e->b);
+            if (!isref(lt)) cfail(c, e->line, "the left side of '?\?' must be something that can be null, not %s", tname(c, lt));
+            Type* t = lt->k == T_NULL ? rt : assignable(rt, lt) ? lt : assignable(lt, rt) ? rt : NULL;
+            if (!t) cfail(c, e->line, "'?\?' needs both sides of the same type (%s vs %s)", tname(c, lt), tname(c, rt));
+            expr(c, e->a);
+            c->line = e->line;
+            int j = jump(c, OP_JNNULL);
+            expr_to(c, e->b, t, e->line, "right side of '?\?'");
+            patch(c, j);
+            return t;
+        }
         case E_NULL: op(c, OP_NULL); return &tNull;
         case E_STRING: op1(c, OP_SCONST, add_string(c, e->name, e->nlen)); return &tString;
         case E_THIS:
@@ -921,6 +1004,19 @@ static Type* expr(C* c, Expr* e) {
         }
 
         case E_MEMBER: {
+            if (e->prefix) {                    /* a?.field: null when a is null */
+                Type* t = expr(c, e->a);
+                c->line = e->line;
+                if (!isref(t) || t->k == T_NULL) cfail(c, e->line, "'?.' needs something that can be null, not %s", tname(c, t));
+                int j = jump(c, OP_JNULL);
+                Expr st = *e; st.k = E_STACK; c->stackType = t;
+                Expr m = *e; m.prefix = 0; m.a = &st;
+                Type* rt = expr(c, &m);
+                if (!isref(rt)) cfail(c, e->line, "'?.%.*s' gives %s or null, and there is no %s? here; add a value for null: ?.%.*s ?\? 0",
+                                      e->nlen, e->name, tname(c, rt), tname(c, rt), e->nlen, e->name);
+                patch(c, j);
+                return rt;
+            }
             if (e->a->k == E_NAME) {
                 Res r = resolve(c, e->a->name, e->a->nlen);
                 if (r.k == R_LOCAL && r.type->k == T_KVP) {     /* foreach pair: key and value live in two slots */
@@ -1168,6 +1264,15 @@ static Type* expr(C* c, Expr* e) {
             if (e->op == TK_ASSIGN) {
                 expr_to(c, e->b, lv.type, e->line, "assignment");
                 c->line = e->line;
+                lv_store(c, &lv);
+                return lv.type;
+            }
+            if (lv.type->k == T_FUNC && (e->op == TK_PLUSEQ || e->op == TK_MINUSEQ)) {    /* onHit += Handler; */
+                lv_dup(c, &lv);
+                lv_load(c, &lv);
+                expr_to(c, e->b, lv.type, e->line, e->op == TK_PLUSEQ ? "'+='" : "'-='");
+                c->line = e->line;
+                op1(c, OP_DELEG, e->op == TK_MINUSEQ);
                 lv_store(c, &lv);
                 return lv.type;
             }

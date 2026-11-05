@@ -1,0 +1,1 @@
+compile error: line 1: '?.hp' gives int or null, and there is no int? here; add a value for null: ?.hp ?? 0
