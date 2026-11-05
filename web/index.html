@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11151c">
+<title>MiniSharp</title>
+<meta name="description" content="MiniSharp: mały język w stylu C# do pisania gier. Ten sam kod działa w przeglądarce i na Nintendo 3DS.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect x='3' y='3' width='42' height='42' rx='9' fill='%232d4a80'/%3E%3Cpath d='M18 10v28M29 10v28M10 18h28M10 29h28' stroke='white' stroke-width='4'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand"><span class="logo" aria-hidden="true">#</span><span>MiniSharp</span></div>
+  <div class="tools">
+    <select id="examples" aria-label="Przykłady"><option value="">Przykłady…</option></select>
+    <button id="share" type="button"><span class="long">Udostępnij</span><span class="short">Link</span></button>
+    <button id="helpBtn" type="button">Pomoc</button>
+    <button id="stop" type="button" class="stopbtn">■ Stop</button>
+    <button id="run" type="button" class="primary" disabled>▶ Uruchom</button>
+  </div>
+</header>
+
+<nav class="viewtabs" aria-label="Widok">
+  <button type="button" data-view-btn="code" class="active">Kod</button>
+  <button type="button" data-view-btn="game">Gra</button>
+</nav>
+
+<main>
+  <section class="codepane" aria-label="Kod">
+    <div id="files" class="files"></div>
+    <div class="editor">
+      <pre id="gutter" aria-hidden="true"></pre>
+      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Kod programu"></textarea>
+    </div>
+    <div id="error" class="error" hidden>
+      <div class="errhead"><strong id="errorTitle"></strong><button id="errorClose" type="button" aria-label="Zamknij">×</button></div>
+      <div id="errorMsg"></div>
+    </div>
+    <div id="mediaRow" class="mediarow">
+      <label class="addmedia">+ obrazek / dźwięk<input type="file" id="addMedia" accept=".png,.jpg,.jpeg,.bmp,.wav" multiple hidden></label>
+      <div id="media" class="media"></div>
+    </div>
+  </section>
+
+  <section class="gamepane" aria-label="Gra">
+    <div class="screens">
+      <canvas id="top" aria-label="Górny ekran"></canvas>
+      <canvas id="bot" aria-label="Dolny ekran (dotykowy)"></canvas>
+    </div>
+
+    <div id="pad" class="pad" aria-label="Przyciski">
+      <div class="padrow">
+        <div class="dpad">
+          <button type="button" data-btn="UP" class="up" aria-label="Góra">▲</button>
+          <button type="button" data-btn="LEFT" class="left" aria-label="Lewo">◀</button>
+          <span class="mid"></span>
+          <button type="button" data-btn="RIGHT" class="right" aria-label="Prawo">▶</button>
+          <button type="button" data-btn="DOWN" class="down" aria-label="Dół">▼</button>
+        </div>
+        <div class="center">
+          <div class="shoulders">
+            <button type="button" data-btn="L">L</button>
+            <button type="button" data-btn="R">R</button>
+          </div>
+          <button type="button" data-btn="SELECT" class="small">SELECT</button>
+          <button type="button" data-action="stop" class="small stopsmall">■ STOP</button>
+          <button type="button" data-action="run" class="small runsmall">▶ START</button>
+        </div>
+        <div class="abxy">
+          <button type="button" data-btn="X" class="x">X</button>
+          <button type="button" data-btn="Y" class="y">Y</button>
+          <button type="button" data-btn="A" class="a">A</button>
+          <button type="button" data-btn="B" class="b">B</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="console">
+      <div class="consolehead">Konsola</div>
+      <pre id="out"></pre>
+    </div>
+    <p class="keys">
+      Klawiatura: <kbd>strzałki</kbd> D-pad · <kbd>X</kbd> A · <kbd>Z</kbd> B · <kbd>S</kbd> X · <kbd>A</kbd> Y ·
+      <kbd>Q</kbd>/<kbd>W</kbd> L/R · <kbd>Shift</kbd> Select · <kbd>I J K L</kbd> gałka · <kbd>Esc</kbd> stop ·
+      mysz na dolnym ekranie = dotyk · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> uruchom
+    </p>
+  </section>
+</main>
+
+<footer id="status" role="status"></footer>
+
+<dialog id="help">
+  <div class="helphead"><strong>Pomoc: język MiniSharp</strong><button id="helpClose" type="button" aria-label="Zamknij">×</button></div>
+  <p class="helpnote">Ten sam kod działa w przeglądarce i w aplikacji MiniSharp na Nintendo 3DS.</p>
+  <div id="helpBody"></div>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>

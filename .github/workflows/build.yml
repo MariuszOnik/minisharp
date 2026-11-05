@@ -25,6 +25,37 @@ jobs:
           name: MiniSharp-3dsx
           path: MiniSharp.3dsx
 
+  # The browser version (WebAssembly), built with Zig from the same C sources
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build web/dist
+        run: |
+          pip install ziglang==0.17.0
+          sh web/build.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  # Every push to main updates https://<user>.github.io/minisharp/
+  deploy-web:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [test-pc, build-web]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
   # A tag like v0.2.0 publishes a GitHub Release with the .3dsx, once the tests pass.
   release:
     if: startsWith(github.ref, 'refs/tags/v')

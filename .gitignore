@@ -7,3 +7,4 @@ minisharp
 bin/
 obj/
 *.exe
+web/dist/

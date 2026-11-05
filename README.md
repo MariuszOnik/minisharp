@@ -20,6 +20,20 @@ class Game {
 }
 ```
 
+## W przeglądarce
+
+**https://mariuszonik.github.io/minisharp/**: edytor i gra na jednej stronie, bez instalowania czegokolwiek. Działa też na telefonie.
+
+- Kompilator i maszyna wirtualna to **ten sam kod w C** co na 3DS, skompilowany do WebAssembly (Zig, `wasm32-wasi`). Program, który działa w przeglądarce, działa też na konsoli.
+- **Komputer:** po lewej kod (kilka plików `.cs` = projekt), po prawej oba ekrany w proporcjach 3DS. Sterowanie: strzałki = D-pad, `X`/`Z`/`S`/`A` = A/B/X/Y, `Q`/`W` = L/R, `Shift` = Select, `I J K L` = gałka, mysz na dolnym ekranie = dotyk, `Esc` = stop, `Ctrl+Enter` = uruchom.
+- **Telefon:** zakładki *Kod* / *Gra*. W grze oba ekrany mają pełną szerokość i ten sam rozmiar (dolny jest rozciągnięty w poziomie), a pod nimi są przyciski: D-pad, A B X Y, L R, Select. Dotyk dolnego ekranu działa jak na konsoli.
+- **Obrazki i dźwięki** dodajesz przyciskiem „+ obrazek / dźwięk” (PNG, JPG, BMP, WAV).
+- **Udostępnij / Link** zapisuje pliki `.cs` w adresie strony (skompresowane), więc grę wysyłasz komuś jako link. Obrazki i dźwięki się do niego nie mieszczą.
+- Kod zapisuje się sam w przeglądarce.
+
+Strona buduje się i publikuje sama przy każdym pushu na `main` (GitHub Actions → GitHub Pages).
+Lokalnie: `sh web/build.sh`, potem np. `python3 -m http.server -d web/dist` i otwórz `http://localhost:8000`.
+
 ## Jak to działa
 
 ```
@@ -165,6 +179,7 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 src/          rdzeń: lekser+parser, kompilator, VM, wbudowane API (wspólne dla PC i 3DS)
 source3ds/    aplikacja na 3DS: menu, pętla gry, citro2d
 pc/           wersja na PC do testów (rysuje do bufora, zapisuje .ppm)
+web/          wersja w przeglądarce: WebAssembly + strona (edytor, ekrany, przyciski dotykowe)
 examples/     przykłady (wgrywane na kartę SD przy pierwszym uruchomieniu)
 tests/        testy z oczekiwanym wyjściem
 tools/        gen_samples.py – osadza examples/*.cs w source3ds/samples.h
