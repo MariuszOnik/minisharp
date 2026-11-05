@@ -1,0 +1,1 @@
+compile error: line 1: a Func must return something; for no result use Action<...>

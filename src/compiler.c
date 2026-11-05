@@ -16,6 +16,7 @@ struct Type {
     Type* arr; Type* list;          /* cached T[] and List<T> */
     Type* kvp; Type* next;          /* Dictionary: its KeyValuePair type; next Dictionary type in C.dicts */
     uint8_t* isa;                   /* class / interface: isa[k] = 1 if it can be used as class k (itself, bases, interfaces) */
+    Type** params; int np;          /* Func / Action: parameter types; elem = return type (void for Action) */
 };
 
 static Type tVoid = {.k = T_VOID}, tInt = {.k = T_INT}, tFloat = {.k = T_FLOAT}, tBool = {.k = T_BOOL}, tString = {.k = T_STRING},
@@ -37,7 +38,19 @@ typedef struct {
     int* vtable;                                /* [nsel]: function, -1 not there, -2 abstract */
 } CClass;
 
-typedef struct { const char* name; int nlen; Type* type; int slot; } Local;
+/* depth: 0 for the method, 1 inside a lambda, 2 in a lambda inside that...
+ * boxed: a lambda uses it, so the slot holds a cell (ObjCell) with the value */
+typedef struct { const char* name; int nlen; Type* type; int slot; int depth, boxed; } Local;
+
+/* the lambda being compiled: the cells it captures from the functions around it */
+typedef struct LamCtx {
+    int depth;
+    struct { int li, from; } ups[64];   /* li: index in C.locals; from: upvalue of the parent lambda, or -1 = parent's local */
+    int nup;
+    struct LamCtx* parent;
+} LamCtx;
+typedef struct { const char* n; int l; } Name;
+typedef struct { Name* v; int n, cap; } NameList;
 
 typedef struct Loop {
     int isSwitch;                   /* 'break' leaves a switch too, 'continue' skips past it */
@@ -61,6 +74,10 @@ typedef struct {
     int* order;                     /* classes with every base before the classes that derive from it */
     CMethod** sels; int nsel, capsel;   /* the method that introduced each virtual selector */
     int toStringSel;                /* selector of 'override string ToString()', or -1 */
+    Type* funcs;                    /* every Func / Action type made so far */
+    int fdepth; LamCtx* lam;        /* lambda nesting while compiling a method */
+    NameList caps;                  /* names that lambdas in this method use from outside themselves */
+    int lastBoxed;                  /* the local declare_local just made is boxed */
     /* REPL: variables declared at the top of Repl.Main's body become static fields */
     Stmt* replBody;
     Local replVars[64]; int nreplVars;          /* slot = static slot */
@@ -96,6 +113,16 @@ static Type* dict_of(C* c, Type* k, Type* v) {
     d->kvp = p;
     return d;
 }
+static Type* func_of(C* c, Type** ps, int np, Type* ret) {
+    for (Type* f = c->funcs; f; f = f->next)
+        if (f->np == np && f->elem == ret && (!np || !memcmp(f->params, ps, sizeof(Type*) * np))) return f;
+    Type* f = (Type*)arena_alloc(&c->A, sizeof(Type));
+    f->k = T_FUNC; f->elem = ret; f->np = np;
+    f->params = (Type**)arena_alloc(&c->A, sizeof(Type*) * (np ? np : 1));
+    if (np) memcpy(f->params, ps, sizeof(Type*) * np);
+    f->next = c->funcs; c->funcs = f;
+    return f;
+}
 static Type* list_of(C* c, Type* t) {
     if (!t->list) {
         Type* l = (Type*)arena_alloc(&c->A, sizeof(Type));
@@ -117,20 +144,27 @@ static const char* tname(C* c, Type* t) {
         case T_KVP: snprintf(b, 96, "KeyValuePair<%s, %s>", tname(c, t->key), tname(c, t->elem)); return b;
         case T_CLASS: snprintf(b, 96, "%.*s", c->classes[t->cls].nlen, c->classes[t->cls].name); return b;
         case T_ARRAY: snprintf(b, 96, "%s[]", tname(c, t->elem)); return b;
+        case T_FUNC: {
+            int isAction = t->elem->k == T_VOID, n = snprintf(b, 96, isAction ? "Action" : "Func");
+            for (int i = 0; i < t->np + (isAction ? 0 : 1) && n < 90; i++)
+                n += snprintf(b + n, 96 - n, "%s%s", i ? ", " : "<", tname(c, i < t->np ? t->params[i] : t->elem));
+            if (t->np || !isAction) snprintf(b + n, 96 - n, ">");
+            return b;
+        }
     }
     return "?";
 }
 
 static int isint(Type* t) { return t->k == T_INT || t->k == T_CHAR; }
 static int isnum(Type* t) { return isint(t) || t->k == T_FLOAT; }
-static int isref(Type* t) { return t->k == T_STRING || t->k == T_CLASS || t->k == T_ARRAY || t->k == T_LIST || t->k == T_DICT || t->k == T_CORO || t->k == T_NULL; }
+static int isref(Type* t) { return t->k == T_STRING || t->k == T_CLASS || t->k == T_ARRAY || t->k == T_LIST || t->k == T_DICT || t->k == T_CORO || t->k == T_NULL || t->k == T_FUNC; }
 
 static int assignable(Type* from, Type* to) {
     if (from == to) return 1;
     if (to->k == T_ANY) return from->k != T_VOID;
     if (from->k == T_INT && to->k == T_FLOAT) return 1;
     if (from->k == T_CHAR && (to->k == T_INT || to->k == T_FLOAT)) return 1;
-    if (from->k == T_NULL && (to->k == T_STRING || to->k == T_CLASS || to->k == T_ARRAY || to->k == T_LIST || to->k == T_DICT || to->k == T_CORO)) return 1;
+    if (from->k == T_NULL && (to->k == T_STRING || to->k == T_CLASS || to->k == T_ARRAY || to->k == T_LIST || to->k == T_DICT || to->k == T_CORO || to->k == T_FUNC)) return 1;
     if (from->k == T_CLASS && to->k == T_CLASS) return from->isa[to->cls];     /* derived -> base, class -> interface */
     return 0;
 }
@@ -250,13 +284,29 @@ static int find_local(C* c, const char* n, int l) {
     return -1;
 }
 
-enum { R_NONE, R_LOCAL, R_FIELD, R_STATIC, R_CLASS, R_BUILTIN, R_METHOD };
+enum { R_NONE, R_LOCAL, R_FIELD, R_STATIC, R_CLASS, R_BUILTIN, R_METHOD, R_CELL /* boxed local */, R_UPVAL /* captured by this lambda */ };
 typedef struct { int k; int idx; Type* type; } Res;
+
+/* index of the captured local li among the cells of lambda lc (adding it, and to the lambdas around it) */
+static int get_upvalue(C* c, LamCtx* lc, int li) {
+    for (int k = 0; k < lc->nup; k++) if (lc->ups[k].li == li) return k;
+    if (lc->nup >= 64) cfail(c, c->line, "a lambda can use at most 64 variables from outside");
+    int from = c->locals[li].depth < lc->depth - 1 ? get_upvalue(c, lc->parent, li) : -1;
+    lc->ups[lc->nup].li = li; lc->ups[lc->nup].from = from;
+    return lc->nup++;
+}
 
 static Res resolve(C* c, const char* n, int l) {
     Res r = { R_NONE, 0, NULL };
     int li = find_local(c, n, l);
-    if (li >= 0) { r.k = R_LOCAL; r.idx = c->locals[li].slot; r.type = c->locals[li].type; return r; }
+    if (li >= 0) {
+        Local* lo = &c->locals[li];
+        r.type = lo->type;
+        if (lo->depth == c->fdepth) { r.k = lo->boxed ? R_CELL : R_LOCAL; r.idx = lo->slot; return r; }
+        if (!lo->boxed) cfail(c, c->line, "'%.*s' cannot be used inside a lambda; copy it to a variable first", l, n);
+        r.k = R_UPVAL; r.idx = get_upvalue(c, c->lam, li);
+        return r;
+    }
     for (int i = 0; i < c->nreplVars; i++)
         if (nameeq(c->replVars[i].name, c->replVars[i].nlen, n, l)) { r.k = R_STATIC; r.idx = c->replVars[i].slot; r.type = c->replVars[i].type; return r; }
     CField* f = find_field(c, c->cur, n, l);
@@ -276,7 +326,25 @@ static int declare_local(C* c, const char* n, int l, Type* t, int line) {
     if (c->nextSlot > c->fn->nlocals) c->fn->nlocals = c->nextSlot;
     Local* lo = &c->locals[c->nlocals++];
     lo->name = n; lo->nlen = l; lo->type = t; lo->slot = slot;
+    lo->depth = c->fdepth;
+    lo->boxed = 0;
+    for (int i = 0; i < c->caps.n; i++) if (nameeq(c->caps.v[i].n, c->caps.v[i].l, n, l)) lo->boxed = 1;
+    c->lastBoxed = lo->boxed;
     return slot;
+}
+/* the value on top of the stack is the first value of a new local (in a fresh cell if a lambda uses it) */
+static void init_local(C* c, int slot, int boxed) {
+    if (boxed) op(c, OP_BOX);
+    op1(c, OP_STORE, slot);
+    emit_pop(c);
+}
+/* parameters that lambdas use are moved into cells at the start of the function */
+static void box_params(C* c) {
+    for (int i = 0; i < c->nlocals; i++)
+        if (c->locals[i].depth == c->fdepth && c->locals[i].boxed) {
+            op1(c, OP_LOAD, c->locals[i].slot);
+            init_local(c, c->locals[i].slot, 1);
+        }
 }
 static int alloc_temp(C* c) {
     int slot = c->nextSlot++;
@@ -295,7 +363,7 @@ static Type* resolve_typenode(C* c, TypeNode* tn, int extraDims) {
         case TK_VOID: t = &tVoid; break;
         default: {
             if (namecs(tn->name, tn->nlen, "Dictionary") || namecs(tn->name, tn->nlen, "KeyValuePair")) {
-                if (!tn->arg2) cfail(c, tn->line, "write both types: %.*s<string, int>, ...", tn->nlen, tn->name);
+                if (!tn->arg2 || tn->nargs > 2) cfail(c, tn->line, "write both types: %.*s<string, int>, ...", tn->nlen, tn->name);
                 Type* kt = resolve_typenode(c, tn->arg, 0);
                 Type* vt = resolve_typenode(c, tn->arg2, 0);
                 if (kt->k == T_VOID || vt->k == T_VOID) cfail(c, tn->line, "a Dictionary cannot hold void");
@@ -305,10 +373,32 @@ static Type* resolve_typenode(C* c, TypeNode* tn, int extraDims) {
             }
             if (namecs(tn->name, tn->nlen, "List")) {
                 if (!tn->arg) cfail(c, tn->line, "write the element type: List<int>, List<string>, ...");
-                if (tn->arg2) cfail(c, tn->line, "List takes one type: List<int>");
+                if (tn->nargs > 1) cfail(c, tn->line, "List takes one type: List<int>");
                 Type* el = resolve_typenode(c, tn->arg, 0);
                 if (el->k == T_VOID) cfail(c, tn->line, "cannot make a List of void");
                 t = list_of(c, el);
+                break;
+            }
+            int isFunc = namecs(tn->name, tn->nlen, "Func"), isAction = namecs(tn->name, tn->nlen, "Action");
+            int isPred = namecs(tn->name, tn->nlen, "Predicate"), isCmp = namecs(tn->name, tn->nlen, "Comparison");
+            if (isFunc || isAction || isPred || isCmp) {
+                Type* ps[16]; int np = 0; Type* ret = &tVoid;
+                if (tn->nargs > 16) cfail(c, tn->line, "too many type arguments");
+                if (isFunc) {
+                    if (!tn->nargs) cfail(c, tn->line, "write the types: Func<int> returns an int, Func<int, bool> takes an int and returns a bool");
+                    for (int i = 0; i < tn->nargs - 1; i++) ps[np++] = resolve_typenode(c, tn->args[i], 0);
+                    ret = resolve_typenode(c, tn->args[tn->nargs - 1], 0);
+                    if (ret->k == T_VOID) cfail(c, tn->line, "a Func must return something; for no result use Action<...>");
+                } else if (isAction) {
+                    for (int i = 0; i < tn->nargs; i++) ps[np++] = resolve_typenode(c, tn->args[i], 0);
+                } else {
+                    if (tn->nargs != 1) cfail(c, tn->line, "%.*s takes one type: %.*s<int>", tn->nlen, tn->name, tn->nlen, tn->name);
+                    Type* a = resolve_typenode(c, tn->args[0], 0);
+                    ps[np++] = a;
+                    if (isCmp) { ps[np++] = a; ret = &tInt; } else ret = &tBool;
+                }
+                for (int i = 0; i < np; i++) if (ps[i]->k == T_VOID) cfail(c, tn->line, "a parameter cannot be void");
+                t = func_of(c, ps, np, ret);
                 break;
             }
             if (tn->arg) cfail(c, tn->line, "'%.*s' is not generic (only List<T> is)", tn->nlen, tn->name);
@@ -327,6 +417,7 @@ static Type* resolve_typenode(C* c, TypeNode* tn, int extraDims) {
 
 /* ================= expressions ================= */
 static Type* expr(C* c, Expr* e);
+static void expr_to(C* c, Expr* e, Type* t, int line, const char* what);
 
 static void coerce(C* c, Type* from, Type* to, int line, const char* what) {
     if (!assignable(from, to)) {
@@ -343,9 +434,15 @@ static void coerce(C* c, Type* from, Type* to, int line, const char* what) {
 
 static Type* peek_type(C* c, Expr* e) {
     Func* f = c->fn;
-    int len = f->len, ll = c->lastLabel, ns = c->nextSlot, nl = c->nlocals, line = c->line;
+    int len = f->len, ll = c->lastLabel, ns = c->nextSlot, nl = c->nlocals, line = c->line, nf = c->P->nfuncs;
     Type* t = expr(c, e);
     f->len = len; c->lastOp = -1; c->lastLabel = ll; c->nextSlot = ns; c->nlocals = nl; c->line = line;
+    for (int i = nf; i < c->P->nfuncs; i++) {
+        Func* g = &c->P->funcs[i];
+        free(g->code); free(g->lines);
+        memset(g, 0, sizeof *g);
+    }
+    c->P->nfuncs = nf;
     return t;
 }
 
@@ -443,7 +540,7 @@ static void need_bool(C* c, Type* t, int line, const char* what) {
 }
 
 /* ---------- l-values ---------- */
-enum { LV_LOCAL, LV_STATIC, LV_FIELD, LV_ELEM };
+enum { LV_LOCAL, LV_STATIC, LV_FIELD, LV_ELEM, LV_CELL };
 typedef struct { int kind, idx; Type* type; } LV;
 
 static LV lvalue(C* c, Expr* e) {
@@ -453,6 +550,9 @@ static LV lvalue(C* c, Expr* e) {
         Res r = resolve(c, e->name, e->nlen);
         switch (r.k) {
             case R_LOCAL: lv.kind = LV_LOCAL; lv.idx = r.idx; lv.type = r.type; return lv;
+            case R_CELL: case R_UPVAL:
+                op1(c, r.k == R_CELL ? OP_LOAD : OP_UPVAL, r.idx);
+                lv.kind = LV_CELL; lv.type = r.type; return lv;
             case R_STATIC: lv.kind = LV_STATIC; lv.idx = r.idx; lv.type = r.type; return lv;
             case R_FIELD:
                 if (c->curStatic) cfail(c, e->line, "cannot use instance field '%.*s' in a static method", e->nlen, e->name);
@@ -487,7 +587,7 @@ static LV lvalue(C* c, Expr* e) {
         Type* t = expr(c, e->a);
         if (t->k == T_STRING) cfail(c, e->line, "strings cannot be changed; build a new string instead");
         if (t->k == T_DICT) {
-            coerce(c, expr(c, e->b), t->key, e->line, "dictionary key");
+            expr_to(c, e->b, t->key, e->line, "dictionary key");
             c->line = e->line;
             lv.kind = LV_ELEM; lv.type = t->elem; return lv;
         }
@@ -499,13 +599,14 @@ static LV lvalue(C* c, Expr* e) {
     }
     cfail(c, e->line, "the left side must be a variable, field or array element");
 }
-static void lv_dup(C* c, LV* lv) { if (lv->kind == LV_FIELD) op(c, OP_DUP); else if (lv->kind == LV_ELEM) op(c, OP_DUP2); }
+static void lv_dup(C* c, LV* lv) { if (lv->kind == LV_FIELD || lv->kind == LV_CELL) op(c, OP_DUP); else if (lv->kind == LV_ELEM) op(c, OP_DUP2); }
 static void lv_load(C* c, LV* lv) {
     switch (lv->kind) {
         case LV_LOCAL: op1(c, OP_LOAD, lv->idx); break;
         case LV_STATIC: op1(c, OP_GETSTATIC, lv->idx); break;
         case LV_FIELD: op1(c, OP_GETFIELD, lv->idx); break;
         case LV_ELEM: op(c, OP_GETELEM); break;
+        case LV_CELL: op(c, OP_GETCELL); break;
     }
 }
 static void lv_store(C* c, LV* lv) {
@@ -514,6 +615,7 @@ static void lv_store(C* c, LV* lv) {
         case LV_STATIC: op1(c, OP_SETSTATIC, lv->idx); break;
         case LV_FIELD: op1(c, OP_SETFIELD, lv->idx); break;
         case LV_ELEM: op(c, OP_SETELEM); break;
+        case LV_CELL: op(c, OP_SETCELL); break;
     }
 }
 
@@ -521,9 +623,10 @@ static void lv_store(C* c, LV* lv) {
 static void args_for(C* c, Expr* e, Type** params, int np, const char* what) {
     if (e->nargs != np) cfail(c, e->line, "%s takes %d argument%s, but %d were given", what, np, np == 1 ? "" : "s", e->nargs);
     for (int i = 0; i < np; i++) {
+        char buf[120]; snprintf(buf, sizeof buf, "argument %d of %s", i + 1, what);
+        if (params[i]->k == T_FUNC) { expr_to(c, e->args[i], params[i], e->args[i]->line, buf); c->line = e->line; continue; }
         Type* t = expr(c, e->args[i]);
         c->line = e->line;
-        char buf[120]; snprintf(buf, sizeof buf, "argument %d of %s", i + 1, what);
         if (params[i]->k == T_ANY && t->k == T_CLASS) { tostr(c, t, 0, e->line); t = &tString; }   /* may call an override of ToString */
         coerce(c, t, params[i], e->args[i]->line, buf);
     }
@@ -619,10 +722,12 @@ static void store_out(C* c, Expr* o, Type* vt) {
         Type* t = o->tn ? resolve_typenode(c, o->tn, 0) : vt;
         coerce(c, vt, t, o->line, "'out' variable");
         int slot = declare_local(c, o->name, o->nlen, t, o->line);
+        if (c->lastBoxed) op(c, OP_BOX);
         op1(c, OP_STORE, slot);
     } else {
         if (o->a->k != E_NAME) cfail(c, o->line, "'out' works with a variable name");
         Res r = resolve(c, o->a->name, o->a->nlen);
+        if (r.k == R_CELL || r.k == R_UPVAL) cfail(c, o->line, "'out %.*s': a variable used by a lambda cannot be an 'out' argument", o->a->nlen, o->a->name);
         if (r.k != R_LOCAL && r.k != R_STATIC) cfail(c, o->line, "'out' works with a local variable or a static field");
         coerce(c, vt, r.type, o->line, "'out' argument");
         op1(c, r.k == R_LOCAL ? OP_STORE : OP_SETSTATIC, r.idx);
@@ -643,7 +748,7 @@ static Type* call_dict(C* c, Expr* e, Type* dt) {
     if (IS("Clear")) { args_for(c, e, NULL, 0, what); op1(c, OP_DICT, D_CLEAR); return &tVoid; }
     if (IS("TryGetValue")) {
         if (e->nargs != 2) cfail(c, e->line, "%s takes 2 arguments: key and 'out var value'", what);
-        coerce(c, expr(c, e->args[0]), dt->key, e->args[0]->line, "argument 1 of TryGetValue");
+        expr_to(c, e->args[0], dt->key, e->args[0]->line, "argument 1 of TryGetValue");
         c->line = e->line;
         op1(c, OP_DICT, D_TRYGET | default_kind(dt->elem) << 8);
         store_out(c, e->args[1], dt->elem);
@@ -653,9 +758,20 @@ static Type* call_dict(C* c, Expr* e, Type* dt) {
     cfail(c, e->line, "Dictionary has no method '%.*s' (there is Add, Remove, ContainsKey, ContainsValue, TryGetValue, Clear, Count, Keys, Values)", f->nlen, f->name);
 }
 
+/* f(args): the delegate is already on the stack */
+static Type* invoke(C* c, Expr* e, Type* ft) {
+    char what[110]; snprintf(what, sizeof what, "the %s", tname(c, ft));
+    args_for(c, e, ft->params, ft->np, what);
+    c->line = e->line;
+    op1(c, OP_CALLF, ft->np);
+    return ft->elem;
+}
+
 static Type* call(C* c, Expr* e) {
     Expr* f = e->a;
     if (f->k == E_NAME) {
+        Res rv = resolve(c, f->name, f->nlen);
+        if (rv.type && rv.type->k == T_FUNC && rv.k != R_METHOD) { expr(c, f); return invoke(c, e, rv.type); }
         CMethod* m = find_method(c, c->cur, f->name, f->nlen);
         if (!m && (namecs(f->name, f->nlen, "StartCoroutine") || namecs(f->name, f->nlen, "StopCoroutine"))) {
             int start = namecs(f->name, f->nlen, "StartCoroutine");
@@ -695,6 +811,8 @@ static Type* call(C* c, Expr* e) {
             Res r = resolve(c, f->a->name, f->a->nlen);
             if (r.k == R_CLASS) {
                 CMethod* m = find_method(c, r.idx, f->name, f->nlen);
+                CField* df = m ? NULL : find_field(c, r.idx, f->name, f->nlen);
+                if (df && df->type->k == T_FUNC) { expr(c, f); return invoke(c, e, df->type); }      /* Game.onWin() */
                 if (!m) cfail(c, e->line, "class '%.*s' has no method '%.*s'", f->a->nlen, f->a->name, f->nlen, f->name);
                 if (!m->isStatic) cfail(c, e->line, "'%.*s' is not static; call it on an object", f->nlen, f->name);
                 return call_method(c, e, m, 0, 0);
@@ -714,14 +832,21 @@ static Type* call(C* c, Expr* e) {
         }
         if (t->k == T_LIST) return call_list(c, e, t);
         if (t->k == T_DICT) return call_dict(c, e, t);
+        if (t->k == T_FUNC && namecs(f->name, f->nlen, "Invoke")) return invoke(c, e, t);
         if (t->k == T_CLASS) {
             CMethod* m = find_method(c, t->cls, f->name, f->nlen);
+            CField* df = m ? NULL : find_field(c, t->cls, f->name, f->nlen);
+            if (df && df->type->k == T_FUNC && !df->isStatic) { op1(c, OP_GETFIELD, df->slot); return invoke(c, e, df->type); }
             if (!m) cfail(c, e->line, "%s has no method '%.*s'", tname(c, t), f->nlen, f->name);
             if (m->isStatic) cfail(c, e->line, "'%.*s' is static; call it as %s.%.*s()", f->nlen, f->name, tname(c, t), f->nlen, f->name);
             if (m->sel < 0) op1(c, OP_NULLCHK, 0);     /* OP_CALLV checks it itself */
             return call_method(c, e, m, 1, 1);
         }
         cfail(c, e->line, "%s has no method '%.*s'", tname(c, t), f->nlen, f->name);
+    }
+    if (f->k != E_NAME && f->k != E_MEMBER) {                      /* GetAction()(), actions[i](1) */
+        Type* t = expr(c, f);
+        if (t->k == T_FUNC) return invoke(c, e, t);
     }
     cfail(c, e->line, "this cannot be called like a method");
 }
@@ -736,6 +861,7 @@ static Type* expr(C* c, Expr* e) {
         case E_CHAR: op1(c, OP_ICONST, e->ival); op(c, OP_I2C); return &tChar;
         case E_OUT: cfail(c, e->line, "'out' is only supported in TryGetValue for now");
         case E_PAIR: cfail(c, e->line, "{ key, value } is only allowed in a Dictionary initializer");
+        case E_LAMBDA: cfail(c, e->line, "a lambda needs a known type here, e.g. Func<int, int> f = x => x * 2;");
         case E_NULL: op(c, OP_NULL); return &tNull;
         case E_STRING: op1(c, OP_SCONST, add_string(c, e->name, e->nlen)); return &tString;
         case E_THIS:
@@ -765,7 +891,9 @@ static Type* expr(C* c, Expr* e) {
             if (e->k == E_AS) { op2(c, OP_ISINST, to->cls, 1); return to; }
             if (e->name) {                      /* x is Enemy en: en = x as Enemy; en != null */
                 op2(c, OP_ISINST, to->cls, 1);
-                op1(c, OP_STORE, declare_local(c, e->name, e->nlen, to, e->line));
+                int slot = declare_local(c, e->name, e->nlen, to, e->line);
+                if (c->lastBoxed) { op(c, OP_DUP); init_local(c, slot, 1); }
+                else op1(c, OP_STORE, slot);
                 op(c, OP_NULL); op(c, OP_RNE);
                 return &tBool;
             }
@@ -780,6 +908,8 @@ static Type* expr(C* c, Expr* e) {
                 case R_LOCAL:
                     if (r.type->k == T_KVP) cfail(c, e->line, "use '%.*s.Key' and '%.*s.Value'", e->nlen, e->name, e->nlen, e->name);
                     op1(c, OP_LOAD, r.idx); return r.type;
+                case R_CELL: op1(c, OP_LOAD, r.idx); op(c, OP_GETCELL); return r.type;
+                case R_UPVAL: op1(c, OP_UPVAL, r.idx); op(c, OP_GETCELL); return r.type;
                 case R_STATIC: op1(c, OP_GETSTATIC, r.idx); return r.type;
                 case R_FIELD:
                     if (c->curStatic) cfail(c, e->line, "cannot use instance field '%.*s' in a static method", e->nlen, e->name);
@@ -843,7 +973,7 @@ static Type* expr(C* c, Expr* e) {
         case E_INDEX: {
             Type* t = expr(c, e->a);
             if (t->k == T_DICT) {
-                coerce(c, expr(c, e->b), t->key, e->line, "dictionary key");
+                expr_to(c, e->b, t->key, e->line, "dictionary key");
                 c->line = e->line;
                 op(c, OP_GETELEM);
                 return t->elem;
@@ -900,8 +1030,8 @@ static Type* expr(C* c, Expr* e) {
                     Expr* it = e->args[i];
                     if (it->k != E_PAIR) cfail(c, it->line, "dictionary items are written { key, value } or [key] = value");
                     op(c, OP_DUP);
-                    coerce(c, expr(c, it->a), lt->key, it->line, "dictionary key");
-                    coerce(c, expr(c, it->b), lt->elem, it->line, "dictionary value");
+                    expr_to(c, it->a, lt->key, it->line, "dictionary key");
+                    expr_to(c, it->b, lt->elem, it->line, "dictionary value");
                     c->line = it->line;
                     if (it->prefix) { op(c, OP_SETELEM); op(c, OP_POP); }   /* [k] = v overwrites */
                     else op1(c, OP_DICT, D_ADD);                             /* {k, v} is Add: duplicates fail */
@@ -913,7 +1043,7 @@ static Type* expr(C* c, Expr* e) {
             for (int i = 0; i < e->nargs; i++) {
                 if (e->args[i]->k == E_PAIR) cfail(c, e->args[i]->line, "a List item is a single value, not { a, b }");
                 op(c, OP_DUP);
-                coerce(c, expr(c, e->args[i]), lt->elem, e->args[i]->line, "list element");
+                expr_to(c, e->args[i], lt->elem, e->args[i]->line, "list element");
                 op1(c, OP_LIST, L_ADD);
             }
             return lt;
@@ -933,8 +1063,7 @@ static Type* expr(C* c, Expr* e) {
                 for (int i = 0; i < e->nargs; i++) {
                     op(c, OP_DUP);
                     op1(c, OP_ICONST, i);
-                    Type* t = expr(c, e->args[i]);
-                    coerce(c, t, elem, e->args[i]->line, "array element");
+                    expr_to(c, e->args[i], elem, e->args[i]->line, "array element");
                     op(c, OP_SETELEM);
                     op(c, OP_POP);
                 }
@@ -1026,10 +1155,10 @@ static Type* expr(C* c, Expr* e) {
             if (t->k == T_VOID) cfail(c, e->line, "'?:' branches cannot be void");
             c->line = e->line;
             int jz = jump(c, OP_JZ);
-            coerce(c, expr(c, e->b), t, e->line, "'?:'");
+            expr_to(c, e->b, t, e->line, "'?:'");
             int je = jump(c, OP_JMP);
             patch(c, jz);
-            coerce(c, expr(c, e->c), t, e->line, "'?:'");
+            expr_to(c, e->c, t, e->line, "'?:'");
             patch(c, je);
             return t;
         }
@@ -1037,9 +1166,8 @@ static Type* expr(C* c, Expr* e) {
         case E_ASSIGN: {
             LV lv = lvalue(c, e->a);
             if (e->op == TK_ASSIGN) {
-                Type* rt = expr(c, e->b);
+                expr_to(c, e->b, lv.type, e->line, "assignment");
                 c->line = e->line;
-                coerce(c, rt, lv.type, e->line, "assignment");
                 lv_store(c, &lv);
                 return lv.type;
             }
@@ -1076,8 +1204,169 @@ static Type* expr(C* c, Expr* e) {
     cfail(c, e->line, "internal error: unknown expression");
 }
 
+/* ================= lambdas ================= */
+static void stmt(C* c, Stmt* s);
+static void expr_stmt(C* c, Expr* e);
+
+/* Before a method is compiled: which names do its lambdas use from outside themselves? Locals with
+ * those names are boxed (kept in cells), so the method and the lambdas share them. It goes by name,
+ * so it may box a variable that did not need it; that only costs a little speed. */
+static void nl_add(C* c, NameList* L, const char* n, int l) {
+    for (int i = 0; i < L->n; i++) if (nameeq(L->v[i].n, L->v[i].l, n, l)) return;
+    L->v = (Name*)arena_grow(&c->A, L->v, L->n, &L->cap, sizeof(Name));
+    L->v[L->n].n = n; L->v[L->n].l = l; L->n++;
+}
+static int nl_has(NameList* L, const char* n, int l) {
+    for (int i = 0; i < L->n; i++) if (nameeq(L->v[i].n, L->v[i].l, n, l)) return 1;
+    return 0;
+}
+static void scan_stmt(C* c, Stmt* s, NameList* uses, NameList* decls);
+static void scan_expr(C* c, Expr* e, NameList* uses, NameList* decls) {
+    if (!e) return;
+    if (e->k == E_LAMBDA) {
+        NameList u = { 0 }, d = { 0 };
+        if (e->body) scan_stmt(c, e->body, &u, &d); else scan_expr(c, e->a, &u, &d);
+        for (int i = 0; i < u.n; i++) {
+            int own = nl_has(&d, u.v[i].n, u.v[i].l);
+            for (int q = 0; q < e->nparams && !own; q++) own = nameeq(e->params[q].name, e->params[q].nlen, u.v[i].n, u.v[i].l);
+            if (!own) nl_add(c, &c->caps, u.v[i].n, u.v[i].l);
+            nl_add(c, uses, u.v[i].n, u.v[i].l);
+        }
+        return;
+    }
+    if (e->k == E_NAME) nl_add(c, uses, e->name, e->nlen);
+    if ((e->k == E_OUT && e->prefix) || (e->k == E_IS && e->name)) nl_add(c, decls, e->name, e->nlen);
+    scan_expr(c, e->a, uses, decls); scan_expr(c, e->b, uses, decls); scan_expr(c, e->c, uses, decls);
+    for (int i = 0; i < e->nargs; i++) scan_expr(c, e->args[i], uses, decls);
+}
+static void scan_stmt(C* c, Stmt* s, NameList* uses, NameList* decls) {
+    if (!s) return;
+    if (s->k == S_VAR) {
+        for (; s; s = s->els) { nl_add(c, decls, s->name, s->nlen); scan_expr(c, s->e, uses, decls); }
+        return;
+    }
+    if (s->k == S_FOREACH) nl_add(c, decls, s->name, s->nlen);
+    scan_expr(c, s->e, uses, decls); scan_expr(c, s->step, uses, decls);
+    for (int i = 0; i < s->nlabels; i++) scan_expr(c, s->labels[i], uses, decls);
+    for (int i = 0; i < s->n; i++) scan_stmt(c, s->list[i], uses, decls);
+    scan_stmt(c, s->body, uses, decls); scan_stmt(c, s->els, uses, decls); scan_stmt(c, s->init, uses, decls);
+}
+static void scan_captures(C* c, Stmt* body, Expr* extra) {
+    NameList u = { 0 }, d = { 0 };
+    c->caps.n = 0;
+    scan_stmt(c, body, &u, &d);
+    scan_expr(c, extra, &u, &d);
+}
+
+static void emit_closure(C* c, int kind, int idx, int nup) { op(c, OP_CLOSURE); emit1(c, kind); emit1(c, idx); emit1(c, nup); }
+
+/* Func<int, int> f = Square;  Action a = enemy.Die;  -> a delegate of that method. 0 = e is not a method name */
+static int method_group(C* c, Expr* e, Type* ft, int line) {
+    CMethod* m = NULL;
+    int self = 0;                               /* 0 static method, 1 this, 2 the object of e->a */
+    if (e->k == E_NAME) {
+        if (resolve(c, e->name, e->nlen).k != R_METHOD) return 0;
+        m = find_method(c, c->cur, e->name, e->nlen);
+        if (!m->isStatic) {
+            if (c->curStatic) cfail(c, line, "cannot use instance method '%.*s' in a static method", e->nlen, e->name);
+            self = 1;
+        }
+    } else if (e->k == E_MEMBER) {
+        if (e->a->k == E_BASE) return 0;
+        if (e->a->k == E_NAME) {
+            Res r = resolve(c, e->a->name, e->a->nlen);
+            if (r.k == R_CLASS) {
+                if (find_field(c, r.idx, e->name, e->nlen)) return 0;
+                m = find_method(c, r.idx, e->name, e->nlen);
+                if (!m) return 0;
+                if (!m->isStatic) cfail(c, line, "'%.*s' is not static; use an object: obj.%.*s", e->nlen, e->name, e->nlen, e->name);
+            }
+            if (r.k == R_BUILTIN) cfail(c, line, "built-in methods like '%.*s.%.*s' cannot be used as a delegate yet; wrap it in a lambda",
+                                       e->a->nlen, e->a->name, e->nlen, e->name);
+        }
+        if (!m) {
+            Type* t = peek_type(c, e->a);
+            if (t->k != T_CLASS || find_field(c, t->cls, e->name, e->nlen)) return 0;
+            m = find_method(c, t->cls, e->name, e->nlen);
+            if (!m) return 0;
+            if (m->isStatic) cfail(c, line, "'%.*s' is static; use %s.%.*s", e->nlen, e->name, tname(c, t), e->nlen, e->name);
+            self = 2;
+        }
+    } else return 0;
+    int ok = m->np == ft->np && m->ret == ft->elem;
+    for (int i = 0; ok && i < m->np; i++) ok = m->params[i] == ft->params[i];
+    if (!ok) cfail(c, line, "method '%.*s' does not fit %s (it needs the same parameter types and return type)", m->nlen, m->name, tname(c, ft));
+    c->line = line;
+    if (!self) { op(c, OP_NULL); emit_closure(c, 1, m->func, 0); return 1; }
+    if (self == 1) op1(c, OP_LOAD, 0);
+    else { expr(c, e->a); c->line = line; op1(c, OP_NULLCHK, 0); }
+    if (m->sel >= 0) emit_closure(c, 2, m->sel, 0);
+    else emit_closure(c, 0, m->func, 0);
+    return 1;
+}
+
+/* A lambda becomes a function of its own: slot 0 = the object of the method around it (or null),
+ * then the parameters. Variables from outside are reached through the cells the delegate captured. */
+static void compile_lambda(C* c, Expr* e, Type* ft) {
+    Program* P = c->P;
+    if (e->nparams != ft->np)
+        cfail(c, e->line, "this lambda has %d parameter%s, but %s needs %d", e->nparams, e->nparams == 1 ? "" : "s", tname(c, ft), ft->np);
+    if (P->nfuncs >= P->capfuncs) cfail(c, e->line, "internal error: too many lambdas");
+    int fi = P->nfuncs++;
+    /* the function around it, put back at the end */
+    Func* sfn = c->fn; int sCtor = c->isCtor, sIter = c->isIter, sOp = c->lastOp, sLabel = c->lastLabel, sSlot = c->nextSlot, sLine = c->line;
+    Type* sRet = c->retType; Loop* sLoop = c->loop;
+    int baseLocals = c->nlocals;
+    LamCtx lc; lc.depth = c->fdepth + 1; lc.nup = 0; lc.parent = c->lam;
+    c->lam = &lc; c->fdepth++;
+    c->fn = &P->funcs[fi];
+    snprintf(c->fn->name, sizeof c->fn->name, "%.50s.lambda", sfn->name);
+    c->fn->nparams = ft->np + 1; c->fn->nlocals = 1;
+    c->nextSlot = 1; c->loop = NULL; c->lastOp = -1; c->lastLabel = -1;
+    c->isCtor = 0; c->isIter = 0; c->retType = ft->elem;
+    for (int i = 0; i < e->nparams; i++) {
+        Param* pa = &e->params[i];
+        if (pa->tn && resolve_typenode(c, pa->tn, 0) != ft->params[i])
+            cfail(c, e->line, "parameter '%.*s' of this lambda must be %s", pa->nlen, pa->name, tname(c, ft->params[i]));
+        if (find_local(c, pa->name, pa->nlen) >= 0)
+            cfail(c, e->line, "a variable named '%.*s' already exists here; give the lambda parameter another name", pa->nlen, pa->name);
+        declare_local(c, pa->name, pa->nlen, ft->params[i], e->line);
+    }
+    box_params(c);
+    if (e->body) {
+        stmt(c, e->body);
+        c->line = e->line;
+        op(c, ft->elem->k == T_VOID ? OP_RET : OP_NORET);
+    } else if (ft->elem->k == T_VOID) {
+        expr_stmt(c, e->a);
+        op(c, OP_RET);
+    } else {
+        expr_to(c, e->a, ft->elem, e->a->line, "the lambda's result");
+        op(c, OP_RETV);
+    }
+    c->nlocals = baseLocals; c->fdepth--; c->lam = lc.parent;
+    c->fn = sfn; c->isCtor = sCtor; c->isIter = sIter; c->lastOp = sOp; c->lastLabel = sLabel; c->nextSlot = sSlot;
+    c->retType = sRet; c->loop = sLoop; c->line = sLine;
+    /* in the function around it: self, the captured cells, then the delegate */
+    if (c->curStatic) op(c, OP_NULL); else op1(c, OP_LOAD, 0);
+    for (int k = 0; k < lc.nup; k++) {
+        if (lc.ups[k].from >= 0) op1(c, OP_UPVAL, lc.ups[k].from);
+        else op1(c, OP_LOAD, c->locals[lc.ups[k].li].slot);
+    }
+    emit_closure(c, 0, fi, lc.nup);
+}
+
+/* an expression converted to type t; lambdas and method names need t to know what they are */
+static void expr_to(C* c, Expr* e, Type* t, int line, const char* what) {
+    if (t->k == T_FUNC && e->k == E_LAMBDA) { compile_lambda(c, e, t); return; }
+    if (t->k == T_FUNC && method_group(c, e, t, line)) return;
+    if (e->k == E_LAMBDA) cfail(c, line, "%s: a lambda cannot become %s", what, tname(c, t));
+    coerce(c, expr(c, e), t, line, what);
+}
+
 /* ================= statements ================= */
 static void stmt(C* c, Stmt* s);
+
 
 static void cond_expr(C* c, Expr* e, const char* what) {
     Type* t = expr(c, e);
@@ -1106,7 +1395,7 @@ static void repl_var(C* c, Stmt* s) {
         if (s->tn) {
             t = resolve_typenode(c, s->tn, 0);
             if (old && old != t) cfail(c, s->line, "'%.*s' is already a %s", s->nlen, s->name, tname(c, old));
-            if (s->e) coerce(c, expr(c, s->e), t, s->line, "variable initializer");
+            if (s->e) expr_to(c, s->e, t, s->line, "variable initializer");
             else push_default(c, t);
         } else {
             t = expr(c, s->e);
@@ -1172,7 +1461,7 @@ static void stmt(C* c, Stmt* s) {
             Type* t;
             if (s->tn) {
                 t = resolve_typenode(c, s->tn, 0);
-                if (s->e) coerce(c, expr(c, s->e), t, s->line, "variable initializer");
+                if (s->e) expr_to(c, s->e, t, s->line, "variable initializer");
                 else push_default(c, t);
             } else {
                 t = expr(c, s->e);
@@ -1181,8 +1470,7 @@ static void stmt(C* c, Stmt* s) {
             }
             c->line = s->line;
             int slot = declare_local(c, s->name, s->nlen, t, s->line);
-            op1(c, OP_STORE, slot);
-            emit_pop(c);
+            init_local(c, slot, c->lastBoxed);
           }
           return;
         }
@@ -1278,7 +1566,7 @@ static void stmt(C* c, Stmt* s) {
                 op(c, OP_RET);
             } else {
                 if (!s->e) cfail(c, s->line, "this method must return a %s", tname(c, c->retType));
-                coerce(c, expr(c, s->e), c->retType, s->line, "return value");
+                expr_to(c, s->e, c->retType, s->line, "return value");
                 op(c, OP_RETV);
             }
             return;
@@ -1311,6 +1599,7 @@ static void stmt(C* c, Stmt* s) {
                 op1(c, OP_STORE, coll); emit_pop(c);
                 op1(c, OP_ICONST, 0); op1(c, OP_STORE, idx); emit_pop(c);
                 int kslot = declare_local(c, s->name, s->nlen, ct->kvp, s->line);
+                c->locals[c->nlocals - 1].boxed = 0;          /* two slots; a lambda cannot use it */
                 alloc_temp(c);                                  /* kslot + 1: the value */
                 int start = label(c);
                 op1(c, OP_LOAD, coll); op1(c, OP_LOAD, idx); op1(c, OP_DICT, D_NEXT);
@@ -1336,13 +1625,13 @@ static void stmt(C* c, Stmt* s) {
             int coll = alloc_temp(c), idx = alloc_temp(c);
             op1(c, OP_STORE, coll); emit_pop(c);
             op1(c, OP_ICONST, 0); op1(c, OP_STORE, idx); emit_pop(c);
-            int var = declare_local(c, s->name, s->nlen, vt, s->line);
+            int var = declare_local(c, s->name, s->nlen, vt, s->line), varBoxed = c->lastBoxed;
             int start = label(c);
             op1(c, OP_LOAD, idx); op1(c, OP_LOAD, coll); op(c, OP_ARRLEN); op(c, OP_ILT);
             int jz = jump(c, OP_JZ);
             op1(c, OP_LOAD, coll); op1(c, OP_LOAD, idx); op(c, OP_GETELEM);
             coerce(c, el, vt, s->line, "'foreach' variable");
-            op1(c, OP_STORE, var); emit_pop(c);
+            init_local(c, var, varBoxed);                   /* a new variable each time round, as in C# */
             Loop l; push_loop(c, &l, -1);
             stmt(c, s->body);
             for (int i = 0; i < l.nc; i++) patch(c, l.conts[i]);
@@ -1407,6 +1696,7 @@ static void begin_func(C* c, int func, int cls, const char* mname, int mlen, int
     snprintf(c->fn->name, sizeof c->fn->name, "%.*s.%.*s", c->classes[cls].nlen, c->classes[cls].name, mlen, mname);
     c->cur = cls; c->curStatic = isStatic;
     c->nlocals = 0; c->nextSlot = isStatic ? 0 : 1;
+    c->fdepth = 0; c->lam = NULL; c->caps.n = 0;
     c->fn->nlocals = c->nextSlot;
     c->loop = NULL; c->lastOp = -1; c->lastLabel = -1;
 }
@@ -1416,7 +1706,9 @@ static void compile_method(C* c, int cls, CMethod* m) {
     begin_func(c, m->func, cls, m->name, m->nlen, m->isStatic);
     c->fn->nparams = m->np + (m->isStatic ? 0 : 1);
     c->isCtor = 0; c->retType = m->ret; c->isIter = m->isIter;
+    scan_captures(c, d->body, NULL);
     for (int i = 0; i < m->np; i++) declare_local(c, d->params[i].name, d->params[i].nlen, m->params[i], d->line);
+    box_params(c);
     stmt(c, d->body);
     c->line = d->line;
     if (m->ret->k == T_VOID || m->isIter) op(c, OP_RET); else op(c, OP_NORET);
@@ -1429,14 +1721,16 @@ static void compile_ctor(C* c, int cls) {
     begin_func(c, k->ctorFunc, cls, ".ctor", 5, 0);
     c->fn->nparams = k->ctorNp + 1;
     c->isCtor = 1; c->retType = &tVoid;
+    scan_captures(c, d ? d->body : NULL, d ? d->baseCall : NULL);
     if (d) for (int i = 0; i < d->nparams; i++) declare_local(c, d->params[i].name, d->params[i].nlen, k->ctorParams[i], d->line);
+    box_params(c);
     /* same order as C#: this class's field initializers, then the base constructor, then the body */
     for (int i = 0; i < k->nf; i++) {
         CField* f = &k->fields[i];
         if (f->isStatic || !f->decl->init) continue;
         c->line = f->decl->line;
         op1(c, OP_LOAD, 0);
-        coerce(c, expr(c, f->decl->init), f->type, f->decl->line, "field initializer");
+        expr_to(c, f->decl->init, f->type, f->decl->line, "field initializer");
         op1(c, OP_SETFIELD, f->slot);
         op(c, OP_POP);
     }
@@ -1467,11 +1761,12 @@ static void compile_static_init(C* c, int func) {
         CClass* k = &c->classes[ci];
         if (ci == 0) begin_func(c, func, 0, ".cctor", 6, 1);
         c->cur = ci; c->curStatic = 1; c->isCtor = 0; c->retType = &tVoid;
+        c->caps.n = 0;
         for (int i = 0; i < k->nf; i++) {
             CField* f = &k->fields[i];
             if (!f->isStatic || !f->decl->init) continue;
             c->line = f->decl->line;
-            coerce(c, expr(c, f->decl->init), f->type, f->decl->line, "field initializer");
+            expr_to(c, f->decl->init, f->type, f->decl->line, "field initializer");
             op1(c, OP_SETSTATIC, f->slot);
             op(c, OP_POP);
         }
@@ -1559,7 +1854,7 @@ static void collect(C* c, ProgramAST* ast) {
         k->type->isa = isa;
     }
 
-    int nfuncs = 1;  /* static init */
+    int nfuncs = 1 + ast->nlambdas;  /* static init, lambdas */
     for (int i = 0; i < nc; i++) nfuncs += 1 + ast->classes[i].nmethods;
     P->funcs = (Func*)calloc(nfuncs, sizeof(Func));
     P->capfuncs = nfuncs;

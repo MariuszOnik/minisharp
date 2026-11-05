@@ -175,7 +175,11 @@ Token* ms_lex(ParseCtx* c, const char* src, int* ntok) {
             TWO('/', '=', TK_SLASHEQ, TK_SLASH)
             TWO('%', '=', TK_PERCENTEQ, TK_PERCENT)
             TWO('!', '=', TK_NE, TK_BANG)
-            TWO('=', '=', TK_EQ, TK_ASSIGN)
+            case '=':
+                if (p[1] == '=') { t->kind = TK_EQ; p += 2; }
+                else if (p[1] == '>') { t->kind = TK_ARROW; p += 2; }
+                else { t->kind = TK_ASSIGN; p++; }
+                break;
             TWO('>', '=', TK_GE, TK_GT)         /* '>>' stays two tokens so List<List<int>> works */
             TWO('^', '=', TK_CARETEQ, TK_CARET)
             case '<':
@@ -200,7 +204,7 @@ Token* ms_lex(ParseCtx* c, const char* src, int* ntok) {
 }
 
 /* ================= parser ================= */
-typedef struct { ParseCtx* c; Token* t; int pos, n; int sawYield, inInterface; } P;
+typedef struct { ParseCtx* c; Token* t; int pos, n; int sawYield, inInterface, nlambdas; } P;
 
 static Token* peek(P* p) { return &p->t[p->pos]; }
 static Token* peekn(P* p, int k) { int i = p->pos + k; return &p->t[i < p->n ? i : p->n - 1]; }
@@ -238,13 +242,21 @@ static int is_type_kw(int k) { return k == TK_KINT || k == TK_KFLOAT || k == TK_
 
 static TypeNode* parse_type(P* p);
 
+/* <A, B, ...> after a generic type's name (the '<' is already read) */
+static void parse_type_args(P* p, TypeNode* tn) {
+    int cap = 0;
+    do {
+        tn->args = (TypeNode**)arena_grow(p->c->A, tn->args, tn->nargs, &cap, sizeof(TypeNode*));
+        tn->args[tn->nargs++] = parse_type(p);
+    } while (accept(p, TK_COMMA));
+    expect(p, TK_GT);
+    tn->arg = tn->args[0];
+    tn->arg2 = tn->nargs > 1 ? tn->args[1] : NULL;
+}
+
 /* after a type name: <T> (generic argument) and [] pairs */
 static void parse_type_suffix(P* p, TypeNode* tn) {
-    if (tn->base == TK_IDENT && accept(p, TK_LT)) {
-        tn->arg = parse_type(p);
-        if (accept(p, TK_COMMA)) tn->arg2 = parse_type(p);
-        expect(p, TK_GT);
-    }
+    if (tn->base == TK_IDENT && accept(p, TK_LT)) parse_type_args(p, tn);
     while (at(p, TK_LBRACK) && peekn(p, 1)->kind == TK_RBRACK) { p->pos += 2; tn->dims++; }
 }
 
@@ -265,7 +277,7 @@ static int skip_type(P* p, int i) {
     i++;
     if (k == TK_IDENT && p->t[i].kind == TK_LT) {
         i = skip_type(p, i + 1);
-        if (i >= 0 && p->t[i].kind == TK_COMMA) i = skip_type(p, i + 1);
+        while (i >= 0 && p->t[i].kind == TK_COMMA) i = skip_type(p, i + 1);
         if (i < 0 || p->t[i].kind != TK_GT) return -1;
         i++;
     }
@@ -353,9 +365,8 @@ static Expr* parse_new(P* p, int line) {
     if (t->kind == TK_IDENT && at(p, TK_LT)) {
         /* new List<T>(), new List<T>(capacity), new List<T> { a, b } */
         next(p);
-        tn->arg = parse_type(p);
-        if (accept(p, TK_COMMA)) tn->arg2 = parse_type(p);
-        expect(p, TK_GT);
+        parse_type_args(p, tn);
+        if (at(p, TK_LBRACK)) goto array;       /* new List<int>[4], new Func<int, int>[] { ... } */
         Expr* e = mkexpr(p, E_NEWLIST, line);
         e->tn = tn;
         if (at(p, TK_LPAREN)) {
@@ -394,6 +405,7 @@ static Expr* parse_new(P* p, int line) {
         return e;
     }
     if (!at(p, TK_LBRACK)) fail(p->c, line, "expected '(' or '[' after 'new %.*s'", t->len, t->start);
+array:;
     Expr* e = mkexpr(p, E_NEWARR, line);
     e->tn = tn;                        /* tn->dims = extra dimensions of the element type */
     next(p);
@@ -589,7 +601,59 @@ static Expr* parse_ternary(P* p) {
     return cond;
 }
 
+static Stmt* parse_block(P* p);
+
+/* x => ..., (x, y) => ..., (int x) => ..., () => ...; the body is an expression or a block */
+static Expr* parse_lambda(P* p) {
+    Token* t = peek(p);
+    Expr* e = mkexpr(p, E_LAMBDA, t->line);
+    int cap = 0;
+    if (accept(p, TK_IDENT)) {
+        e->params = (Param*)arena_grow(p->c->A, e->params, 0, &cap, sizeof(Param));
+        e->params[0].name = t->start; e->params[0].nlen = t->len;
+        e->nparams = 1;
+    } else {
+        expect(p, TK_LPAREN);
+        if (!at(p, TK_RPAREN)) {
+            do {
+                e->params = (Param*)arena_grow(p->c->A, e->params, e->nparams, &cap, sizeof(Param));
+                Param* pa = &e->params[e->nparams++];
+                memset(pa, 0, sizeof *pa);
+                if (looks_like_decl(p)) pa->tn = parse_type(p);
+                Token* id = expect(p, TK_IDENT);
+                pa->name = id->start; pa->nlen = id->len;
+            } while (accept(p, TK_COMMA));
+        }
+        expect(p, TK_RPAREN);
+    }
+    expect(p, TK_ARROW);
+    p->nlambdas++;
+    if (at(p, TK_LBRACE)) {
+        int saw = p->sawYield;
+        p->sawYield = 0;
+        e->body = parse_block(p);
+        if (p->sawYield) fail(p->c, t->line, "a lambda cannot use 'yield'");
+        p->sawYield = saw;
+    } else e->a = parse_expr(p);
+    return e;
+}
+
+/* does a lambda start here? */
+static int at_lambda(P* p) {
+    if (at(p, TK_IDENT)) return peekn(p, 1)->kind == TK_ARROW;
+    if (!at(p, TK_LPAREN)) return 0;
+    int d = 0;
+    for (int i = p->pos; i < p->n; i++) {
+        int k = p->t[i].kind;
+        if (k == TK_LPAREN) d++;
+        else if (k == TK_RPAREN && --d == 0) return i + 1 < p->n && p->t[i + 1].kind == TK_ARROW;
+        else if (k == TK_SEMI || k == TK_LBRACE || k == TK_RBRACE || k == TK_EOF) return 0;
+    }
+    return 0;
+}
+
 static Expr* parse_expr(P* p) {
+    if (at_lambda(p)) return parse_lambda(p);
     Expr* left = parse_ternary(p);
     int ntok, k = optok(p, &ntok);
     if (k == TK_ASSIGN || k == TK_PLUSEQ || k == TK_MINUSEQ || k == TK_STAREQ || k == TK_SLASHEQ || k == TK_PERCENTEQ ||
@@ -883,7 +947,7 @@ static void parse_class(P* p, ClassDecl* cd) {
 }
 
 ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
-    P p = { c, toks, 0, ntok, 0, 0 };
+    P p = { c, toks, 0, ntok, 0, 0, 0 };
     ProgramAST* prog = (ProgramAST*)arena_alloc(c->A, sizeof(ProgramAST));
     int cap = 0, nsDepth = 0;
     while (!at(&p, TK_EOF)) {
@@ -916,5 +980,6 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
         parse_class(&p, cd);
     }
     if (nsDepth > 0) fail(c, peek(&p)->line, "expected '}' to close the namespace but reached end of file");
+    prog->nlambdas = p.nlambdas;
     return prog;
 }

@@ -117,6 +117,7 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 - **Dziedziczenie i interfejsy:** `class Boss : Wrog, IRaniony`, `abstract class`, metody `virtual` / `override` / `abstract`, `base.Metoda()`, konstruktor `: base(...)`, `interface` (także `interface IB : IA`), `public override string ToString()` (używane przez `Console.WriteLine(obj)` i `"..." + obj`), `x is Boss`, `x is Boss b`, `x is null`, `x is not Boss`, `x as Boss`, rzutowanie `(Boss)x` (błąd wykonania, gdy obiekt nie jest Bossem). Kolejność konstruktorów i pól jak w .NET (test `tests/inherit.cs` daje identyczny wynik).
 - **Instrukcje:** `if`/`else`, `while`, `do`/`while`, `for`, `foreach` (tablice, listy, stringi), `switch` (int, char, string, bool; `case 1: case 2:`, `default`), `break`, `continue`, `return`, bloki, `var`, `int a = 1, b = 2;`.
 - **Wyrażenia:** `+ - * / %`, `== != < <= > >=`, `&& || !`, bitowe `& | ^ ~ << >>`, `? :`, `= += -= *= /= %= &= |= ^= <<= >>=`, `++ --` (przed i po), rzutowania `(int)` / `(float)` / `(char)` / `(Klasa)`, `is`, `as`.
+- **Lambdy i delegaty:** `Func<...>`, `Action<...>`, `Predicate<T>`, `Comparison<T>`; `x => x * 2`, `(a, b) => a + b`, `(int x) => { ... }`, `() => ...`; nazwa metody jako delegat (`Func<int, int> f = Kwadrat;`, `Action a = obiekt.Metoda;`, także wirtualna); wywołanie `f(1)` i `f.Invoke(1)`; pola, tablice i listy delegatów; domknięcia jak w C# (lambda dzieli zmienne z metodą, `foreach` daje nową zmienną w każdym obrocie, `for` jedną). Test `tests/lambdas.cs` daje wynik identyczny z .NET.
 - **Stringi:** łączenie `+` z dowolnym typem (`"x=" + x`), `.Length`, `s[i]` (char), porównanie `==`, `Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower Trim Replace Split`, `string.IsNullOrEmpty`, `x.ToString()`.
 - **char:** literały `'A'`, `'\n'`; `char.IsDigit IsLetter IsWhiteSpace ToUpper ToLower`; `c + 1` daje `int`, `c++` zostaje `char` (jak w C#). Znaki są 8-bitowe (ASCII), polskie litery w stringach liczą się jako kilka znaków.
 - **Liczby:** `int.Parse(s)`, `float.Parse(s)`, `int.MaxValue`, `int.MinValue`.
@@ -151,7 +152,7 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 
 ### Czego jeszcze nie ma (pomysły na kolejne wersje)
-- lambdy, `Func`/`Action`, metody `List` z predykatami (`Find`, `RemoveAll`, `Sort`...), mini Linq,
+- metody `List` z predykatami (`Find`, `RemoveAll`, `Sort`...), mini Linq, `?.` (np. `onSmierc?.Invoke()`), `+=` na delegatach,
 - `switch` na typach (`case Boss b:`), ukrywanie metod (`new`), `protected` sprawdzane przez kompilator,
 - przeciążanie własnych metod, wiele konstruktorów,
 - własne generyki, `long`, `out` poza `TryGetValue`,
@@ -164,6 +165,7 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 1. ~~Workflow w VS Code (IntelliSense, sprawdzanie, wysyłanie przez FTP, log z konsoli)~~
 2. ~~Język: `foreach`, `switch`, `List<T>`, operatory bitowe, `char` i operacje na stringach~~ (test `tests/features2.cs` daje wynik identyczny z .NET)
    - ~~2b. `Mathf` w stylu Unity, korutyny, `Dictionary<K,V>`~~ (testy `tests/coroutines.cs` i `tests/dict.cs` dają to samo co prawdziwy .NET)
+   - 2d. Język, wersja 3 (po kolei): ~~dziedziczenie i interfejsy~~, ~~lambdy, `Func`/`Action`, domknięcia~~; dalej `?.` i `+=` na delegatach (zdarzenia), metody `List` z predykatami (`Find FindAll FindIndex Exists RemoveAll ForEach Sort TrueForAll`), mini Linq (zachłanny: `Where Select OrderBy OrderByDescending First FirstOrDefault Any All Count Sum Min Max ToList`); mniejsze: `enum`, właściwości `get`/`set`, interpolacja `$"..."`, `switch` na typach (`case Boss b:`), przeciążanie metod i wiele konstruktorów.
    - 2c. Debug przez Wi-Fi: VS Code wysyła kod do działającej aplikacji (bez zamykania, kompilacja i start od razu), `Console` i błędy na żywo w terminalu VS Code, później komendy (stop, restart, podgląd/zmiana zmiennych).
 3. Podgląd na PC w oknie na żywo (sterowanie klawiaturą/myszą, ta sama czcionka co na 3DS).
 4. ~~Sprite'y z PNG i dźwięk~~ (przykład `examples/sprites.cs`; Ctrl+Shift+B wysyła też obrazki i dźwięki leżące obok programu). Później: OGG/muzyka strumieniowa, sprite batching.

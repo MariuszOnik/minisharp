@@ -15,6 +15,8 @@ static size_t obj_size(Obj* o) {
         case O_LIST: return sizeof(ObjList) + sizeof(Value) * ((ObjList*)o)->cap;
         case O_CORO: return sizeof(ObjCoro) + sizeof(Value) * ((ObjCoro*)o)->nlocals;
         case O_DICT: return sizeof(ObjDict) + sizeof(DictEntry) * ((ObjDict*)o)->cap + sizeof(int32_t) * ((ObjDict*)o)->icap;
+        case O_CELL: return sizeof(ObjCell);
+        case O_CLOSURE: return sizeof(ObjClosure) + sizeof(Value) * ((ObjClosure*)o)->nup;
         default: return sizeof(ObjInstance) + sizeof(Value) * ((ObjInstance*)o)->nfields;
     }
 }
@@ -44,6 +46,8 @@ static void collect(VM* vm) {
     for (int i = 0; i < vm->sp; i++) mark_value(vm, vm->stack[i]);
     for (int i = 0; i < vm->p->nstatics; i++) mark_value(vm, vm->statics[i]);
     for (int i = 0; i < vm->ncoros; i++) { Value v; v.t = V_OBJ; v.as.o = (Obj*)vm->coros[i]; mark_value(vm, v); }
+    for (int i = 0; i < vm->fp; i++)
+        if (vm->frames[i].clo) { Value v; v.t = V_OBJ; v.as.o = vm->frames[i].clo; mark_value(vm, v); }
     while (vm->ngray > 0) {
         Obj* o = vm->gray[--vm->ngray];
         if (o->type == O_ARRAY) {
@@ -56,6 +60,12 @@ static void collect(VM* vm) {
             ObjDict* d = (ObjDict*)o;
             for (int i = 0; i < d->used; i++)
                 if (d->entries[i].live) { mark_value(vm, d->entries[i].key); mark_value(vm, d->entries[i].val); }
+        } else if (o->type == O_CELL) {
+            mark_value(vm, ((ObjCell*)o)->v);
+        } else if (o->type == O_CLOSURE) {
+            ObjClosure* cl = (ObjClosure*)o;
+            mark_value(vm, cl->self);
+            for (int i = 0; i < cl->nup; i++) mark_value(vm, cl->ups[i]);
         } else if (o->type == O_CORO) {
             ObjCoro* co = (ObjCoro*)o;
             for (int i = 0; i < co->nlocals; i++) mark_value(vm, co->locals[i]);
@@ -143,6 +153,7 @@ void ms_value_to_text(VM* vm, Value v, char* buf, int n) {
             else if (o->type == O_LIST) snprintf(buf, n, "List[%d]", (int)((ObjList*)o)->len);
             else if (o->type == O_DICT) snprintf(buf, n, "Dictionary[%d]", (int)((ObjDict*)o)->count);
             else if (o->type == O_CORO) snprintf(buf, n, "Coroutine");
+            else if (o->type == O_CLOSURE) snprintf(buf, n, "Delegate");
             else snprintf(buf, n, "%s", vm->p->classes[((ObjInstance*)o)->cls].name);
         }
     }
@@ -321,7 +332,7 @@ int vm_call(VM* vm, int func) {
     int startFp = vm->fp;
     if (vm->fp >= MS_FRAMES) { snprintf(vm->err, sizeof vm->err, "call stack overflow"); return 0; }
     Frame* fr = &vm->frames[vm->fp++];
-    fr->f = &P->funcs[func]; fr->ip = 0; fr->base = vm->sp;
+    fr->f = &P->funcs[func]; fr->ip = 0; fr->base = vm->sp; fr->clo = NULL;
     for (int i = 0; i < fr->f->nlocals; i++) { vm->stack[vm->sp + i].t = V_NULL; vm->stack[vm->sp + i].as.o = NULL; }
     vm->sp += fr->f->nlocals;
     return vm_run(vm, startFp);
@@ -343,7 +354,7 @@ static int coro_resume(VM* vm, ObjCoro* co) {
     if (vm->fp >= MS_FRAMES || vm->sp + co->nlocals + 512 >= MS_STACK) { snprintf(vm->err, sizeof vm->err, "stack overflow (coroutine)"); return 0; }
     int startFp = vm->fp;
     Frame* fr = &vm->frames[vm->fp++];
-    fr->f = f; fr->ip = co->ip; fr->base = vm->sp;
+    fr->f = f; fr->ip = co->ip; fr->base = vm->sp; fr->clo = NULL;
     memcpy(vm->stack + vm->sp, co->locals, sizeof(Value) * (size_t)co->nlocals);
     vm->sp += co->nlocals;
     ObjCoro* prev = vm->curCoro;
@@ -537,7 +548,7 @@ static int vm_run(VM* vm, int startFp) {
                     if (vm->fp >= MS_FRAMES) FAIL("stack overflow (too much recursion?)");
                     int top = vm->fp;
                     Frame* nf = &vm->frames[vm->fp++];
-                    nf->f = &P->funcs[f]; nf->ip = 0; nf->base = vm->sp - 1;
+                    nf->f = &P->funcs[f]; nf->ip = 0; nf->base = vm->sp - 1; nf->clo = NULL;
                     for (int i = 1; i < nf->f->nlocals; i++) { stack[nf->base + i].t = V_NULL; stack[nf->base + i].as.o = NULL; }
                     vm->sp = nf->base + nf->f->nlocals;
                     if (vm->sp + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
@@ -602,7 +613,58 @@ static int vm_run(VM* vm, int startFp) {
                 if (base + nf->nlocals + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
                 for (int i = argc; i < nf->nlocals; i++) { stack[base + i].t = V_NULL; stack[base + i].as.o = NULL; }
                 fr = &vm->frames[vm->fp++];
-                fr->f = nf; fr->ip = 0; fr->base = base;
+                fr->f = nf; fr->ip = 0; fr->base = base; fr->clo = NULL;
+                sp = stack + base + nf->nlocals;
+                bp = stack + base;
+                code = nf->code; ip = 0;
+                break;
+            }
+            case OP_BOX: {
+                SYNC();
+                ObjCell* cell = (ObjCell*)alloc_obj(vm, sizeof(ObjCell), O_CELL);
+                if (!cell) FAIL("out of memory");
+                cell->v = sp[-1];
+                sp[-1].t = V_OBJ; sp[-1].as.o = (Obj*)cell;
+                break;
+            }
+            case OP_GETCELL: sp[-1] = ((ObjCell*)sp[-1].as.o)->v; break;
+            case OP_SETCELL: ((ObjCell*)sp[-2].as.o)->v = sp[-1]; sp[-2] = sp[-1]; sp--; break;
+            case OP_UPVAL: *sp++ = ((ObjClosure*)fr->clo)->ups[ARG()]; break;
+            case OP_CLOSURE: {
+                int kind = ARG(); int idx = ARG(); int nup = ARG();
+                Value self = sp[-nup - 1];
+                if (kind == 2) {            /* virtual method: the object picks the function now */
+                    if (self.t != V_OBJ) FAIL("null reference (making a delegate of a method of null)");
+                    idx = P->classes[INST(self)->cls].vtable[idx];
+                }
+                SYNC();
+                ObjClosure* cl = (ObjClosure*)alloc_obj(vm, sizeof(ObjClosure) + sizeof(Value) * nup, O_CLOSURE);
+                if (!cl) FAIL("out of memory");
+                cl->func = idx; cl->kind = kind == 1 ? CL_STATIC : CL_SELF; cl->nup = nup;
+                cl->self = sp[-nup - 1];
+                for (int i = 0; i < nup; i++) cl->ups[i] = sp[i - nup];
+                sp -= nup;
+                sp[-1].t = V_OBJ; sp[-1].as.o = (Obj*)cl;
+                break;
+            }
+            case OP_CALLF: {
+                int argc = ARG();
+                Value cv = sp[-argc - 1];
+                if (cv.t != V_OBJ) FAIL("null reference (calling a delegate that is null)");
+                ObjClosure* cl = (ObjClosure*)cv.as.o;
+                int n = argc;
+                if (cl->kind == CL_STATIC) { memmove(sp - argc - 1, sp - argc, sizeof(Value) * (size_t)argc); sp--; }
+                else { sp[-argc - 1] = cl->self; n = argc + 1; }
+                int fidx = cl->func;
+                if (P->funcs[fidx].isIter) { SYNC(); if (!coro_new(vm, fidx, n, &sp)) FAIL("out of memory"); break; }
+                Func* nf = &P->funcs[fidx];
+                SYNC();
+                if (vm->fp >= MS_FRAMES) FAIL("stack overflow (too much recursion?)");
+                int base = (int)(sp - stack) - n;
+                if (base + nf->nlocals + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
+                for (int i = n; i < nf->nlocals; i++) { stack[base + i].t = V_NULL; stack[base + i].as.o = NULL; }
+                fr = &vm->frames[vm->fp++];
+                fr->f = nf; fr->ip = 0; fr->base = base; fr->clo = (Obj*)cl;
                 sp = stack + base + nf->nlocals;
                 bp = stack + base;
                 code = nf->code; ip = 0;
@@ -627,7 +689,7 @@ static int vm_run(VM* vm, int startFp) {
                 if (base + nf->nlocals + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
                 for (int i = argc; i < nf->nlocals; i++) { stack[base + i].t = V_NULL; stack[base + i].as.o = NULL; }
                 fr = &vm->frames[vm->fp++];
-                fr->f = nf; fr->ip = 0; fr->base = base;
+                fr->f = nf; fr->ip = 0; fr->base = base; fr->clo = NULL;
                 sp = stack + base + nf->nlocals;
                 bp = stack + base;
                 code = nf->code; ip = 0;

@@ -28,13 +28,18 @@ enum {
     TK_AMP, TK_PIPE, TK_CARET, TK_TILDE, TK_SHL, TK_AMPEQ, TK_PIPEEQ, TK_CARETEQ, TK_SHLEQ,
     TK_SHR, TK_SHREQ,                   /* never made by the lexer: the parser joins '>' '>' (see optok) */
     TK_OUT,
-    TK_ABSTRACT, TK_VIRTUAL, TK_OVERRIDE, TK_SEALED, TK_INTERFACE, TK_BASE, TK_IS, TK_AS
+    TK_ABSTRACT, TK_VIRTUAL, TK_OVERRIDE, TK_SEALED, TK_INTERFACE, TK_BASE, TK_IS, TK_AS,
+    TK_ARROW                            /* => */
 };
 
 typedef struct { int kind; const char* start; int len; int line; int32_t ival; float fval; } Token;
 
 /* ---------- AST ---------- */
-typedef struct TypeNode { int base; const char* name; int nlen; int dims; int line; struct TypeNode *arg, *arg2; } TypeNode;  /* List<arg>, Dictionary<arg, arg2> */
+typedef struct TypeNode {
+    int base; const char* name; int nlen; int dims; int line;
+    struct TypeNode *arg, *arg2;        /* List<arg>, Dictionary<arg, arg2> */
+    struct TypeNode** args; int nargs;  /* all type arguments: Func<int, int, bool> */
+} TypeNode;
 
 enum {
     E_INT, E_FLOAT, E_BOOL, E_STRING, E_NULL, E_NAME, E_THIS,
@@ -44,7 +49,8 @@ enum {
     E_PAIR,                         /* dictionary initializer item: {a, b}, or [a] = b when prefix is set */
     E_OUT,                          /* 'out x' (a = target) or 'out var x' / 'out T x' (prefix = 1, tn = type or NULL, name) */
     E_BASE,                         /* 'base' (only as base.Member) */
-    E_IS, E_AS                      /* a is T [name] / a as T: tn = type (NULL: 'is null'), name = pattern variable; op = 1 for 'is not' */
+    E_IS, E_AS,                     /* a is T [name] / a as T: tn = type (NULL: 'is null'), name = pattern variable; op = 1 for 'is not' */
+    E_LAMBDA                        /* params / nparams (tn NULL if not written), body (block) or a (expression) */
 };
 
 typedef struct Expr Expr;
@@ -56,6 +62,7 @@ struct Expr {
     Expr** args; int nargs;
     TypeNode* tn;
     int prefix;                     /* ++x vs x++ ; for E_NEWARR: has initializer list */
+    struct Param* params; int nparams; struct Stmt* body;      /* E_LAMBDA */
 };
 
 enum { S_BLOCK, S_VAR, S_EXPR, S_IF, S_WHILE, S_DO, S_FOR, S_RETURN, S_BREAK, S_CONTINUE,
@@ -72,7 +79,7 @@ struct Stmt {
     Expr** labels; int nlabels; int isDefault;
 };
 
-typedef struct { TypeNode* tn; const char* name; int nlen; } Param;
+typedef struct Param { TypeNode* tn; const char* name; int nlen; } Param;
 enum { MK_NONE, MK_VIRTUAL, MK_OVERRIDE, MK_ABSTRACT };
 typedef struct {
     int line, isStatic, isCtor, isIter;     /* isIter: the body uses 'yield' */
@@ -90,7 +97,7 @@ typedef struct {
     FieldDecl* fields; int nfields;
     MethodDecl* methods; int nmethods;
 } ClassDecl;
-typedef struct { ClassDecl* classes; int nclasses; } ProgramAST;
+typedef struct { ClassDecl* classes; int nclasses; int nlambdas; } ProgramAST;
 
 /* ---------- front end ---------- */
 typedef struct {

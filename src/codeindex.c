@@ -457,6 +457,7 @@ void ci_member_names(const CodeIndex* ci, const char* type, char* out, int cap) 
     if (!strncmp(type, "List<", 5)) { ADD("Add Count RemoveAt Clear Contains IndexOf Insert Remove AddRange"); return; }
     if (!strncmp(type, "Dictionary<", 11)) { ADD("ContainsKey TryGetValue Add Remove Count Keys Values Clear ContainsValue"); return; }
     if (!strncmp(type, "KeyValuePair<", 13)) { ADD("Key Value"); return; }
+    if (!strncmp(type, "Func<", 5) || !strncmp(type, "Action", 6) || !strncmp(type, "Predicate<", 10) || !strncmp(type, "Comparison<", 11)) { ADD("Invoke"); return; }
     int tl = (int)strlen(type);
     if (tl > 2 && !strcmp(type + tl - 2, "[]")) { ADD("Length"); return; }
     if (!strcmp(type, "string")) ADD("Length");

@@ -85,6 +85,23 @@ Boss b2 = w as Boss;             // Boss albo null
 Boss b3 = (Boss)w;               // rzutowanie: błąd, jeśli w nie jest Bossem
 if (w is null) ...   if (w is not Boss) ...
 
+## Lambdy
+Lambda to funkcja bez nazwy, którą można trzymać w zmiennej i przekazać dalej.
+Func<int, int> razy2 = x => x * 2;           // bierze int, zwraca int
+Func<int, int, int> suma = (a, b) => a + b;   // ostatni typ to wynik
+Action hej = () => Console.WriteLine("hej"); // Action: nic nie zwraca
+Action<string> pisz = s => { Console.WriteLine(s); };
+razy2(5)   suma(2, 3)   hej()   pisz.Invoke("x")
+Predicate<int> parzysta = n => n % 2 == 0;    // to samo co Func<int, bool>
+Comparison<string> krotsze = (a, b) => a.Length - b.Length;
+Func<int, int> f = Kwadrat;     // nazwa metody też jest funkcją
+Action klik = przycisk.Klik;    // metoda konkretnego obiektu
+Lambda widzi zmienne dookoła i dzieli je z metodą (domknięcie):
+int licznik = 0;
+Action dodaj = () => licznik++;
+dodaj(); dodaj();               // licznik == 2
+Pole typu Action działa jak zdarzenie: public Action onSmierc; ... if (onSmierc != null) onSmierc();
+
 ## List<T>
 var l = new List<int>(); l.Add(5); l[0]; l.Count
 Metody: Add AddRange Insert Remove RemoveAt Clear Contains IndexOf

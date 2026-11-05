@@ -1,0 +1,1 @@
+compile error: line 1: only assignments, calls, ++/-- and 'new' can be used as a statement

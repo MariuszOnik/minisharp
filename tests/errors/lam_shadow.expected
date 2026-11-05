@@ -1,0 +1,1 @@
+compile error: line 1: a variable named 'x' already exists here; give the lambda parameter another name

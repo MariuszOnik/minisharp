@@ -30,6 +30,8 @@ static const struct { const char* name; int nargs; } ops[] = {
     [OP_ISHR] = {"ISHR", 0}, [OP_INOT] = {"INOT", 0}, [OP_I2C] = {"I2C", 0}, [OP_C2I] = {"C2I", 1},
     [OP_LIST] = {"LIST", 1}, [OP_CORO_NEW] = {"CORO_NEW", 2}, [OP_YIELD] = {"YIELD", 1}, [OP_CORO] = {"CORO", 1}, [OP_DICT] = {"DICT", 1},
     [OP_CALLV] = {"CALLV", 2}, [OP_ISINST] = {"ISINST", 2},
+    [OP_BOX] = {"BOX", 0}, [OP_GETCELL] = {"GETCELL", 0}, [OP_SETCELL] = {"SETCELL", 0}, [OP_UPVAL] = {"UPVAL", 1},
+    [OP_CLOSURE] = {"CLOSURE", 3}, [OP_CALLF] = {"CALLF", 1},
 };
 
 void ms_disassemble(Program* p) {

@@ -1,0 +1,1 @@
+compile error: line 1: a lambda needs a known type here, e.g. Func<int, int> f = x => x * 2;

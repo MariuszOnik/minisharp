@@ -14,7 +14,7 @@ typedef struct {
     union { int32_t i; float f; Obj* o; } as;
 } Value;
 
-enum { O_STRING, O_ARRAY, O_INSTANCE, O_LIST, O_CORO, O_DICT };
+enum { O_STRING, O_ARRAY, O_INSTANCE, O_LIST, O_CORO, O_DICT, O_CELL, O_CLOSURE };
 struct Obj { uint8_t type, marked, pinned; Obj* next; };
 typedef struct { Obj h; int32_t len; char chars[]; } ObjString;
 typedef struct { Obj h; int32_t len; Value items[]; } ObjArray;
@@ -29,6 +29,13 @@ typedef struct {
     int32_t count, used, cap, icap, ntomb, freeList, freeCount;
     DictEntry* entries; int32_t* index;
 } ObjDict;
+
+/* A local variable that a lambda uses lives in a cell, so the method and the lambda share it. */
+typedef struct { Obj h; Value v; } ObjCell;
+/* A delegate (Func / Action): a lambda with its captured cells, or a method with its object.
+ * Calling it puts 'self' in slot 0 (CL_SELF) or drops that slot (CL_STATIC, a static method). */
+enum { CL_SELF, CL_STATIC };
+typedef struct { Obj h; int32_t func; uint8_t kind; int32_t nup; Value self; Value ups[]; } ObjClosure;
 
 /* A coroutine (IEnumerator). 'yield' is only allowed as a statement in the iterator method itself,
  * so its whole state is the method's locals plus the resume position. */
@@ -45,7 +52,8 @@ typedef struct {
 /* ---------- static types (used by compiler and native signatures) ---------- */
 enum { T_VOID, T_INT, T_FLOAT, T_BOOL, T_STRING, T_NULL, T_CLASS, T_ARRAY, T_ANY, T_CHAR, T_LIST,
        T_STRARR /* string[], only in native signatures */, T_CORO /* IEnumerator / Coroutine */,
-       T_DICT, T_KVP /* Dictionary<K,V> and the KeyValuePair<K,V> of its foreach */ };
+       T_DICT, T_KVP /* Dictionary<K,V> and the KeyValuePair<K,V> of its foreach */,
+       T_FUNC /* Func<...> / Action<...> / Predicate<T> / Comparison<T> */ };
 
 /* ---------- bytecode ---------- */
 enum {
@@ -69,7 +77,12 @@ enum {
     OP_CORO,                            /* C_* sub-op */
     OP_DICT,                            /* D_* sub-op, | default-value kind << 8 for D_TRYGET */
     OP_CALLV,                           /* selector, argc (with 'this'): virtual / interface call through the object's vtable */
-    OP_ISINST                           /* class, mode: 0 'is' (bool), 1 'as' (object or null), 2 cast (fails if not one) */
+    OP_ISINST,                          /* class, mode: 0 'is' (bool), 1 'as' (object or null), 2 cast (fails if not one) */
+    OP_BOX, OP_GETCELL, OP_SETCELL,     /* value -> new cell; cell -> value; cell value -> value */
+    OP_UPVAL,                           /* k: push captured cell k of the running lambda */
+    OP_CLOSURE,                         /* kind (0 lambda / method, 1 static method, 2 virtual: idx = selector), idx, nup:
+                                           self, cells... -> delegate */
+    OP_CALLF                            /* argc: delegate, args... -> call it */
 };
 enum { D_NEW, D_ADD, D_REMOVE, D_CONTAINS, D_CONTAINSVAL, D_CLEAR, D_TRYGET, D_KEYS, D_VALUES, D_NEXT, D_KEYAT, D_VALAT };
 enum { Y_NEXT, Y_SECONDS, Y_CORO };
@@ -104,7 +117,7 @@ typedef struct {
 #define MS_STACK  8192
 #define MS_FRAMES 256
 
-typedef struct { Func* f; int ip; int base; } Frame;
+typedef struct { Func* f; int ip; int base; Obj* clo; } Frame;    /* clo: the delegate being run, for OP_UPVAL */
 
 typedef struct VM {
     Program* p;
