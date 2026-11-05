@@ -64,7 +64,8 @@ static const char* KEYWORDS[] = {
     "class", "static", "public", "private", "void", "int", "float", "double", "bool", "char", "string",
     "var", "new", "return", "if", "else", "for", "foreach", "in", "while", "do", "switch", "case",
     "default", "break", "continue", "true", "false", "null", "this", "const", "using", "namespace",
-    "yield", "out", NULL
+    "yield", "out", "interface", "abstract", "virtual", "override", "sealed", "base", "is", "as",
+    "protected", "readonly", NULL
 };
 
 static int isword(int c) { return isalnum(c) || c == '_'; }

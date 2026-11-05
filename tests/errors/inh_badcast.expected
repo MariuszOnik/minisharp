@@ -1,0 +1,1 @@
+compile error: line 1: cannot convert A to B (neither derives from the other)

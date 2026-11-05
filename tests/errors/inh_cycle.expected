@@ -1,0 +1,1 @@
+compile error: line 1: 'A' derives from itself (a cycle of base classes)

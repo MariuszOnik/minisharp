@@ -15,19 +15,26 @@ struct Type {
     Type* key;                      /* Dictionary and KeyValuePair: key type */
     Type* arr; Type* list;          /* cached T[] and List<T> */
     Type* kvp; Type* next;          /* Dictionary: its KeyValuePair type; next Dictionary type in C.dicts */
+    uint8_t* isa;                   /* class / interface: isa[k] = 1 if it can be used as class k (itself, bases, interfaces) */
 };
 
 static Type tVoid = {.k = T_VOID}, tInt = {.k = T_INT}, tFloat = {.k = T_FLOAT}, tBool = {.k = T_BOOL}, tString = {.k = T_STRING},
             tNull = {.k = T_NULL}, tAny = {.k = T_ANY}, tChar = {.k = T_CHAR}, tCoro = {.k = T_CORO};
 
 typedef struct { const char* name; int nlen; Type* type; int isStatic; int slot; FieldDecl* decl; } CField;
-typedef struct { const char* name; int nlen; int isStatic, isIter; Type* ret; Type** params; int np; int func; MethodDecl* decl; } CMethod;
+/* sel >= 0: virtual, abstract, override or interface method, called through the class's vtable[sel];
+ * func < 0: abstract (no body) */
+typedef struct { const char* name; int nlen; int isStatic, isIter; Type* ret; Type** params; int np; int func, sel, owner; MethodDecl* decl; } CMethod;
 typedef struct {
     const char* name; int nlen; Type* type;
-    CField* fields; int nf; int ninst;
-    CMethod* methods; int nm;
+    CField* fields; int nf; int ninst;          /* own fields; ninst counts the inherited ones too */
+    CMethod* methods; int nm;                   /* own methods */
     int ctorFunc; MethodDecl* ctor; Type** ctorParams; int ctorNp;
     ClassDecl* decl;
+    int base;                                   /* base class or -1 */
+    int* ifaces; int nifaces;                   /* interfaces listed after ':' (for an interface: the ones it extends) */
+    int isInterface, isAbstract, state;         /* state: hierarchy walk (0 new, 1 visiting, 2 done) */
+    int* vtable;                                /* [nsel]: function, -1 not there, -2 abstract */
 } CClass;
 
 typedef struct { const char* name; int nlen; Type* type; int slot; } Local;
@@ -51,6 +58,9 @@ typedef struct {
     Loop* loop;
     int lastOp, lastLabel;
     Type* dicts;                    /* every Dictionary<K,V> type made so far */
+    int* order;                     /* classes with every base before the classes that derive from it */
+    CMethod** sels; int nsel, capsel;   /* the method that introduced each virtual selector */
+    int toStringSel;                /* selector of 'override string ToString()', or -1 */
     /* REPL: variables declared at the top of Repl.Main's body become static fields */
     Stmt* replBody;
     Local replVars[64]; int nreplVars;          /* slot = static slot */
@@ -121,6 +131,7 @@ static int assignable(Type* from, Type* to) {
     if (from->k == T_INT && to->k == T_FLOAT) return 1;
     if (from->k == T_CHAR && (to->k == T_INT || to->k == T_FLOAT)) return 1;
     if (from->k == T_NULL && (to->k == T_STRING || to->k == T_CLASS || to->k == T_ARRAY || to->k == T_LIST || to->k == T_DICT || to->k == T_CORO)) return 1;
+    if (from->k == T_CLASS && to->k == T_CLASS) return from->isa[to->cls];     /* derived -> base, class -> interface */
     return 0;
 }
 
@@ -200,14 +211,29 @@ static void push_default(C* c, Type* t) {
 }
 
 /* ================= lookups ================= */
+/* fields and methods are looked up in the class, then its base classes */
 static CField* find_field(C* c, int cls, const char* n, int l) {
+    for (; cls >= 0; cls = c->classes[cls].base) {
+        CClass* k = &c->classes[cls];
+        for (int i = 0; i < k->nf; i++) if (nameeq(k->fields[i].name, k->fields[i].nlen, n, l)) return &k->fields[i];
+    }
+    return NULL;
+}
+static CMethod* find_own_method(C* c, int cls, const char* n, int l) {
     CClass* k = &c->classes[cls];
-    for (int i = 0; i < k->nf; i++) if (nameeq(k->fields[i].name, k->fields[i].nlen, n, l)) return &k->fields[i];
+    for (int i = 0; i < k->nm; i++) if (nameeq(k->methods[i].name, k->methods[i].nlen, n, l)) return &k->methods[i];
     return NULL;
 }
 static CMethod* find_method(C* c, int cls, const char* n, int l) {
-    CClass* k = &c->classes[cls];
-    for (int i = 0; i < k->nm; i++) if (nameeq(k->methods[i].name, k->methods[i].nlen, n, l)) return &k->methods[i];
+    for (int k = cls; k >= 0; k = c->classes[k].base) {
+        CMethod* m = find_own_method(c, k, n, l);
+        if (m) return m;
+    }
+    if (c->classes[cls].isInterface)            /* an interface also has the methods of the interfaces it extends */
+        for (int i = 0; i < c->classes[cls].nifaces; i++) {
+            CMethod* m = find_method(c, c->classes[cls].ifaces[i], n, l);
+            if (m) return m;
+        }
     return NULL;
 }
 static int find_class(C* c, const char* n, int l) {
@@ -306,6 +332,9 @@ static void coerce(C* c, Type* from, Type* to, int line, const char* what) {
     if (!assignable(from, to)) {
         if (from->k == T_VOID) cfail(c, line, "%s: this expression has no value (void)", what);
         if (from->k == T_FLOAT && to->k == T_INT) cfail(c, line, "%s: cannot convert float to int automatically, use (int)", what);
+        if (from->k == T_CLASS && to->k == T_CLASS && to->isa[from->cls])
+            cfail(c, line, "%s: not every %s is a %s; use a cast (%s)x, or 'x as %s' / 'x is %s y'", what,
+                  tname(c, from), tname(c, to), tname(c, to), tname(c, to), tname(c, to));
         cfail(c, line, "%s: cannot convert %s to %s", what, tname(c, from), tname(c, to));
     }
     if ((from->k == T_INT || from->k == T_CHAR) && to->k == T_FLOAT) op1(c, OP_I2F, 0);
@@ -403,7 +432,7 @@ static Type* compare(C* c, int tok, Type* lt, Type* rt, int line) {
         (lt->k == T_STRING || lt->k == T_NULL) && (rt->k == T_STRING || rt->k == T_NULL)) {
         op(c, tok == TK_EQ ? OP_SEQ : OP_SNE); return &tBool;
     }
-    if (isref(lt) && isref(rt) && (lt == rt || lt->k == T_NULL || rt->k == T_NULL)) {
+    if (isref(lt) && isref(rt) && (lt == rt || lt->k == T_NULL || rt->k == T_NULL || (lt->k == T_CLASS && rt->k == T_CLASS))) {
         op(c, tok == TK_EQ ? OP_REQ : OP_RNE); return &tBool;
     }
     cfail(c, line, "cannot compare %s with %s", tname(c, lt), tname(c, rt));
@@ -495,16 +524,23 @@ static void args_for(C* c, Expr* e, Type** params, int np, const char* what) {
         Type* t = expr(c, e->args[i]);
         c->line = e->line;
         char buf[120]; snprintf(buf, sizeof buf, "argument %d of %s", i + 1, what);
+        if (params[i]->k == T_ANY && t->k == T_CLASS) { tostr(c, t, 0, e->line); t = &tString; }   /* may call an override of ToString */
         coerce(c, t, params[i], e->args[i]->line, buf);
     }
 }
 
-static Type* call_method(C* c, Expr* e, int cls, CMethod* m, int hasThis) {
+/* virt: call through the vtable of the object (virtual and interface methods); otherwise this exact method */
+static Type* call_method(C* c, Expr* e, CMethod* m, int hasThis, int virt) {
     char what[100];
-    snprintf(what, sizeof what, "'%.*s.%.*s'", c->classes[cls].nlen, c->classes[cls].name, m->nlen, m->name);
+    CClass* owner = &c->classes[m->owner];
+    snprintf(what, sizeof what, "'%.*s.%.*s'", owner->nlen, owner->name, m->nlen, m->name);
     args_for(c, e, m->params, m->np, what);
     c->line = e->line;
-    op2(c, m->isIter ? OP_CORO_NEW : OP_CALL, m->func, m->np + (hasThis ? 1 : 0));
+    if (virt && m->sel >= 0) op2(c, OP_CALLV, m->sel, m->np + 1);     /* the VM looks up the function (or coroutine) */
+    else {
+        if (m->func < 0) cfail(c, e->line, "'%.*s' is abstract and has no body to call", m->nlen, m->name);
+        op2(c, m->isIter ? OP_CORO_NEW : OP_CALL, m->func, m->np + (hasThis ? 1 : 0));
+    }
     return m->ret;
 }
 
@@ -643,16 +679,25 @@ static Type* call(C* c, Expr* e) {
             if (c->curStatic) cfail(c, e->line, "cannot call instance method '%.*s' from a static method", f->nlen, f->name);
             op1(c, OP_LOAD, 0);
         }
-        return call_method(c, e, c->cur, m, !m->isStatic);
+        return call_method(c, e, m, !m->isStatic, 1);
     }
     if (f->k == E_MEMBER) {
+        if (f->a->k == E_BASE) {               /* base.Method(): the base class's version, not the override */
+            expr(c, f->a);
+            int b = c->classes[c->cur].base;
+            CMethod* m = find_method(c, b, f->name, f->nlen);
+            if (!m && namecs(f->name, f->nlen, "ToString") && e->nargs == 0) { op2(c, OP_TOSTR, 4, 0); return &tString; }
+            if (!m) cfail(c, e->line, "base class '%.*s' has no method '%.*s'", c->classes[b].nlen, c->classes[b].name, f->nlen, f->name);
+            if (m->isStatic) { op(c, OP_POP); return call_method(c, e, m, 0, 0); }
+            return call_method(c, e, m, 1, 0);
+        }
         if (f->a->k == E_NAME) {
             Res r = resolve(c, f->a->name, f->a->nlen);
             if (r.k == R_CLASS) {
                 CMethod* m = find_method(c, r.idx, f->name, f->nlen);
                 if (!m) cfail(c, e->line, "class '%.*s' has no method '%.*s'", f->a->nlen, f->a->name, f->nlen, f->name);
                 if (!m->isStatic) cfail(c, e->line, "'%.*s' is not static; call it on an object", f->nlen, f->name);
-                return call_method(c, e, r.idx, m, 0);
+                return call_method(c, e, m, 0, 0);
             }
             if (r.k == R_BUILTIN) return call_native(c, e, f->a->name, f->a->nlen, 0);
         }
@@ -673,8 +718,8 @@ static Type* call(C* c, Expr* e) {
             CMethod* m = find_method(c, t->cls, f->name, f->nlen);
             if (!m) cfail(c, e->line, "%s has no method '%.*s'", tname(c, t), f->nlen, f->name);
             if (m->isStatic) cfail(c, e->line, "'%.*s' is static; call it as %s.%.*s()", f->nlen, f->name, tname(c, t), f->nlen, f->name);
-            op1(c, OP_NULLCHK, 0);
-            return call_method(c, e, t->cls, m, 1);
+            if (m->sel < 0) op1(c, OP_NULLCHK, 0);     /* OP_CALLV checks it itself */
+            return call_method(c, e, m, 1, 1);
         }
         cfail(c, e->line, "%s has no method '%.*s'", tname(c, t), f->nlen, f->name);
     }
@@ -697,6 +742,37 @@ static Type* expr(C* c, Expr* e) {
             if (c->curStatic) cfail(c, e->line, "'this' cannot be used in a static method");
             op1(c, OP_LOAD, 0);
             return c->classes[c->cur].type;
+        case E_BASE: {
+            if (c->curStatic) cfail(c, e->line, "'base' cannot be used in a static method");
+            int b = c->classes[c->cur].base;
+            if (b < 0) cfail(c, e->line, "class '%.*s' has no base class", c->classes[c->cur].nlen, c->classes[c->cur].name);
+            op1(c, OP_LOAD, 0);
+            return c->classes[b].type;
+        }
+        case E_IS: case E_AS: {
+            Type* t = expr(c, e->a);
+            c->line = e->line;
+            if (e->k == E_IS && !e->tn) {        /* is null / is not null */
+                if (!isref(t)) cfail(c, e->line, "%s can never be null", tname(c, t));
+                op(c, OP_NULL);
+                op(c, e->op ? OP_RNE : OP_REQ);
+                return &tBool;
+            }
+            const char* w = e->k == E_IS ? "is" : "as";
+            Type* to = resolve_typenode(c, e->tn, 0);
+            if (to->k != T_CLASS) cfail(c, e->line, "'%s' works with classes and interfaces, not %s", w, tname(c, to));
+            if (t->k != T_CLASS && t->k != T_NULL) cfail(c, e->line, "'%s' works with objects of classes, not %s", w, tname(c, t));
+            if (e->k == E_AS) { op2(c, OP_ISINST, to->cls, 1); return to; }
+            if (e->name) {                      /* x is Enemy en: en = x as Enemy; en != null */
+                op2(c, OP_ISINST, to->cls, 1);
+                op1(c, OP_STORE, declare_local(c, e->name, e->nlen, to, e->line));
+                op(c, OP_NULL); op(c, OP_RNE);
+                return &tBool;
+            }
+            op2(c, OP_ISINST, to->cls, 0);
+            if (e->op) op(c, OP_NOT);
+            return &tBool;
+        }
 
         case E_NAME: {
             Res r = resolve(c, e->name, e->nlen);
@@ -793,6 +869,8 @@ static Type* expr(C* c, Expr* e) {
                 cfail(c, e->line, "unknown class '%.*s'", e->tn->nlen, e->tn->name);
             }
             CClass* k = &c->classes[ci];
+            if (k->isInterface) cfail(c, e->line, "'%.*s' is an interface; create an object of a class that implements it", k->nlen, k->name);
+            if (k->isAbstract) cfail(c, e->line, "'%.*s' is abstract; create an object of a class derived from it", k->nlen, k->name);
             op1(c, OP_NEW, ci);
             char what[80]; snprintf(what, sizeof what, "constructor of '%.*s'", k->nlen, k->name);
             args_for(c, e, k->ctorParams, k->ctorNp, what);
@@ -886,6 +964,16 @@ static Type* expr(C* c, Expr* e) {
         case E_CAST: {
             Type* t = expr(c, e->a);
             c->line = e->line;
+            if (e->tn) {                        /* (Enemy)x */
+                Type* to = resolve_typenode(c, e->tn, 0);
+                if (to->k != T_CLASS) cfail(c, e->line, "cannot cast to %s this way", tname(c, to));
+                if (t->k == T_NULL || assignable(t, to)) return to;          /* up-cast: nothing to check */
+                if (t->k != T_CLASS) cfail(c, e->line, "cannot convert %s to %s", tname(c, t), tname(c, to));
+                if (!to->isa[t->cls] && !c->classes[t->cls].isInterface && !c->classes[to->cls].isInterface)
+                    cfail(c, e->line, "cannot convert %s to %s (neither derives from the other)", tname(c, t), tname(c, to));
+                op2(c, OP_ISINST, to->cls, 2);  /* fails at run time if the object is not one */
+                return to;
+            }
             if (!isnum(t)) cfail(c, e->line, "cannot cast %s to a number", tname(c, t));
             if (e->op == TK_KINT) { if (t->k == T_FLOAT) op(c, OP_F2I); else if (t->k == T_CHAR) op1(c, OP_C2I, 0); return &tInt; }
             if (e->op == TK_KCHAR) {
@@ -932,6 +1020,8 @@ static Type* expr(C* c, Expr* e) {
             else if (isnum(tb) && isnum(tc)) t = (tb->k == T_FLOAT || tc->k == T_FLOAT) ? &tFloat : &tInt;
             else if (tb->k == T_NULL && isref(tc)) t = tc;
             else if (tc->k == T_NULL && isref(tb)) t = tb;
+            else if (tb->k == T_CLASS && assignable(tc, tb)) t = tb;
+            else if (tc->k == T_CLASS && assignable(tb, tc)) t = tc;
             else cfail(c, e->line, "both sides of '?:' must have the same type (%s vs %s)", tname(c, tb), tname(c, tc));
             if (t->k == T_VOID) cfail(c, e->line, "'?:' branches cannot be void");
             c->line = e->line;
@@ -1051,6 +1141,7 @@ static void repl_var(C* c, Stmt* s) {
 static void repl_expr(C* c, Expr* e) {
     if (e->k == E_ASSIGN || e->k == E_INCDEC) { expr_stmt(c, e); return; }
     Type* t = expr(c, e);
+    if (t->k == T_CLASS) tostr(c, t, 0, e->line);
     if (t->k != T_VOID) op2(c, OP_CALLN, c->replPrint, 1);
 }
 
@@ -1339,6 +1430,7 @@ static void compile_ctor(C* c, int cls) {
     c->fn->nparams = k->ctorNp + 1;
     c->isCtor = 1; c->retType = &tVoid;
     if (d) for (int i = 0; i < d->nparams; i++) declare_local(c, d->params[i].name, d->params[i].nlen, k->ctorParams[i], d->line);
+    /* same order as C#: this class's field initializers, then the base constructor, then the body */
     for (int i = 0; i < k->nf; i++) {
         CField* f = &k->fields[i];
         if (f->isStatic || !f->decl->init) continue;
@@ -1348,6 +1440,22 @@ static void compile_ctor(C* c, int cls) {
         op1(c, OP_SETFIELD, f->slot);
         op(c, OP_POP);
     }
+    Expr* bc = d ? d->baseCall : NULL;
+    if (k->base >= 0) {
+        CClass* b = &c->classes[k->base];
+        c->line = bc ? bc->line : d ? d->line : k->decl->line;
+        if (!bc && b->ctorNp) cfail(c, c->line, "the constructor of '%.*s' takes %d argument%s; call it with ': base(...)' after the constructor of '%.*s'",
+                                    b->nlen, b->name, b->ctorNp, b->ctorNp == 1 ? "" : "s", k->nlen, k->name);
+        op1(c, OP_LOAD, 0);
+        if (bc) {
+            char what[80]; snprintf(what, sizeof what, "constructor of '%.*s'", b->nlen, b->name);
+            c->curStatic = 1;                   /* like C#: 'this' is not ready yet in base(...) arguments */
+            args_for(c, bc, b->ctorParams, b->ctorNp, what);
+            c->curStatic = 0;
+        }
+        op2(c, OP_CALL, b->ctorFunc, b->ctorNp + 1);
+        op(c, OP_POP);
+    } else if (bc) cfail(c, bc->line, "'%.*s' has no base class, so it cannot call base(...)", k->nlen, k->name);
     if (d) stmt(c, d->body);
     c->line = d ? d->line : k->decl->line;
     op1(c, OP_LOAD, 0);
@@ -1372,14 +1480,42 @@ static void compile_static_init(C* c, int func) {
     op(c, OP_RET);
 }
 
+/* ---------- class hierarchy ---------- */
+static void add_sel(C* c, CMethod* m) {
+    c->sels = (CMethod**)arena_grow(&c->A, c->sels, c->nsel, &c->capsel, sizeof(CMethod*));
+    m->sel = c->nsel;
+    c->sels[c->nsel++] = m;
+}
+
+static int same_sig(CMethod* a, CMethod* b) {
+    if (a->ret != b->ret || a->np != b->np) return 0;
+    for (int i = 0; i < a->np; i++) if (a->params[i] != b->params[i]) return 0;
+    return 1;
+}
+
+/* puts every class after its base class and interfaces; finds cycles */
+static void visit(C* c, int i, int* n) {
+    CClass* k = &c->classes[i];
+    if (k->state == 2) return;
+    if (k->state == 1) cfail(c, k->decl->line, "'%.*s' derives from itself (a cycle of base classes)", k->nlen, k->name);
+    k->state = 1;
+    if (k->base >= 0) visit(c, k->base, n);
+    for (int j = 0; j < k->nifaces; j++) visit(c, k->ifaces[j], n);
+    k->state = 2;
+    c->order[(*n)++] = i;
+}
+
 static void collect(C* c, ProgramAST* ast) {
     Program* P = c->P;
-    c->nclasses = ast->nclasses;
-    c->classes = (CClass*)arena_alloc(&c->A, sizeof(CClass) * (ast->nclasses ? ast->nclasses : 1));
-    for (int i = 0; i < ast->nclasses; i++) {
+    int nc = ast->nclasses;
+    c->nclasses = nc;
+    c->classes = (CClass*)arena_alloc(&c->A, sizeof(CClass) * (nc ? nc : 1));
+    for (int i = 0; i < nc; i++) {
         ClassDecl* d = &ast->classes[i];
         CClass* k = &c->classes[i];
         k->name = d->name; k->nlen = d->nlen; k->decl = d;
+        k->isInterface = d->isInterface; k->isAbstract = d->isAbstract || d->isInterface;
+        k->base = -1; k->ctorFunc = -1;
         k->type = (Type*)arena_alloc(&c->A, sizeof(Type));
         k->type->k = T_CLASS; k->type->cls = i;
         if (d->nlen >= 32) cfail(c, d->line, "class name too long");
@@ -1387,22 +1523,64 @@ static void collect(C* c, ProgramAST* ast) {
         for (int j = 0; j < i; j++)
             if (nameeq(c->classes[j].name, c->classes[j].nlen, d->name, d->nlen)) cfail(c, d->line, "class '%.*s' is defined twice", d->nlen, d->name);
     }
-    int nfuncs = 1;  /* static init */
-    for (int i = 0; i < ast->nclasses; i++) nfuncs += 1 + ast->classes[i].nmethods;
-    P->funcs = (Func*)calloc(nfuncs, sizeof(Func));
-    P->capfuncs = nfuncs;
-    P->classes = (ClassRT*)calloc(ast->nclasses ? ast->nclasses : 1, sizeof(ClassRT));
-    P->nclasses = ast->nclasses;
 
-    int nstatics = 0;
-    for (int i = 0; i < ast->nclasses; i++) {
+    /* base class and interfaces */
+    for (int i = 0; i < nc; i++) {
         ClassDecl* d = &ast->classes[i];
         CClass* k = &c->classes[i];
+        k->ifaces = (int*)arena_alloc(&c->A, sizeof(int) * (d->nbases ? d->nbases : 1));
+        for (int j = 0; j < d->nbases; j++) {
+            TypeNode* b = d->bases[j];
+            int bi = find_class(c, b->name, b->nlen);
+            if (bi < 0) cfail(c, b->line, "unknown class or interface '%.*s'", b->nlen, b->name);
+            if (bi == i) cfail(c, b->line, "'%.*s' cannot derive from itself", d->nlen, d->name);
+            CClass* bk = &c->classes[bi];
+            if (!bk->isInterface) {
+                if (k->isInterface) cfail(c, b->line, "an interface can only extend interfaces, and '%.*s' is a class", b->nlen, b->name);
+                if (j > 0) cfail(c, b->line, "a class has only one base class, and it must come first after ':' ('%.*s')", b->nlen, b->name);
+                k->base = bi;
+            } else {
+                for (int q = 0; q < k->nifaces; q++)
+                    if (k->ifaces[q] == bi) cfail(c, b->line, "'%.*s' is listed twice", b->nlen, b->name);
+                k->ifaces[k->nifaces++] = bi;
+            }
+        }
+    }
+    c->order = (int*)arena_alloc(&c->A, sizeof(int) * (nc ? nc : 1));
+    int n = 0;
+    for (int i = 0; i < nc; i++) visit(c, i, &n);
+    for (int oi = 0; oi < nc; oi++) {
+        int i = c->order[oi];
+        CClass* k = &c->classes[i];
+        uint8_t* isa = (uint8_t*)arena_alloc(&c->A, nc);
+        isa[i] = 1;
+        if (k->base >= 0) for (int q = 0; q < nc; q++) isa[q] |= c->classes[k->base].type->isa[q];
+        for (int j = 0; j < k->nifaces; j++) for (int q = 0; q < nc; q++) isa[q] |= c->classes[k->ifaces[j]].type->isa[q];
+        k->type->isa = isa;
+    }
+
+    int nfuncs = 1;  /* static init */
+    for (int i = 0; i < nc; i++) nfuncs += 1 + ast->classes[i].nmethods;
+    P->funcs = (Func*)calloc(nfuncs, sizeof(Func));
+    P->capfuncs = nfuncs;
+    P->classes = (ClassRT*)calloc(nc ? nc : 1, sizeof(ClassRT));
+    P->nclasses = nc;
+
+    /* fields: a derived class's instance fields come after its base class's */
+    int nstatics = 0;
+    for (int oi = 0; oi < nc; oi++) {
+        int i = c->order[oi];
+        ClassDecl* d = &ast->classes[i];
+        CClass* k = &c->classes[i];
+        k->ninst = k->base >= 0 ? c->classes[k->base].ninst : 0;
         k->fields = (CField*)arena_alloc(&c->A, sizeof(CField) * (d->nfields ? d->nfields : 1));
         for (int j = 0; j < d->nfields; j++) {
             FieldDecl* fd = &d->fields[j];
             for (int q = 0; q < k->nf; q++)
                 if (nameeq(k->fields[q].name, k->fields[q].nlen, fd->name, fd->nlen)) cfail(c, fd->line, "field '%.*s' is defined twice", fd->nlen, fd->name);
+            if (k->base >= 0 && find_field(c, k->base, fd->name, fd->nlen))
+                cfail(c, fd->line, "field '%.*s' is already in base class '%.*s'; use a different name", fd->nlen, fd->name,
+                      c->classes[k->base].nlen, c->classes[k->base].name);
             CField* f = &k->fields[k->nf++];
             f->name = fd->name; f->nlen = fd->nlen; f->isStatic = fd->isStatic; f->decl = fd;
             f->type = resolve_typenode(c, fd->tn, 0);
@@ -1413,20 +1591,23 @@ static void collect(C* c, ProgramAST* ast) {
     P->staticDefaults = (Value*)calloc(nstatics ? nstatics : 1, sizeof(Value));
 
     int fi = 0;
-    for (int i = 0; i < ast->nclasses; i++) {
+    for (int oi = 0; oi < nc; oi++) {
+        int i = c->order[oi];
         ClassDecl* d = &ast->classes[i];
         CClass* k = &c->classes[i];
         ClassRT* rt = &P->classes[i];
         snprintf(rt->name, sizeof rt->name, "%.*s", d->nlen, d->name);
         rt->nfields = k->ninst;
+        rt->base = k->base;
         rt->defaults = (Value*)calloc(k->ninst ? k->ninst : 1, sizeof(Value));
+        if (k->base >= 0) memcpy(rt->defaults, P->classes[k->base].defaults, sizeof(Value) * c->classes[k->base].ninst);
         for (int j = 0; j < k->nf; j++) {
             CField* f = &k->fields[j];
             if (f->isStatic) P->staticDefaults[f->slot] = default_value(f->type);
             else rt->defaults[f->slot] = default_value(f->type);
         }
         k->methods = (CMethod*)arena_alloc(&c->A, sizeof(CMethod) * (d->nmethods ? d->nmethods : 1));
-        k->ctorFunc = fi++;
+        if (!k->isInterface) k->ctorFunc = fi++;
         for (int j = 0; j < d->nmethods; j++) {
             MethodDecl* md = &d->methods[j];
             Type** params = (Type**)arena_alloc(&c->A, sizeof(Type*) * (md->nparams ? md->nparams : 1));
@@ -1442,7 +1623,7 @@ static void collect(C* c, ProgramAST* ast) {
                 k->ctor = md; k->ctorParams = params; k->ctorNp = md->nparams;
                 continue;
             }
-            if (find_method(c, i, md->name, md->nlen)) cfail(c, md->line, "method '%.*s' is defined twice (overloading is not supported yet)", md->nlen, md->name);
+            if (find_own_method(c, i, md->name, md->nlen)) cfail(c, md->line, "method '%.*s' is defined twice (overloading is not supported yet)", md->nlen, md->name);
             if (find_field(c, i, md->name, md->nlen)) cfail(c, md->line, "'%.*s' is both a field and a method", md->nlen, md->name);
             CMethod* m = &k->methods[k->nm++];
             m->name = md->name; m->nlen = md->nlen; m->isStatic = md->isStatic; m->decl = md;
@@ -1451,24 +1632,95 @@ static void collect(C* c, ProgramAST* ast) {
             if (m->isIter && m->ret->k != T_CORO)
                 cfail(c, md->line, "'%.*s' uses 'yield', so it must return IEnumerator", md->nlen, md->name);
             m->params = params; m->np = md->nparams;
-            m->func = fi++;
+            m->owner = i; m->sel = -1;
+            m->func = md->body ? fi++ : -1;
+            if (m->func >= 0) P->funcs[m->func].isIter = (uint8_t)m->isIter;
+            /* virtual methods */
+            CMethod* inh = k->base >= 0 ? find_method(c, k->base, md->name, md->nlen) : NULL;
+            int isToString = namecs(md->name, md->nlen, "ToString");
+            if (md->kind == MK_OVERRIDE) {
+                if (isToString && (m->np || m->ret != &tString)) cfail(c, md->line, "write it as 'public override string ToString()'");
+                if (inh) {
+                    CClass* ik = &c->classes[inh->owner];
+                    if (inh->sel < 0)
+                        cfail(c, md->line, "cannot override '%.*s.%.*s' because it is not virtual; write 'public virtual ...' there",
+                              ik->nlen, ik->name, md->nlen, md->name);
+                    if (!same_sig(inh, m))
+                        cfail(c, md->line, "'%.*s' must have the same return type and parameters as in '%.*s'", md->nlen, md->name, ik->nlen, ik->name);
+                    m->sel = inh->sel;
+                } else if (isToString) {        /* object.ToString() */
+                    if (c->toStringSel < 0) { add_sel(c, m); c->toStringSel = m->sel; }
+                    else m->sel = c->toStringSel;
+                } else cfail(c, md->line, "'%.*s' has nothing to override: no base class of '%.*s' has a virtual method '%.*s'",
+                             md->nlen, md->name, k->nlen, k->name, md->nlen, md->name);
+            } else if (inh) {
+                CClass* ik = &c->classes[inh->owner];
+                cfail(c, md->line, "'%.*s' is already in base class '%.*s'; to replace it, make it 'virtual' (or 'abstract') there and 'override' here",
+                      md->nlen, md->name, ik->nlen, ik->name);
+            } else if (md->kind == MK_VIRTUAL || md->kind == MK_ABSTRACT) add_sel(c, m);
+            else if (isToString && !m->isStatic) cfail(c, md->line, "write it as 'public override string ToString()'");
         }
     }
     P->staticInit = fi++;
     P->nfuncs = fi;
+
+    /* vtables: what each selector calls for an object of this class */
+    P->nsel = c->nsel;
+    for (int oi = 0; oi < nc; oi++) {
+        int i = c->order[oi];
+        CClass* k = &c->classes[i];
+        int* vt = (int*)arena_alloc(&c->A, sizeof(int) * (c->nsel ? c->nsel : 1));
+        for (int s = 0; s < c->nsel; s++) vt[s] = k->base >= 0 ? c->classes[k->base].vtable[s] : -1;
+        for (int j = 0; j < k->nm; j++)
+            if (k->methods[j].sel >= 0) vt[k->methods[j].sel] = k->methods[j].func >= 0 ? k->methods[j].func : -2;
+        k->vtable = vt;
+        if (!k->isInterface) {
+            /* every method of every interface this class implements, directly or through its base class */
+            for (int q = 0; q < nc; q++) {
+                CClass* ik = &c->classes[q];
+                if (!ik->isInterface || !k->type->isa[q]) continue;
+                for (int j = 0; j < ik->nm; j++) {
+                    CMethod* im = &ik->methods[j];
+                    CMethod* impl = find_method(c, i, im->name, im->nlen);
+                    if (!impl || impl->isStatic)
+                        cfail(c, k->decl->line, "class '%.*s' must have the method '%.*s' of interface '%.*s'",
+                              k->nlen, k->name, im->nlen, im->name, ik->nlen, ik->name);
+                    if (!same_sig(impl, im))
+                        cfail(c, impl->decl->line, "'%.*s' must have the same return type and parameters as in interface '%.*s'",
+                              im->nlen, im->name, ik->nlen, ik->name);
+                    vt[im->sel] = impl->sel >= 0 ? vt[impl->sel] : impl->func;
+                }
+            }
+            if (!k->isAbstract)
+                for (int s = 0; s < c->nsel; s++)
+                    if (vt[s] == -2) {
+                        CMethod* am = c->sels[s];
+                        CClass* ak = &c->classes[am->owner];
+                        cfail(c, k->decl->line, "class '%.*s' must override the abstract method '%.*s.%.*s' (or be 'abstract class')",
+                              k->nlen, k->name, ak->nlen, ak->name, am->nlen, am->name);
+                    }
+        }
+        ClassRT* rt = &P->classes[i];
+        rt->vtable = (int*)malloc(sizeof(int) * (c->nsel ? c->nsel : 1));
+        rt->isa = (uint8_t*)malloc(nc ? nc : 1);
+        if (!rt->vtable || !rt->isa) cfail(c, 1, "out of memory");
+        for (int s = 0; s < c->nsel; s++) rt->vtable[s] = vt[s] >= 0 ? vt[s] : -1;
+        memcpy(rt->isa, k->type->isa, nc);
+        rt->toString = c->toStringSel >= 0 ? rt->vtable[c->toStringSel] : -1;
+    }
 }
 
 static int find_entry(C* c, const char* name) {
     int found = -1;
     for (int i = 0; i < c->nclasses; i++) {
-        CMethod* m = find_method(c, i, name, (int)strlen(name));
+        CMethod* m = find_own_method(c, i, name, (int)strlen(name));
         if (!m || !m->isStatic || m->np != 0 || m->ret->k != T_VOID) continue;
         if (found >= 0)
             cfail(c, m->decl->line, "'static void %s()' is in two classes ('%.*s' and '%.*s'); the program can only have one",
                   name, c->classes[found].nlen, c->classes[found].name, c->classes[i].nlen, c->classes[i].name);
         found = i;
     }
-    return found >= 0 ? find_method(c, found, name, (int)strlen(name))->func : -1;
+    return found >= 0 ? find_own_method(c, found, name, (int)strlen(name))->func : -1;
 }
 
 static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {
@@ -1476,6 +1728,7 @@ static Program* compile(const char* src, char* err, int errlen, char* replDecls,
     if (!c) { snprintf(err, errlen, "out of memory"); return NULL; }
     Type* prims[] = { &tVoid, &tInt, &tFloat, &tBool, &tString, &tNull, &tAny, &tChar, &tCoro };
     for (size_t i = 0; i < sizeof prims / sizeof prims[0]; i++) { prims[i]->arr = NULL; prims[i]->list = NULL; }
+    c->toStringSel = -1;
     c->pc.A = &c->A; c->pc.jb = &c->jb; c->pc.err = err; c->pc.errlen = errlen;
     c->P = (Program*)calloc(1, sizeof(Program));
     err[0] = 0;
@@ -1498,8 +1751,10 @@ static Program* compile(const char* src, char* err, int errlen, char* replDecls,
             if (!strcmp(ms_natives[i].cls, "Console") && !strcmp(ms_natives[i].name, "WriteLine") && ms_natives[i].np == 1) c->replPrint = i;
     }
     for (int i = 0; i < c->nclasses; i++) {
+        if (c->classes[i].isInterface) continue;
         compile_ctor(c, i);
-        for (int j = 0; j < c->classes[i].nm; j++) compile_method(c, i, &c->classes[i].methods[j]);
+        for (int j = 0; j < c->classes[i].nm; j++)
+            if (c->classes[i].methods[j].func >= 0) compile_method(c, i, &c->classes[i].methods[j]);
     }
     compile_static_init(c, c->P->staticInit);
     c->P->entryMain = find_entry(c, "Main");
@@ -1522,7 +1777,7 @@ void ms_free_program(Program* p) {
     free(p->funcs);
     for (int i = 0; i < p->nstrings; i++) free(p->strings[i]);
     free(p->strings);
-    for (int i = 0; i < p->nclasses; i++) free(p->classes[i].defaults);
+    for (int i = 0; i < p->nclasses; i++) { free(p->classes[i].defaults); free(p->classes[i].vtable); free(p->classes[i].isa); }
     free(p->classes);
     free(p->staticDefaults);
     free(p);

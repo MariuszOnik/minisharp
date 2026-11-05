@@ -1,0 +1,1 @@
+compile error: line 1: cannot override 'A.F' because it is not virtual; write 'public virtual ...' there

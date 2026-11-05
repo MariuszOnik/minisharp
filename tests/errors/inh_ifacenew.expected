@@ -1,0 +1,1 @@
+compile error: line 1: 'I' is an interface; create an object of a class that implements it

@@ -17,7 +17,7 @@ static int is_id(int c) { return isalnum(c) || c == '_'; }
 static const char* MODIFIERS[] = { "public", "private", "protected", "internal", "static", "const", "readonly",
                                    "override", "virtual", "sealed", "abstract", NULL };
 /* words that can come before a name without being its type */
-static const char* NOT_TYPES[] = { "return", "new", "in", "else", "case", "out", "ref", "using", "namespace", "class",
+static const char* NOT_TYPES[] = { "return", "new", "in", "else", "case", "out", "ref", "using", "namespace", "class", "interface",
                                    "yield", "throw", "is", "as", "goto", NULL };
 
 static int in_list(const char** list, const char* s, int n) {
@@ -96,7 +96,7 @@ static int member(CodeIndex* ci, int cls, const char* s, int p) {
         if (e > i && in_list(MODIFIERS, head + i, e - i)) i = skip_sp(head, e);
         else break;
     }
-    if (!strncmp(head + i, "class ", 6)) return q;
+    if (!strncmp(head + i, "class ", 6) || !strncmp(head + i, "interface ", 10)) return q;
     int ts = i, te = read_type(head, i);
     if (te == ts) return q;
     char type[48];
@@ -182,12 +182,28 @@ static void scan(CodeIndex* ci, int t) {
         if (is_id0((unsigned char)c)) {
             int e = p;
             while (is_id((unsigned char)s[e])) e++;
-            if (e - p == 5 && !memcmp(s + p, "class", 5)) {
+            if ((e - p == 5 && !memcmp(s + p, "class", 5)) || (e - p == 9 && !memcmp(s + p, "interface", 9))) {
                 int ns = skip_sp(s, e), ne = ns;
                 while (is_id((unsigned char)s[ne])) ne++;
                 if (ne > ns && ci->nclasses < 64) {
-                    snprintf(ci->classes[ci->nclasses], 32, "%.*s", ne - ns, s + ns);
-                    pending = ci->nclasses++;
+                    int k = ci->nclasses++;
+                    snprintf(ci->classes[k], 32, "%.*s", ne - ns, s + ns);
+                    ci->bases[k][0] = 0;
+                    pending = k;
+                    int b = skip_sp(s, ne);
+                    if (s[b] == ':') {                  /* class Boss : Enemy, IHealable */
+                        int n = 0;
+                        for (b = skip_sp(s, b + 1); is_id0((unsigned char)s[b]); ) {
+                            int be = b;
+                            while (is_id((unsigned char)s[be])) be++;
+                            int w = snprintf(ci->bases[k] + n, sizeof ci->bases[k] - n, "%s%.*s", n ? " " : "", be - b, s + b);
+                            if (w > 0 && w < (int)sizeof ci->bases[k] - n) n += w;
+                            b = skip_sp(s, be);
+                            if (s[b] != ',') break;
+                            b = skip_sp(s, b + 1);
+                        }
+                        ne = b;
+                    }
                 }
                 p = ne; atStart = 0; continue;
             }
@@ -229,6 +245,36 @@ static int is_builtin_class(const char* s, int n) {
     return 0;
 }
 
+static int has_word(const char* list, const char* w) {
+    int n = (int)strlen(w);
+    for (const char* p = list; (p = strstr(p, w)) != NULL; p++)
+        if ((p == list || p[-1] == ' ') && (p[n] == ' ' || !p[n])) return 1;
+    return 0;
+}
+
+/* the classes a member of 'type' can come from: the class itself, then its base classes and interfaces */
+static int lineage(const CodeIndex* ci, const char* type, const char** out, int max) {
+    int n = 0;
+    if (max > 0) out[n++] = type;
+    for (int q = 0; q < n && n < max; q++) {
+        int k = -1;
+        for (int i = 0; i < ci->nclasses; i++) if (!strcmp(ci->classes[i], out[q])) { k = i; break; }
+        if (k < 0) continue;
+        for (const char* b = ci->bases[k]; *b && n < max; ) {
+            const char* e = strchr(b, ' ');
+            int len = e ? (int)(e - b) : (int)strlen(b);
+            for (int i = 0; i < ci->nclasses; i++)
+                if ((int)strlen(ci->classes[i]) == len && !memcmp(ci->classes[i], b, len)) {
+                    int dup = 0;
+                    for (int j = 0; j < n; j++) dup |= out[j] == ci->classes[i];
+                    if (!dup) out[n++] = ci->classes[i];
+                }
+            b += len + (e ? 1 : 0);
+        }
+    }
+    return n;
+}
+
 /* "Dictionary<string, List<int>>" -> the n-th type argument */
 static int type_arg(const char* type, int n, char* out, int cap) {
     const char* p = strchr(type, '<');
@@ -260,8 +306,11 @@ static const char* code_name(int k) {
 }
 
 static int type_of_member(const CodeIndex* ci, const char* owner, const char* name, char* out, int cap) {
-    for (int i = 0; i < ci->n; i++)
-        if (!strcmp(ci->m[i].cls, owner) && !strcmp(ci->m[i].name, name)) { snprintf(out, cap, "%s", ci->m[i].type); return 1; }
+    const char* from[16];
+    int nf = lineage(ci, owner, from, 16);
+    for (int f = 0; f < nf; f++)
+        for (int i = 0; i < ci->n; i++)
+            if (!strcmp(ci->m[i].cls, from[f]) && !strcmp(ci->m[i].name, name)) { snprintf(out, cap, "%s", ci->m[i].type); return 1; }
     if (!strcmp(name, "Count") || !strcmp(name, "Length") || !strcmp(name, "IndexOf")) { snprintf(out, cap, "int"); return 1; }
     if (!strncmp(owner, "KeyValuePair<", 13)) return type_arg(owner, !strcmp(name, "Key") ? 0 : 1, out, cap);
     if (!strncmp(owner, "Dictionary<", 11) && (!strcmp(name, "Keys") || !strcmp(name, "Values"))) {
@@ -351,9 +400,19 @@ static int name_type(const CodeIndex* ci, int t, int ns, int ne, char* type, int
         if (c) snprintf(type, cap, "%s", c);
         return c != NULL;
     }
+    if (!strcmp(name, "base")) {                /* the first name after ':' */
+        const char* c = ci_class_at(ci, t, ns);
+        for (int i = 0; c && i < ci->nclasses; i++)
+            if (!strcmp(ci->classes[i], c) && ci->bases[i][0]) {
+                int len = (int)strcspn(ci->bases[i], " ");
+                snprintf(type, cap, "%.*s", len, ci->bases[i]);
+                return 1;
+            }
+        return 0;
+    }
     if (is_user_class(ci, s + ns, ne - ns) || is_builtin_class(s + ns, ne - ns)) { snprintf(type, cap, "%s", name); return 1; }
     if (find_decl(ci, t, ns, name, type, cap, depth)) return 1;
-    const char* c = ci_class_at(ci, t, ns);     /* a field or method of this class */
+    const char* c = ci_class_at(ci, t, ns);     /* a field or method of this class or a base class */
     return c && type_of_member(ci, c, name, type, cap);
 }
 
@@ -401,7 +460,11 @@ void ci_member_names(const CodeIndex* ci, const char* type, char* out, int cap) 
     int tl = (int)strlen(type);
     if (tl > 2 && !strcmp(type + tl - 2, "[]")) { ADD("Length"); return; }
     if (!strcmp(type, "string")) ADD("Length");
-    for (int i = 0; i < ci->n; i++) if (!strcmp(ci->m[i].cls, type)) ADD(ci->m[i].name);
+    const char* from[16];
+    int nf = lineage(ci, type, from, 16);
+    for (int f = 0; f < nf; f++)
+        for (int i = 0; i < ci->n; i++)
+            if (!strcmp(ci->m[i].cls, from[f]) && !has_word(out, ci->m[i].name)) ADD(ci->m[i].name);   /* an override once */
     const char* cls = !strcmp(type, "string") ? ".string" : type;
     for (int i = 0; i < ms_nnatives; i++)
         if (!strcmp(ms_natives[i].cls, cls) && !strstr(out, ms_natives[i].name)) ADD(ms_natives[i].name);
@@ -431,7 +494,10 @@ int ci_complete(const CodeIndex* ci, int t, int cursor, int* start, char out[][R
 }
 
 const char* ci_signature(const CodeIndex* ci, const char* type, const char* name) {
-    for (int i = 0; i < ci->n; i++)
-        if (ci->m[i].isMethod && !strcmp(ci->m[i].cls, type) && !strcmp(ci->m[i].name, name)) return ci->m[i].sig;
+    const char* from[16];
+    int nf = lineage(ci, type, from, 16);
+    for (int f = 0; f < nf; f++)
+        for (int i = 0; i < ci->n; i++)
+            if (ci->m[i].isMethod && !strcmp(ci->m[i].cls, from[f]) && !strcmp(ci->m[i].name, name)) return ci->m[i].sig;
     return NULL;
 }

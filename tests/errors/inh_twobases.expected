@@ -1,0 +1,1 @@
+compile error: line 1: a class has only one base class, and it must come first after ':' ('B')

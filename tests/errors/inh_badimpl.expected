@@ -1,0 +1,1 @@
+compile error: line 1: 'G' must have the same return type and parameters as in interface 'I'

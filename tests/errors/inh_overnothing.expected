@@ -1,0 +1,1 @@
+compile error: line 1: 'F' has nothing to override: no base class of 'B' has a virtual method 'F'

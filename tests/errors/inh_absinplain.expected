@@ -1,0 +1,1 @@
+compile error: line 1: class 'A' has an abstract method, so it must be 'abstract class'

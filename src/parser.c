@@ -56,6 +56,8 @@ static const struct { const char* s; int k; } keywords[] = {
     {"const", TK_CONST}, {"readonly", TK_READONLY}, {"protected", TK_PRIVATE}, {"internal", TK_PRIVATE},
     {"char", TK_KCHAR}, {"foreach", TK_FOREACH}, {"in", TK_IN}, {"switch", TK_SWITCH}, {"case", TK_CASE},
     {"default", TK_DEFAULT}, {"out", TK_OUT},
+    {"abstract", TK_ABSTRACT}, {"virtual", TK_VIRTUAL}, {"override", TK_OVERRIDE}, {"sealed", TK_SEALED},
+    {"interface", TK_INTERFACE}, {"base", TK_BASE}, {"is", TK_IS}, {"as", TK_AS},
 };
 
 Token* ms_lex(ParseCtx* c, const char* src, int* ntok) {
@@ -198,7 +200,7 @@ Token* ms_lex(ParseCtx* c, const char* src, int* ntok) {
 }
 
 /* ================= parser ================= */
-typedef struct { ParseCtx* c; Token* t; int pos, n; int sawYield; } P;
+typedef struct { ParseCtx* c; Token* t; int pos, n; int sawYield, inInterface; } P;
 
 static Token* peek(P* p) { return &p->t[p->pos]; }
 static Token* peekn(P* p, int k) { int i = p->pos + k; return &p->t[i < p->n ? i : p->n - 1]; }
@@ -429,6 +431,9 @@ static Expr* parse_primary(P* p) {
         case TK_FALSE: e = mkexpr(p, E_BOOL, t->line); e->ival = 0; return e;
         case TK_NULL: return mkexpr(p, E_NULL, t->line);
         case TK_THIS: return mkexpr(p, E_THIS, t->line);
+        case TK_BASE:
+            if (!at(p, TK_DOT)) fail(p->c, t->line, "'base' must be followed by '.', e.g. base.Update()");
+            return mkexpr(p, E_BASE, t->line);
         case TK_STRING: {
             e = mkexpr(p, E_STRING, t->line);
             int L; e->name = unescape(p, t, &L); e->nlen = L;
@@ -511,6 +516,19 @@ static Expr* parse_unary(P* p) {
             e->op = k; e->a = parse_unary(p);
             return e;
         }
+        /* (Enemy)x: a name in parentheses followed by something that starts an operand, as in C# */
+        if (k == TK_IDENT && peekn(p, 2)->kind == TK_RPAREN) {
+            int n = peekn(p, 3)->kind;
+            if (n == TK_IDENT || n == TK_THIS || n == TK_BASE || n == TK_NEW || n == TK_LPAREN || n == TK_INT || n == TK_FLOAT ||
+                n == TK_STRING || n == TK_CHAR || n == TK_TRUE || n == TK_FALSE || n == TK_NULL || n == TK_BANG || n == TK_TILDE) {
+                p->pos++;
+                Expr* e = mkexpr(p, E_CAST, t->line);
+                e->tn = parse_type(p);
+                expect(p, TK_RPAREN);
+                e->a = parse_unary(p);
+                return e;
+            }
+        }
     }
     return parse_postfix(p);
 }
@@ -523,7 +541,7 @@ static int binprec(int k) {
         case TK_CARET: return 4;
         case TK_AMP: return 5;
         case TK_EQ: case TK_NE: return 6;
-        case TK_LT: case TK_LE: case TK_GT: case TK_GE: return 7;
+        case TK_LT: case TK_LE: case TK_GT: case TK_GE: case TK_IS: case TK_AS: return 7;
         case TK_SHL: case TK_SHR: return 8;
         case TK_PLUS: case TK_MINUS: return 9;
         case TK_STAR: case TK_SLASH: case TK_PERCENT: return 10;
@@ -539,6 +557,16 @@ static Expr* parse_binary(P* p, int minprec) {
         int prec = binprec(k);
         if (!prec || prec < minprec) break;
         p->pos += ntok;
+        if (k == TK_IS || k == TK_AS) {          /* the right side is a type: a is Enemy, a is Enemy e, a is null, a is not null */
+            Expr* e = mkexpr(p, k == TK_IS ? E_IS : E_AS, t->line);
+            e->a = left;
+            if (k == TK_IS && at(p, TK_IDENT) && peek(p)->len == 3 && !memcmp(peek(p)->start, "not", 3)) { next(p); e->op = 1; }
+            if (k == TK_IS && accept(p, TK_NULL)) { left = e; continue; }
+            e->tn = parse_type(p);
+            if (k == TK_IS && !e->op && at(p, TK_IDENT)) { Token* id = next(p); e->name = id->start; e->nlen = id->len; }
+            left = e;
+            continue;
+        }
         Expr* right = parse_binary(p, prec + 1);
         Expr* e = mkexpr(p, (k == TK_AND || k == TK_OR) ? E_LOGIC : E_BINARY, t->line);
         e->op = k; e->a = left; e->b = right;
@@ -759,6 +787,19 @@ static void parse_method_rest(P* p, MethodDecl* m) {
         } while (accept(p, TK_COMMA));
     }
     expect(p, TK_RPAREN);
+    if (m->isCtor && accept(p, TK_COLON)) {
+        Token* b = next(p);
+        if (b->kind == TK_THIS) fail(p->c, b->line, "': this(...)' is not supported (only one constructor per class for now)");
+        if (b->kind != TK_BASE) fail(p->c, b->line, "expected 'base(...)' after ':'");
+        Expr* call = mkexpr(p, E_CALL, b->line);
+        call->args = parse_args(p, &call->nargs);
+        m->baseCall = call;
+    }
+    if (accept(p, TK_SEMI)) {
+        if (m->kind != MK_ABSTRACT) fail(p->c, m->line, "method '%.*s' needs a body { ... } (only abstract and interface methods end with ';')", m->nlen, m->name);
+        return;
+    }
+    if (m->kind == MK_ABSTRACT) fail(p->c, m->line, "%s method '%.*s' cannot have a body; end it with ';'", p->inInterface ? "an interface" : "an abstract", m->nlen, m->name);
     p->sawYield = 0;
     m->body = parse_block(p);
     m->isIter = p->sawYield;
@@ -766,20 +807,45 @@ static void parse_method_rest(P* p, MethodDecl* m) {
 static void parse_class(P* p, ClassDecl* cd) {
     Token* id = expect(p, TK_IDENT);
     cd->name = id->start; cd->nlen = id->len; cd->line = id->line;
+    if (at(p, TK_LT)) fail(p->c, id->line, "generic classes are not supported");
+    if (accept(p, TK_COLON)) {
+        int bcap = 0;
+        do {
+            cd->bases = (TypeNode**)arena_grow(p->c->A, cd->bases, cd->nbases, &bcap, sizeof(TypeNode*));
+            TypeNode* b = parse_type(p);
+            if (b->base != TK_IDENT || b->dims || b->arg) fail(p->c, b->line, "a class can only derive from a class or an interface");
+            cd->bases[cd->nbases++] = b;
+        } while (accept(p, TK_COMMA));
+    }
+    const char* what = cd->isInterface ? "interface" : "class";
+    p->inInterface = cd->isInterface;
     expect(p, TK_LBRACE);
     int fcap = 0, mcap = 0;
     while (!at(p, TK_RBRACE)) {
-        if (at(p, TK_EOF)) fail(p->c, cd->line, "class '%.*s' is never closed with '}'", cd->nlen, cd->name);
-        int isStatic = 0;
+        if (at(p, TK_EOF)) fail(p->c, cd->line, "%s '%.*s' is never closed with '}'", what, cd->nlen, cd->name);
+        int isStatic = 0, kind = cd->isInterface ? MK_ABSTRACT : MK_NONE;
+        Token* mod = peek(p);
         for (;;) {
+            Token* m = peek(p);
             if (accept(p, TK_STATIC) || accept(p, TK_CONST)) isStatic = 1;   /* const fields are static */
-            else if (accept(p, TK_PUBLIC) || accept(p, TK_PRIVATE) || accept(p, TK_READONLY)) {}
+            else if (accept(p, TK_PUBLIC) || accept(p, TK_PRIVATE) || accept(p, TK_READONLY) || accept(p, TK_SEALED)) {}
+            else if (accept(p, TK_VIRTUAL) || accept(p, TK_OVERRIDE) || accept(p, TK_ABSTRACT)) {
+                if (cd->isInterface) fail(p->c, m->line, "interface members cannot be '%.*s'", m->len, m->start);
+                if (kind != MK_NONE) fail(p->c, m->line, "use only one of 'virtual', 'override' and 'abstract'");
+                kind = m->kind == TK_VIRTUAL ? MK_VIRTUAL : m->kind == TK_OVERRIDE ? MK_OVERRIDE : MK_ABSTRACT;
+            }
             else break;
         }
+        if (kind == MK_ABSTRACT && !cd->isAbstract && !cd->isInterface)
+            fail(p->c, mod->line, "class '%.*s' has an abstract method, so it must be 'abstract class'", cd->nlen, cd->name);
+        if (kind != MK_NONE && !cd->isInterface && isStatic) fail(p->c, mod->line, "a static method cannot be virtual, override or abstract");
+        if (cd->isInterface && isStatic) fail(p->c, mod->line, "interfaces cannot have static members here");
         Token* t = peek(p);
         /* constructor */
         if (t->kind == TK_IDENT && t->len == cd->nlen && !memcmp(t->start, cd->name, t->len) && peekn(p, 1)->kind == TK_LPAREN) {
             if (isStatic) fail(p->c, t->line, "static constructors are not supported");
+            if (cd->isInterface) fail(p->c, t->line, "an interface cannot have a constructor");
+            if (kind != MK_NONE) fail(p->c, t->line, "a constructor cannot be virtual, override or abstract");
             next(p);
             cd->methods = (MethodDecl*)arena_grow(p->c->A, cd->methods, cd->nmethods, &mcap, sizeof(MethodDecl));
             MethodDecl* m = &cd->methods[cd->nmethods++];
@@ -788,17 +854,19 @@ static void parse_class(P* p, ClassDecl* cd) {
             parse_method_rest(p, m);
             continue;
         }
-        if (t->kind == TK_CLASS) fail(p->c, t->line, "nested classes are not supported");
+        if (t->kind == TK_CLASS || t->kind == TK_INTERFACE) fail(p->c, t->line, "nested classes are not supported");
         TypeNode* tn = parse_type(p);
         Token* name = expect(p, TK_IDENT);
         if (at(p, TK_LPAREN)) {
             cd->methods = (MethodDecl*)arena_grow(p->c->A, cd->methods, cd->nmethods, &mcap, sizeof(MethodDecl));
             MethodDecl* m = &cd->methods[cd->nmethods++];
             memset(m, 0, sizeof *m);
-            m->line = name->line; m->isStatic = isStatic; m->ret = tn; m->name = name->start; m->nlen = name->len;
+            m->line = name->line; m->isStatic = isStatic; m->ret = tn; m->name = name->start; m->nlen = name->len; m->kind = kind;
             parse_method_rest(p, m);
             continue;
         }
+        if (cd->isInterface) fail(p->c, name->line, "interfaces can only have methods (no fields)");
+        if (kind != MK_NONE) fail(p->c, name->line, "a field cannot be virtual, override or abstract");
         if (tn->base == TK_VOID && tn->dims == 0) fail(p->c, name->line, "a field cannot be 'void'");
         for (;;) {
             cd->fields = (FieldDecl*)arena_grow(p->c->A, cd->fields, cd->nfields, &fcap, sizeof(FieldDecl));
@@ -811,10 +879,11 @@ static void parse_class(P* p, ClassDecl* cd) {
         expect(p, TK_SEMI);
     }
     next(p);
+    p->inInterface = 0;
 }
 
 ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
-    P p = { c, toks, 0, ntok, 0 };
+    P p = { c, toks, 0, ntok, 0, 0 };
     ProgramAST* prog = (ProgramAST*)arena_alloc(c->A, sizeof(ProgramAST));
     int cap = 0, nsDepth = 0;
     while (!at(&p, TK_EOF)) {
@@ -830,13 +899,20 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
             continue;
         }
         if (nsDepth > 0 && accept(&p, TK_RBRACE)) { nsDepth--; continue; }
-        while (accept(&p, TK_PUBLIC) || accept(&p, TK_PRIVATE) || accept(&p, TK_STATIC)) {}
+        int isAbstract = 0;
+        for (;;) {
+            if (accept(&p, TK_PUBLIC) || accept(&p, TK_PRIVATE) || accept(&p, TK_STATIC) || accept(&p, TK_SEALED)) {}
+            else if (accept(&p, TK_ABSTRACT)) isAbstract = 1;
+            else break;
+        }
         Token* t = peek(&p);
-        if (t->kind != TK_CLASS) fail(c, t->line, "expected 'class' at top level, found '%.*s'", t->len, t->start);
+        if (t->kind != TK_CLASS && t->kind != TK_INTERFACE) fail(c, t->line, "expected 'class' or 'interface' at top level, found '%.*s'", t->len, t->start);
+        if (t->kind == TK_INTERFACE && isAbstract) fail(c, t->line, "an interface is already abstract");
         next(&p);
         prog->classes = (ClassDecl*)arena_grow(c->A, prog->classes, prog->nclasses, &cap, sizeof(ClassDecl));
         ClassDecl* cd = &prog->classes[prog->nclasses++];
         memset(cd, 0, sizeof *cd);
+        cd->isAbstract = isAbstract; cd->isInterface = t->kind == TK_INTERFACE;
         parse_class(&p, cd);
     }
     if (nsDepth > 0) fail(c, peek(&p)->line, "expected '}' to close the namespace but reached end of file");

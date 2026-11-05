@@ -1,0 +1,1 @@
+compile error: line 1: variable initializer: not every A is a B; use a cast (B)x, or 'x as B' / 'x is B y'

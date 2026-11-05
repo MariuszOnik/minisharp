@@ -1,0 +1,1 @@
+compile error: line 1: field 'x' is already in base class 'A'; use a different name

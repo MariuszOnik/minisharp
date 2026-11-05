@@ -1,0 +1,1 @@
+compile error: line 1: 'A' has no base class, so it cannot call base(...)

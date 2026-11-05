@@ -27,7 +27,8 @@ enum {
     TK_CHAR, TK_KCHAR, TK_FOREACH, TK_IN, TK_SWITCH, TK_CASE, TK_DEFAULT,
     TK_AMP, TK_PIPE, TK_CARET, TK_TILDE, TK_SHL, TK_AMPEQ, TK_PIPEEQ, TK_CARETEQ, TK_SHLEQ,
     TK_SHR, TK_SHREQ,                   /* never made by the lexer: the parser joins '>' '>' (see optok) */
-    TK_OUT
+    TK_OUT,
+    TK_ABSTRACT, TK_VIRTUAL, TK_OVERRIDE, TK_SEALED, TK_INTERFACE, TK_BASE, TK_IS, TK_AS
 };
 
 typedef struct { int kind; const char* start; int len; int line; int32_t ival; float fval; } Token;
@@ -41,7 +42,9 @@ enum {
     E_UNARY, E_BINARY, E_LOGIC, E_ASSIGN, E_INCDEC, E_CAST, E_COND,
     E_CHAR, E_NEWLIST,              /* E_NEWLIST: tn = List<T> or Dictionary<K,V>, args = initializer items, a = capacity or NULL */
     E_PAIR,                         /* dictionary initializer item: {a, b}, or [a] = b when prefix is set */
-    E_OUT                           /* 'out x' (a = target) or 'out var x' / 'out T x' (prefix = 1, tn = type or NULL, name) */
+    E_OUT,                          /* 'out x' (a = target) or 'out var x' / 'out T x' (prefix = 1, tn = type or NULL, name) */
+    E_BASE,                         /* 'base' (only as base.Member) */
+    E_IS, E_AS                      /* a is T [name] / a as T: tn = type (NULL: 'is null'), name = pattern variable; op = 1 for 'is not' */
 };
 
 typedef struct Expr Expr;
@@ -70,15 +73,20 @@ struct Stmt {
 };
 
 typedef struct { TypeNode* tn; const char* name; int nlen; } Param;
+enum { MK_NONE, MK_VIRTUAL, MK_OVERRIDE, MK_ABSTRACT };
 typedef struct {
     int line, isStatic, isCtor, isIter;     /* isIter: the body uses 'yield' */
+    int kind;                               /* MK_*; interface methods are MK_ABSTRACT */
     TypeNode* ret; const char* name; int nlen;
     Param* params; int nparams;
-    Stmt* body;
+    Stmt* body;                             /* NULL for abstract and interface methods */
+    Expr* baseCall;                         /* constructor: ': base(args)' as an E_CALL, or NULL */
 } MethodDecl;
 typedef struct { int line, isStatic; TypeNode* tn; const char* name; int nlen; Expr* init; } FieldDecl;
 typedef struct {
     int line; const char* name; int nlen;
+    int isAbstract, isInterface;
+    TypeNode** bases; int nbases;           /* ': Base, IFoo, IBar' (which one is the class is decided later) */
     FieldDecl* fields; int nfields;
     MethodDecl* methods; int nmethods;
 } ClassDecl;

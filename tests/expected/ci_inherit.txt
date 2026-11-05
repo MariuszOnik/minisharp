@@ -1,0 +1,7 @@
+Game.cs:15: Entity -> x y name Update Info
+Game.cs:26: string -> Length Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower
+Game.cs:27: Boss -> phase Heal Info Test hp Update Hit x
+Game.cs:37: Boss -> phase Heal Info Test hp Update Hit x
+Game.cs:38: string -> Length Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower
+Game.cs:39: IHeal -> Heal Hit
+Game.cs:41: Enemy -> hp Update Hit x y name Info

@@ -19,6 +19,8 @@ check dict "$($BIN tests/dict.cs 2>&1)" tests/expected/dict.txt
 check dict_gc "$($BIN tests/dict_gc.cs 2>&1)" tests/expected/dict_gc.txt
 check media "$($BIN tests/media.cs 2>&1)" tests/expected/media.txt
 check namespace "$($BIN tests/namespace.cs 2>&1)"  tests/expected/namespace.txt
+check inherit "$($BIN tests/inherit.cs 2>&1)" tests/expected/inherit.txt
+check inherit_coro "$($BIN tests/inherit_coro.cs --frames 8 2>&1)" tests/expected/inherit_coro.txt
 check rt_dictkey "$($BIN tests/rt_dictkey.cs 2>&1 >/dev/null)" tests/expected/rt_dictkey.txt
 check rt_dictdup "$($BIN tests/rt_dictdup.cs 2>&1 >/dev/null)" tests/expected/rt_dictdup.txt
 check rt_imgmissing "$($BIN tests/rt_imgmissing.cs 2>&1 >/dev/null)" tests/expected/rt_imgmissing.txt
@@ -27,8 +29,10 @@ check rt_imgid "$($BIN tests/rt_imgid.cs 2>&1 >/dev/null)" tests/expected/rt_img
 check rt_sndbad "$($BIN tests/rt_sndbad.cs 2>&1 >/dev/null)" tests/expected/rt_sndbad.txt
 check rt_null   "$($BIN tests/rt_null.cs 2>&1 >/dev/null)"  tests/expected/rt_null.txt
 check rt_index  "$($BIN tests/rt_index.cs 2>&1 >/dev/null)" tests/expected/rt_index.txt
+check rt_cast   "$($BIN tests/rt_cast.cs 2>&1 >/dev/null)" tests/expected/rt_cast.txt
 check repl "$($BIN --repl < tests/repl.txt 2>&1)" tests/expected/repl.txt
 check ci "$($BIN --ci tests/ci 2>&1)" tests/expected/ci.txt
+check ci_inherit "$($BIN --ci tests/ci_inherit 2>&1)" tests/expected/ci_inherit.txt
 for t in project project_err project_rt project_twomain; do
     check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
 done

@@ -1,0 +1,9 @@
+Unit archer aims
+Unit knight charges
+knight waits 1
+frame 1
+frame 2
+frame 3
+Unit archer shoots
+Unit knight hits
+frame 4

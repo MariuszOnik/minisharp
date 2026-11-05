@@ -14,6 +14,7 @@ typedef struct {
 typedef struct {
     CIMember* m; int n, cap;
     char classes[64][32]; int nclasses;
+    char bases[64][64];                 /* "Enemy IHealable": what each class derives from, space separated */
     const char** texts; int ntexts;     /* the files the index was built from (not copied) */
 } CodeIndex;
 

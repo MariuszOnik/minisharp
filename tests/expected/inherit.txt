@@ -1,0 +1,44 @@
+Entity ctor: goblin #1
+Enemy ctor: hp=10 speed=3
+Entity ctor: DRAGON #2
+Enemy ctor: hp=10 speed=2
+Boss ctor: hp=50
+Entity ctor: coin #3
+created 3
+Enemy goblin at 1.5,4
+<Enemy:goblin>
+str: <Enemy:goblin> name=goblin
+Boss DRAGON at 1,4 phase 1
+Boss(<Boss:DRAGON>)
+str: Boss(<Boss:DRAGON>) name=DRAGON
+Pickup coin at 1.5,1
+<Pickup:coin>
+str: <Pickup:coin> name=coin
+hit 4 dead=False
+hit 7 dead=True
+hit 30 dead=False
+boss hp=35 phase=1
+boss hp=39 dead=False
+named: coin
+an enemy with hp 0
+goblin can be damaged
+goblin cannot heal
+as Enemy null? False
+boss phase 1
+DRAGON can be damaged
+as Enemy null? False
+coin cannot heal
+as Enemy null? True
+null is Enemy: False
+null is null: True e is not null: True
+cast of null: True
+same object: True True
+plain 3 7 Plain2
+Circle area 12
+Rect area 6
+Square area 16
+Shape area 0
+total 34
+square as rect: 4x4 Square
+Boss(<Boss:DRAGON>) <Enemy:goblin>
+3 created 3

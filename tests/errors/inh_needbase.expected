@@ -1,0 +1,1 @@
+compile error: line 1: the constructor of 'A' takes 1 argument; call it with ': base(...)' after the constructor of 'B'

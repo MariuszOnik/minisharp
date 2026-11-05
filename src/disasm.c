@@ -29,6 +29,7 @@ static const struct { const char* name; int nargs; } ops[] = {
     [OP_IAND] = {"IAND", 0}, [OP_IOR] = {"IOR", 0}, [OP_IXOR] = {"IXOR", 0}, [OP_ISHL] = {"ISHL", 0},
     [OP_ISHR] = {"ISHR", 0}, [OP_INOT] = {"INOT", 0}, [OP_I2C] = {"I2C", 0}, [OP_C2I] = {"C2I", 1},
     [OP_LIST] = {"LIST", 1}, [OP_CORO_NEW] = {"CORO_NEW", 2}, [OP_YIELD] = {"YIELD", 1}, [OP_CORO] = {"CORO", 1}, [OP_DICT] = {"DICT", 1},
+    [OP_CALLV] = {"CALLV", 2}, [OP_ISINST] = {"ISINST", 2},
 };
 
 void ms_disassemble(Program* p) {
@@ -43,6 +44,7 @@ void ms_disassemble(Program* p) {
             if (o == OP_JMP || o == OP_JZ || o == OP_JFALSE_KEEP || o == OP_JTRUE_KEEP) printf("   -> %d", ip + 2 + (int)f->code[ip + 1]);
             if (o == OP_CALL) printf("   %s", p->funcs[f->code[ip + 1]].name);
             if (o == OP_CALLN) printf("   %s.%s", ms_natives[f->code[ip + 1]].cls, ms_natives[f->code[ip + 1]].name);
+            if (o == OP_ISINST) printf("   %s", p->classes[f->code[ip + 1]].name);
             if (o == OP_SCONST) printf("   \"%s\"", p->strings[f->code[ip + 1]]->chars);
             if (o == OP_FCONST) { float v; memcpy(&v, &f->code[ip + 1], 4); printf("   %g", v); }
             printf("\n");

@@ -1,0 +1,1 @@
+compile error: line 1: class 'A' must have the method 'G' of interface 'I'

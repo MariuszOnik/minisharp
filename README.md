@@ -114,8 +114,9 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 ### Co jest
 - **Typy:** `int`, `float` (`double` to alias), `bool`, `char`, `string`, `void`, tablice `T[]` (także `int[][]`), `List<T>` (także `List<List<int>>`), własne klasy.
 - **Klasy:** pola (instancyjne i `static`, z wartościami początkowymi), metody, jeden konstruktor, `this`, `new`, `null`. `const` działa jak pole statyczne.
+- **Dziedziczenie i interfejsy:** `class Boss : Wrog, IRaniony`, `abstract class`, metody `virtual` / `override` / `abstract`, `base.Metoda()`, konstruktor `: base(...)`, `interface` (także `interface IB : IA`), `public override string ToString()` (używane przez `Console.WriteLine(obj)` i `"..." + obj`), `x is Boss`, `x is Boss b`, `x is null`, `x is not Boss`, `x as Boss`, rzutowanie `(Boss)x` (błąd wykonania, gdy obiekt nie jest Bossem). Kolejność konstruktorów i pól jak w .NET (test `tests/inherit.cs` daje identyczny wynik).
 - **Instrukcje:** `if`/`else`, `while`, `do`/`while`, `for`, `foreach` (tablice, listy, stringi), `switch` (int, char, string, bool; `case 1: case 2:`, `default`), `break`, `continue`, `return`, bloki, `var`, `int a = 1, b = 2;`.
-- **Wyrażenia:** `+ - * / %`, `== != < <= > >=`, `&& || !`, bitowe `& | ^ ~ << >>`, `? :`, `= += -= *= /= %= &= |= ^= <<= >>=`, `++ --` (przed i po), rzutowania `(int)` / `(float)` / `(char)`.
+- **Wyrażenia:** `+ - * / %`, `== != < <= > >=`, `&& || !`, bitowe `& | ^ ~ << >>`, `? :`, `= += -= *= /= %= &= |= ^= <<= >>=`, `++ --` (przed i po), rzutowania `(int)` / `(float)` / `(char)` / `(Klasa)`, `is`, `as`.
 - **Stringi:** łączenie `+` z dowolnym typem (`"x=" + x`), `.Length`, `s[i]` (char), porównanie `==`, `Substring IndexOf Contains StartsWith EndsWith ToUpper ToLower Trim Replace Split`, `string.IsNullOrEmpty`, `x.ToString()`.
 - **char:** literały `'A'`, `'\n'`; `char.IsDigit IsLetter IsWhiteSpace ToUpper ToLower`; `c + 1` daje `int`, `c++` zostaje `char` (jak w C#). Znaki są 8-bitowe (ASCII), polskie litery w stringach liczą się jako kilka znaków.
 - **Liczby:** `int.Parse(s)`, `float.Parse(s)`, `int.MaxValue`, `int.MinValue`.
@@ -150,7 +151,8 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 
 ### Czego jeszcze nie ma (pomysły na kolejne wersje)
-- dziedziczenie, interfejsy, metody wirtualne,
+- lambdy, `Func`/`Action`, metody `List` z predykatami (`Find`, `RemoveAll`, `Sort`...), mini Linq,
+- `switch` na typach (`case Boss b:`), ukrywanie metod (`new`), `protected` sprawdzane przez kompilator,
 - przeciążanie własnych metod, wiele konstruktorów,
 - własne generyki, `long`, `out` poza `TryGetValue`,
 - `enum`, `struct`, właściwości (`get`/`set`), interpolacja `$"..."`,

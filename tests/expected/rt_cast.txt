@@ -1,0 +1,1 @@
+runtime error: line 7 (P.Main): invalid cast: this Cat is not a Dog

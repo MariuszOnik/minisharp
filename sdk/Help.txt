@@ -55,7 +55,35 @@ a.Ruch();                // a.x = 11, b.x dalej 50
 Gracz.ilu                // pole static czyta się przez nazwę klasy
 Konstruktor ma nazwę klasy, nie ma typu zwracanego i uruchamia go new.
 this to obiekt, na którym działa metoda. Bez this, gdy parametr i pole mają tę samą nazwę, x = x zmieniłoby tylko parametr.
-Jeden konstruktor na klasę. Nie ma jeszcze dziedziczenia ani interfejsów.
+Jeden konstruktor na klasę. Klasa może dziedziczyć po innej (następny temat).
+
+## Dziedziczenie
+Klasa pochodna dostaje pola i metody klasy bazowej i może je rozszerzać.
+class Wrog {
+    public int hp = 10;
+    public Wrog(int hp) { this.hp = hp; }
+    public virtual void Trafiony(int ile) { hp -= ile; }   // virtual: można nadpisać
+}
+class Boss : Wrog {                        // Boss jest też Wrogiem
+    public Boss() : base(50) { }           // base(...) woła konstruktor Wroga
+    public override void Trafiony(int ile) {
+        base.Trafiony(ile / 2);            // wersja z klasy bazowej
+    }
+}
+Wrog w = new Boss();      // zmienna typu bazowego może trzymać Bossa
+w.Trafiony(10);           // override: wywoła się wersja Bossa, hp = 45
+abstract class Ksztalt { public abstract float Pole(); }   // bez ciała, nie da się zrobić new
+public override string ToString() { return "Boss " + hp; } // używane przez Console.WriteLine i "..." + obiekt
+
+## Interfejsy, is, as
+Interfejs to lista metod, które klasa obiecuje mieć. Klasa ma jedną bazę, ale wiele interfejsów.
+interface IRaniony { void Trafiony(int ile); }
+class Skrzynia : IRaniony { public void Trafiony(int ile) { ... } }
+IRaniony r = new Skrzynia(); r.Trafiony(1);
+if (w is Boss b) b.Faza();       // czy to Boss? jeśli tak, b to ten sam obiekt jako Boss
+Boss b2 = w as Boss;             // Boss albo null
+Boss b3 = (Boss)w;               // rzutowanie: błąd, jeśli w nie jest Bossem
+if (w is null) ...   if (w is not Boss) ...
 
 ## List<T>
 var l = new List<int>(); l.Add(5); l[0]; l.Count

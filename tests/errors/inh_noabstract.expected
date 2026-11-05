@@ -1,0 +1,1 @@
+compile error: line 1: class 'B' must override the abstract method 'A.F' (or be 'abstract class')

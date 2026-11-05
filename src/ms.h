@@ -67,7 +67,9 @@ enum {
     OP_CORO_NEW,                        /* func, argc: calling an iterator method makes a coroutine */
     OP_YIELD,                           /* Y_* kind */
     OP_CORO,                            /* C_* sub-op */
-    OP_DICT                             /* D_* sub-op, | default-value kind << 8 for D_TRYGET */
+    OP_DICT,                            /* D_* sub-op, | default-value kind << 8 for D_TRYGET */
+    OP_CALLV,                           /* selector, argc (with 'this'): virtual / interface call through the object's vtable */
+    OP_ISINST                           /* class, mode: 0 'is' (bool), 1 'as' (object or null), 2 cast (fails if not one) */
 };
 enum { D_NEW, D_ADD, D_REMOVE, D_CONTAINS, D_CONTAINSVAL, D_CLEAR, D_TRYGET, D_KEYS, D_VALUES, D_NEXT, D_KEYAT, D_VALAT };
 enum { Y_NEXT, Y_SECONDS, Y_CORO };
@@ -77,15 +79,23 @@ enum { L_NEW, L_ADD, L_INSERT, L_REMOVEAT, L_REMOVE, L_CLEAR, L_INDEXOF, L_ADDRA
 typedef struct {
     int32_t* code; int* lines; int len, cap;
     int nparams, nlocals;
+    uint8_t isIter;                     /* calling it makes a coroutine */
     char name[64];
 } Func;
 
-typedef struct { char name[32]; int nfields; Value* defaults; } ClassRT;
+typedef struct {
+    char name[32]; int nfields; Value* defaults;
+    int base;                           /* base class or -1 */
+    int* vtable;                        /* [Program.nsel]: function for each virtual selector, -1 none */
+    uint8_t* isa;                       /* [nclasses]: 1 if an object of this class is also that class / interface */
+    int toString;                       /* 'override string ToString()' or -1 */
+} ClassRT;
 
 typedef struct {
     Func* funcs; int nfuncs, capfuncs;
     ObjString** strings; int nstrings, capstrings;
     ClassRT* classes; int nclasses;
+    int nsel;                           /* virtual selectors (length of every vtable) */
     Value* staticDefaults; int nstatics;
     int staticInit, entryMain, entryUpdate, entryDraw;
 } Program;

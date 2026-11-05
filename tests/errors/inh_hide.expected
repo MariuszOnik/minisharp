@@ -1,0 +1,1 @@
+compile error: line 1: 'F' is already in base class 'A'; to replace it, make it 'virtual' (or 'abstract') there and 'override' here

@@ -396,6 +396,25 @@ int vm_tick_coroutines(VM* vm) {
     return 1;
 }
 
+/* Calling an iterator method: the arguments on the stack become a new coroutine. 0 = out of memory */
+static int coro_new(VM* vm, int fidx, int argc, Value** spp) {
+    Value* sp = *spp;
+    int nl = vm->p->funcs[fidx].nlocals;
+    ObjCoro* co = (ObjCoro*)alloc_obj(vm, sizeof(ObjCoro) + sizeof(Value) * nl, O_CORO);
+    if (!co) return 0;
+    co->func = fidx; co->ip = 0; co->nlocals = nl;
+    co->started = co->done = co->running = 0; co->waitKind = Y_NEXT;
+    co->waitUntil = 0; co->lastFrame = -1; co->waitFor = NULL; co->owner = NULL;
+    for (int i = 0; i < nl; i++) {
+        if (i < argc) co->locals[i] = sp[i - argc];
+        else { co->locals[i].t = V_NULL; co->locals[i].as.o = NULL; }
+    }
+    sp -= argc;
+    sp->t = V_OBJ; sp->as.o = (Obj*)co; sp++;
+    *spp = sp;
+    return 1;
+}
+
 /* Runs from the top frame until the frame at startFp returns (1), yields (2) or fails (0). */
 static int vm_run(VM* vm, int startFp) {
     Program* P = vm->p;
@@ -505,11 +524,29 @@ static int vm_run(VM* vm, int startFp) {
                 if (f != f) r = 0; else if (f >= 2147483647.0f) r = 2147483647; else if (f <= -2147483648.0f) r = (-2147483647 - 1); else r = (int32_t)f;
                 sp[-1].t = V_INT; sp[-1].as.i = r; break;
             }
-            case OP_TOSTR: {
+            case OP_TOSTR: {               /* kind 4: an object's own class name, without its ToString override (base.ToString()) */
                 int kind = ARG(); int depth = ARG();
                 Value* v = sp - 1 - depth;
                 char buf[96];
                 if (kind == 3 && v->t == V_OBJ && v->as.o->type == O_STRING) break;
+                if (kind == 3 && v->t == V_OBJ && v->as.o->type == O_INSTANCE && P->classes[INST(*v)->cls].toString >= 0) {
+                    /* override string ToString(): run it here, nested, and put its result in place of the object */
+                    int f = P->classes[INST(*v)->cls].toString;
+                    *sp = *v;
+                    vm->sp = (int)(sp - stack) + 1; fr->ip = ip;
+                    if (vm->fp >= MS_FRAMES) FAIL("stack overflow (too much recursion?)");
+                    int top = vm->fp;
+                    Frame* nf = &vm->frames[vm->fp++];
+                    nf->f = &P->funcs[f]; nf->ip = 0; nf->base = vm->sp - 1;
+                    for (int i = 1; i < nf->f->nlocals; i++) { stack[nf->base + i].t = V_NULL; stack[nf->base + i].as.o = NULL; }
+                    vm->sp = nf->base + nf->f->nlocals;
+                    if (vm->sp + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
+                    int r = vm_run(vm, top);
+                    if (r != 1) { vm->fp = startFp; return 0; }
+                    *v = stack[vm->sp];
+                    sp = stack + vm->sp;
+                    break;
+                }
                 ms_value_to_text(vm, *v, buf, sizeof buf);
                 SYNC();
                 Value s = vm_make_string(vm, buf, (int)strlen(buf));
@@ -551,6 +588,36 @@ static int vm_run(VM* vm, int startFp) {
             case OP_JFALSE_KEEP: { int off = ARG(); if (!sp[-1].as.i) ip += off; else sp--; break; }
             case OP_JTRUE_KEEP: { int off = ARG(); if (sp[-1].as.i) ip += off; else sp--; break; }
             case OP_NULLCHK: { int d = ARG(); if (sp[-1 - d].t != V_OBJ) FAIL("null reference (calling a method on null)"); break; }
+            case OP_CALLV: {               /* virtual call: the object (first argument) picks the function */
+                int sel = ARG(); int argc = ARG();
+                Value self = sp[-argc];
+                if (self.t != V_OBJ) FAIL("null reference (calling a method on null)");
+                int fidx = P->classes[INST(self)->cls].vtable[sel];
+                if (fidx < 0) FAIL("internal error: missing virtual method");
+                if (P->funcs[fidx].isIter) { SYNC(); if (!coro_new(vm, fidx, argc, &sp)) FAIL("out of memory"); break; }
+                Func* nf = &P->funcs[fidx];
+                SYNC();
+                if (vm->fp >= MS_FRAMES) FAIL("stack overflow (too much recursion?)");
+                int base = (int)(sp - stack) - argc;
+                if (base + nf->nlocals + 512 >= MS_STACK) FAIL("stack overflow (too much recursion?)");
+                for (int i = argc; i < nf->nlocals; i++) { stack[base + i].t = V_NULL; stack[base + i].as.o = NULL; }
+                fr = &vm->frames[vm->fp++];
+                fr->f = nf; fr->ip = 0; fr->base = base;
+                sp = stack + base + nf->nlocals;
+                bp = stack + base;
+                code = nf->code; ip = 0;
+                break;
+            }
+            case OP_ISINST: {
+                int ci = ARG(); int mode = ARG();
+                Value v = sp[-1];
+                int ok = v.t == V_OBJ && v.as.o->type == O_INSTANCE && P->classes[INST(v)->cls].isa[ci];
+                if (mode == 0) { sp[-1].t = V_BOOL; sp[-1].as.i = ok; break; }
+                if (ok || v.t == V_NULL) break;
+                if (mode == 1) { sp[-1].t = V_NULL; sp[-1].as.o = NULL; break; }
+                char m[160]; snprintf(m, sizeof m, "invalid cast: this %s is not a %s", P->classes[INST(v)->cls].name, P->classes[ci].name);
+                FAIL(m);
+            }
             case OP_CALL: {
                 int fidx = ARG(); int argc = ARG();
                 Func* nf = &P->funcs[fidx];
@@ -777,19 +844,8 @@ static int vm_run(VM* vm, int startFp) {
             }
             case OP_CORO_NEW: {
                 int fidx = ARG(); int argc = ARG();
-                int nl = P->funcs[fidx].nlocals;
                 SYNC();
-                ObjCoro* co = (ObjCoro*)alloc_obj(vm, sizeof(ObjCoro) + sizeof(Value) * nl, O_CORO);
-                if (!co) FAIL("out of memory");
-                co->func = fidx; co->ip = 0; co->nlocals = nl;
-                co->started = co->done = co->running = 0; co->waitKind = Y_NEXT;
-                co->waitUntil = 0; co->lastFrame = -1; co->waitFor = NULL; co->owner = NULL;
-                for (int i = 0; i < nl; i++) {
-                    if (i < argc) co->locals[i] = sp[i - argc];
-                    else { co->locals[i].t = V_NULL; co->locals[i].as.o = NULL; }
-                }
-                sp -= argc;
-                sp->t = V_OBJ; sp->as.o = (Obj*)co; sp++;
+                if (!coro_new(vm, fidx, argc, &sp)) FAIL("out of memory");
                 break;
             }
             case OP_YIELD: {

@@ -1,0 +1,1 @@
+compile error: line 1: 'F' must have the same return type and parameters as in 'A'
