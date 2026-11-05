@@ -2,6 +2,7 @@
  *   minisharp file.cs                 run Main(), or 60 frames of Update()/Draw()
  *   minisharp folder                  the same for a project (all .cs files in the folder)
  *   minisharp file.cs --frames N      run N frames
+ *   minisharp file.cs --press "10:Right 12:A"   buttons pressed in those frames (to test games)
  *   minisharp file.cs --ppm out.ppm   save both screens of the last frame as an image
  *   minisharp file.cs --check         only compile, report errors
  *   minisharp file.cs --dis           print the bytecode
@@ -22,6 +23,7 @@
 #endif
 
 void pc_begin_frame(void);
+void pc_set_presses(const char* s);
 void pc_save_ppm(const char* path);
 void ms_disassemble(Program* p);
 
@@ -104,6 +106,7 @@ int main(int argc, char** argv) {
         else if (!strcmp(argv[i], "--ppm") && i + 1 < argc) ppm = argv[++i];
         else if (!strcmp(argv[i], "--check")) check = 1;
         else if (!strcmp(argv[i], "--dis")) dis = 1;
+        else if (!strcmp(argv[i], "--press") && i + 1 < argc) pc_set_presses(argv[++i]);
     }
     /* Gfx.LoadImage("x.png") and Audio.Load start from the program's folder */
     char dir[256]; snprintf(dir, sizeof dir, "%s", argv[1]);

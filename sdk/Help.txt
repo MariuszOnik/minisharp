@@ -213,6 +213,94 @@ Co dalej:
 - obrazki i dźwięki: Gfx.LoadImage, Audio.Load (przykład sprites.cs),
 - tematy Klasy, Dziedziczenie, Lambdy i "C# a MiniSharp" opisują wszystko dokładniej.
 
+## Loch 1: mapa z liter
+Przykład loch.cs to roguelike: litery zamiast obrazków, losowy loch, walka turowa. Uruchom go z menu, potem czytaj dalej.
+Mapa to tablica znaków: '#' ściana, '.' podłoga, '>' schody. Pole (x, y) ma numer y * W + x.
+const int W = 40, H = 19;              // 40 x 19 pól; pole ma 10 x 12 pikseli
+static char[] mapa = new char[W * H];
+Generowanie: najpierw wszystko jest ścianą, potem wykuwamy pokoje i łączymy je korytarzami.
+for (int proba = 0; proba < 80 && pokoje.Count < 8; proba++) {
+    int w = Random.Range(4, 11), h = Random.Range(3, 6);       // losowy rozmiar
+    int x = Random.Range(1, W - w - 1), y = Random.Range(1, H - h - 1);
+    if (pokoje.Exists(p => x <= p[0] + p[2] && p[0] <= x + w && y <= p[1] + p[3] && p[1] <= y + h)) continue;  // nachodzi na inny
+    for (int yy = y; yy < y + h; yy++) for (int xx = x; xx < x + w; xx++) mapa[yy * W + xx] = '.';
+    if (pokoje.Count > 0) Korytarz(...środek poprzedniego..., ...środek nowego...);   // poziomo, potem pionowo
+    pokoje.Add(new int[] { x, y, w, h });
+}
+Gracz staje w pierwszym pokoju, schody '>' w ostatnim, potwory i mikstury w pozostałych.
+Rysowanie: każda litera osobno w swoim polu, żeby kolumny się zgadzały:
+Gfx.Text(x * 10, y * 12, znaki[c], 0.45f, kolor);    // znaki[c]: gotowy napis z jedną literą
+Widzisz tylko pola blisko siebie (Widac), a odkryte wcześniej ściany zostają na mapie (widziane[]).
+
+## Loch 2: komponenty jak w Unity
+W Unity GameObject sam nic nie umie; zachowanie dają mu komponenty (Rigidbody, Health...).
+To samo da się zrobić w MiniSharp: wystarczy lista komponentów, dziedziczenie po jednej klasie bazowej w zupełności wystarcza.
+abstract class Komponent {
+    public Byt byt;                        // właściciel (jak gameObject)
+    public virtual void Tura() { }         // jak Update w Unity, tylko raz na turę
+}
+class Byt {                                // jak GameObject
+    public string nazwa; public char znak; public int x, y;
+    List<Komponent> komponenty = new List<Komponent>();
+    public Byt Dodaj(Komponent k) { k.byt = this; komponenty.Add(k); return this; }
+    public Komponent Pobierz(Predicate<Komponent> jaki) => komponenty.Find(jaki);
+    public Zdrowie PobierzZdrowie() => Pobierz(k => k is Zdrowie) as Zdrowie;   // jak GetComponent<Health>()
+    public void Tura() { foreach (Komponent k in komponenty) k.Tura(); }
+}
+Komponenty: Zdrowie (hp i zdarzenie onSmierc), Atak (siła), AI (mózg potwora), Przedmiot (efekt jako lambda).
+Potwór to zestaw klocków; nowy rodzaj potwora nie potrzebuje nowej klasy:
+Byt ork = new Byt("Ork", 'O', Color.Red, 0, 0).Dodaj(new Zdrowie(15)).Dodaj(new Atak(4)).Dodaj(new AI(false));
+Byt mikstura = new Byt("mikstura", '!', Color.Magenta, 0, 0).Dodaj(new Przedmiot(kto => kto.PobierzZdrowie().Lecz(12)));
+Różnica z Unity: nie ma GetComponent<T>() (MiniSharp nie ma własnych generyków), dlatego Pobierz(k => k is Zdrowie) as Zdrowie.
+Kiedy dziedziczenie, a kiedy komponenty? Dziedziczenie: "Boss JEST wrogiem" (Kurs 6). Komponenty: "ten byt MA zdrowie i atak", gdy cechy się mieszają.
+
+## Loch 3: maszyna stanów (FSM)
+Potwór śpi, aż podejdziesz; wtedy goni; ranny ucieka i liże rany; wyleczony wraca do walki.
+Każdy stan to osobna klasa. Tura() robi swoje i zwraca następny stan (albo null: zostań).
+abstract class Stan {
+    public abstract string Nazwa();
+    public virtual void Wejdz(AI ai) { }       // raz, przy wejściu w stan
+    public abstract Stan Tura(AI ai);
+}
+class Spi : Stan {
+    public override string Nazwa() => "spi";
+    public override Stan Tura(AI ai) {
+        if (ai.OdlegloscDoGracza() <= 4) return new Goni();   // przejście
+        return null;
+    }
+}
+class Goni : Stan {
+    public override Stan Tura(AI ai) {
+        if (ai.byt.PobierzZdrowie().hp * 3 < ai.byt.PobierzZdrowie().max && ai.tchorz) return new Ucieka();
+        if (ai.OdlegloscDoGracza() == 1) ai.byt.PobierzAtak().Uderz(Game.gracz);
+        else ai.Krok(1);                       // krok do gracza
+        return null;
+    }
+    ...
+}
+Komponent AI trzyma bieżący stan i zmienia go:
+public override void Tura() {
+    Stan nowy = stan.Tura(this);
+    if (nowy != null) { stan = nowy; stan.Wejdz(this); }
+}
+Dolny ekran pokazuje stan każdego widocznego potwora (spi / goni / ucieka).
+Prostsza FSM, gdy stanów jest mało: string stan = "spi"; switch (stan) { case "spi": ... stan = "goni"; break; case "goni": ... break; }
+Albo stan jako lambda: Action stan = Spij; ... stan(); ... stan = Gon;
+Ta sama technika przyda się do menu gry (menu, gra, pauza, koniec) i animacji postaci.
+
+## Loch 4: walka turowa
+W grze turowej świat stoi, dopóki gracz czegoś nie zrobi. Update sprawdza przyciski i tylko wtedy wykonuje turę:
+bool tura = false;
+if (dx != 0 || dy != 0) tura = RuchGracza(gracz.x + dx, gracz.y + dy);   // ruch albo atak
+else if (Input.Pressed(Btn.A)) tura = true;                              // czekaj
+if (!tura) return;
+foreach (Byt b in byty) if (b != gracz) b.Tura();                         // teraz ruszają się potwory
+byty.RemoveAll(b => b.PobierzZdrowie() != null && !b.Zywy() && b != gracz);
+Atak to wejście na pole potwora (tzw. bump): w RuchGracza, gdy na polu stoi żywy potwór, gracz uderza zamiast iść.
+Obrażenia: siła + Random.Range(0, 3). Śmierć ogłasza zdarzenie onSmierc, a gra dopisuje komunikat do dziennika.
+Dziennik (log) to lista napisów; trzymamy 9 ostatnich i rysujemy je na dolnym ekranie.
+Pomysły: miecz zwiększający Atak.sila, pułapki na mapie, łucznik strzelający z daleka (nowy stan FSM), więcej poziomów.
+
 ## Zmienne i typy
 int (liczby całkowite), float (ułamki, 1.5f albo 1.5), bool (true/false), char ('a'), string ("tekst").
 var x = 5; - typ zgaduje kompilator.

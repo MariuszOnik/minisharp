@@ -28,6 +28,7 @@ check listfunc_gc "$($BIN tests/listfunc_gc.cs 2>&1)" tests/expected/listfunc_gc
 check exprbody "$($BIN tests/exprbody.cs 2>&1)" tests/expected/exprbody.txt
 check help_examples "$($BIN tests/help_examples.cs 2>&1)" tests/expected/help_examples.txt
 check kurs_snippets "$($BIN tests/kurs_snippets.cs --frames 30 2>&1)" tests/expected/kurs_snippets.txt
+check loch_bot "$($BIN examples/loch.cs --frames 6000 --press "$(cat tests/loch_press.txt)" 2>&1)" tests/expected/loch_bot.txt
 check rt_dictkey "$($BIN tests/rt_dictkey.cs 2>&1 >/dev/null)" tests/expected/rt_dictkey.txt
 check rt_dictdup "$($BIN tests/rt_dictdup.cs 2>&1 >/dev/null)" tests/expected/rt_dictdup.txt
 check rt_imgmissing "$($BIN tests/rt_imgmissing.cs 2>&1 >/dev/null)" tests/expected/rt_imgmissing.txt

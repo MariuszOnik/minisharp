@@ -48,8 +48,28 @@ void plat_text(float x, float y, const char* s, float scale, uint32_t c) {
     for (int i = 0; s[i]; i++)
         if (s[i] != ' ') plat_rect(x + i * cw + 1, y + 2, cw - 2, ch - 4, c);
 }
-uint32_t plat_buttons_held(void) { return 0; }
-uint32_t plat_buttons_pressed(void) { return 0; }
+/* --press "10:Right 12:A": buttons pressed (and held) in those frames, for testing games without a console */
+static const char* presses = "";
+void pc_set_presses(const char* s) { presses = s; }
+static uint32_t pressed_now(void) {
+    static const struct { const char* n; uint32_t b; } names[] = {
+        {"A", MSB_A}, {"B", MSB_B}, {"X", MSB_X}, {"Y", MSB_Y}, {"L", MSB_L}, {"R", MSB_R}, {"ZL", MSB_ZL}, {"ZR", MSB_ZR},
+        {"Up", MSB_UP}, {"Down", MSB_DOWN}, {"Left", MSB_LEFT}, {"Right", MSB_RIGHT}, {"Select", MSB_SELECT},
+    };
+    uint32_t r = 0;
+    for (const char* p = presses; *p; ) {
+        while (*p == ' ') p++;
+        int f = 0, n = 0;
+        char name[16];
+        if (sscanf(p, "%d:%15[A-Za-z]%n", &f, name, &n) != 2) break;
+        if (f == frame)
+            for (size_t i = 0; i < sizeof names / sizeof names[0]; i++) if (!strcmp(names[i].n, name)) r |= names[i].b;
+        p += n;
+    }
+    return r;
+}
+uint32_t plat_buttons_held(void) { return pressed_now(); }
+uint32_t plat_buttons_pressed(void) { return pressed_now(); }
 int plat_touch(int* x, int* y) { *x = 0; *y = 0; return 0; }
 float plat_stick_x(void) { return 0; }
 float plat_stick_y(void) { return 0; }

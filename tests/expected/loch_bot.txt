@@ -1,0 +1,472 @@
+Witaj w lochu! Znajdz schody >
+Pijesz miksture. +12 hp
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin cie zauwaza!
+Goblin -> Bohater: -3
+Nie masz mikstur.
+Goblin -> Bohater: -4
+Nie masz mikstur.
+Goblin -> Bohater: -4
+Goblin -> Bohater: -3
+Nie masz mikstur.
+Bohater -> Goblin: -3
+Goblin -> Bohater: -3
+Bohater -> Goblin: -3
+Goblin ucieka!
+Goblin cie zauwaza!
+Goblin -> Bohater: -3
+Goblin -> Bohater: -2
+Goblin -> Bohater: -4
+Nie masz mikstur.
+Goblin -> Bohater: -2
+Nie masz mikstur.
+Szczur cie zauwaza!
+Bohater -> Goblin: -5
+Goblin ginie.
+Szczur -> Bohater: -3
+ZGINALES. A: nowa gra
+Witaj w lochu! Znajdz schody >
+Pijesz miksture. +12 hp
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Szczur cie zauwaza!
+Nie masz mikstur.
+Szczur -> Bohater: -2
+Bohater -> Szczur: -5
+Szczur ginie.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Ork cie zauwaza!
+Szczur cie zauwaza!
+Ork -> Bohater: -5
+Ork -> Bohater: -5
+Ork -> Bohater: -5
+Nie masz mikstur.
+Bohater -> Ork: -5
+Ork -> Bohater: -6
+Ork -> Bohater: -4
+Szczur -> Bohater: -2
+Nie masz mikstur.
+Nie masz mikstur.
+Szczur -> Bohater: -2
+ZGINALES. A: nowa gra
+Witaj w lochu! Znajdz schody >
+Pijesz miksture. +12 hp
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Szczur cie zauwaza!
+Nie masz mikstur.
+Bohater -> Szczur: -4
+Szczur ginie.
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin cie zauwaza!
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Szczur cie zauwaza!
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin cie zauwaza!
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin -> Bohater: -2
+Goblin -> Bohater: -3
+Nie masz mikstur.
+Goblin -> Bohater: -2
+Goblin -> Bohater: -3
+Goblin -> Bohater: -3
+Goblin -> Bohater: -3
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin -> Bohater: -2
+Goblin -> Bohater: -2
+Goblin -> Bohater: -2
+Goblin -> Bohater: -2
+Goblin -> Bohater: -4
+Goblin -> Bohater: -4
+ZGINALES. A: nowa gra
+Witaj w lochu! Znajdz schody >
+Goblin cie zauwaza!
+Pijesz miksture. +12 hp
+Goblin cie zauwaza!
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin -> Bohater: -3
+Goblin -> Bohater: -4
+Goblin -> Bohater: -2
+Nie masz mikstur.
+Goblin -> Bohater: -3
+Goblin -> Bohater: -4
+Nie masz mikstur.
+Szczur cie zauwaza!
+Goblin -> Bohater: -4
+Goblin -> Bohater: -3
+Szczur -> Bohater: -1
+Szczur -> Bohater: -2
+Szczur -> Bohater: -2
+Goblin -> Bohater: -4
+ZGINALES. A: nowa gra
+Witaj w lochu! Znajdz schody >
+Goblin cie zauwaza!
+Pijesz miksture. +12 hp
+Goblin -> Bohater: -2
+Goblin -> Bohater: -4
+Nie masz mikstur.
+Bohater -> Goblin: -5
+Goblin -> Bohater: -3
+Goblin -> Bohater: -2
+Nie masz mikstur.
+Goblin cie zauwaza!
+Nie masz mikstur.
+Nie masz mikstur.
+Goblin -> Bohater: -2
+Nie masz mikstur.
+Goblin -> Bohater: -4
+Nie masz mikstur.
+Goblin -> Bohater: -3
+Goblin -> Bohater: -2
+Goblin -> Bohater: -2
+Goblin -> Bohater: -3
+Goblin -> Bohater: -3
+ZGINALES. A: nowa gra
+Goblin -> Bohater: -3
+Witaj w lochu! Znajdz schody >
+Pijesz miksture. +12 hp
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.
+Nie masz mikstur.

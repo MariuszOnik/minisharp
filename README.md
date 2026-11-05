@@ -129,7 +129,7 @@ make -f Makefile.pc test   # buduje ./minisharp i odpala testy
 - `using System;` jest akceptowane i ignorowane, więc kod z „prawdziwego" C# często wkleja się bez zmian.
 
 ### Kurs dla początkujących
-W Help (X w edytorze) tematy **Kurs 1** ... **Kurs 10** prowadzą od pierwszej zmiennej do małej gry: ruch i przyciski, pętle i listy, metody, klasy, dziedziczenie, interfejsy, lambdy i zdarzenia, korutyny, słownik. Cała gra z kursu to przykład [examples/kurs.cs](examples/kurs.cs) (statek, fale nietoperzy i kamieni). Przykłady z rozdziałów 1-4 sprawdza test `tests/kurs_snippets.cs`.
+W Help (X w edytorze) tematy **Kurs 1** ... **Kurs 10** prowadzą od pierwszej zmiennej do małej gry: ruch i przyciski, pętle i listy, metody, klasy, dziedziczenie, interfejsy, lambdy i zdarzenia, korutyny, słownik. Cała gra z kursu to przykład [examples/kurs.cs](examples/kurs.cs) (statek, fale nietoperzy i kamieni). Dalej tematy **Loch 1** ... **Loch 4** objaśniają przykład [examples/loch.cs](examples/loch.cs): roguelike z liter z losowym lochem, walką turową, systemem komponentów jak w Unity (`Byt` + `Komponent`) i maszyną stanów (FSM) potworów. Przykłady z rozdziałów 1-4 sprawdza test `tests/kurs_snippets.cs`.
 
 ### Punkty wejścia
 - `static void Main()` – wywoływane raz na starcie.
