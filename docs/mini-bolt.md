@@ -59,7 +59,10 @@ z parametrami i wynikiem albo klasa `Node`, jeśli ma pamiętać stan między kl
 
 1. ✔ Format i generator w C, zgodne z przeglądarką.
 2. Edytor na 3DS: przepływ od lewej do prawej, wygląd jak w przeglądarce, duże porty, łączenie przeciągnięciem
-   albo dotknięciem dwóch portów, paleta z wyszukiwaniem (`fg_search`). Rysowanie i dotyk z `source3ds/gview.c`
+   albo dotknięciem dwóch portów, paleta z wyszukiwaniem (`fg_search`).
+   **Usuwanie połączeń (pomyłki):** dotknięcie przewodu zaznacza go (szeroka strefa trafienia, jak w przeglądarce),
+   „Usuń” kasuje zaznaczony przewód albo węzeł razem z jego przewodami; przeciągnięcie przewodu z podłączonego wejścia
+   w puste miejsce odpina go; „Cofnij” wraca o krok. Rysowanie i dotyk z `source3ds/gview.c`
    (pomiary z `docs/graph-model.md`, sekcja 7: kosztem jest tekst).
 3. Własne węzły: metody static (są) i klasy `Node` z `[In]` / `[Out]`; 3b: podgrafy.
 4. Grafy obiektów i scena: obiekty, inspektor, zmienne sceny.
