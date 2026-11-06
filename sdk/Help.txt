@@ -30,7 +30,7 @@ Połącz: przeciągnij z portu do portu albo dotknij jednego portu, potem drugie
 Usuń połączenie: dotknij przewodu, potem Usuń (albo X). Albo przeciągnij przewód z podłączonego wejścia w puste miejsce. Cofnij wraca o krok.
 Węzeł: przesuwasz za nagłówek; dotknij wartości w węźle, żeby ją wpisać (tekst dostanie cudzysłów sam). + Węzeł (albo A): paleta z wyszukiwaniem, np. circle, held, jeśli, dodaj.
 L/R: przybliż / oddal. Y: cały graf na ekranie. Gałka albo przeciągnięcie tła: przesuń widok.
-Więcej: zmienne grafu, nazwa klasy, klasa z obiektami, kolejność (jak [Order] w kodzie), następna uwaga, zapisz.
+Więcej: ustawienia grafu, każde opisane w Graf 4.
 Uwagi: pomarańczowa ramka i lista na górnym ekranie to podpowiedzi generatora, np. węzeł niepodłączony do żadnego zdarzenia.
 Każda zmiana od razu zapisuje kod pliku, więc Kod, potem Uruchom działa od razu.
 Rysuj tylko w Draw: to, co narysujesz w Update, zniknie (Draw zwykle zaczyna od Gfx.Clear). Kolor tła ustaw raz: Gfx.Background w Start, wtedy Gfx.Clear nie jest potrzebne.
@@ -64,6 +64,21 @@ static void DodajPunkty(int n) { Game.wynik += n; }
 Klasa z obiektami (Więcej): graf staje się klasą bez static, z której robisz obiekty, każdy z własnymi zmiennymi:
 var b = new Ball(); b.Skok();
 Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie, chyba że ustawisz kolejność (Więcej > Kolejność, w kodzie [Order(n)]). Tło ustaw raz, Gfx.Background(kolor) w Main: ekran czyści się nim sam przed każdą klatką, więc żaden Draw nie potrzebuje Gfx.Clear (Clear w późniejszym pliku zmazałby to, co narysowały wcześniejsze).
+
+## Graf 4: menu Więcej
+Zmienne grafu: pola klasy grafu, np. float x = 200. Lista: Y dodaj, A zmień, X usuń. Każda ma nazwę, typ (int, float, bool, string, List<int>...) i wartość początkową (może być pusta). W grafie czytasz je węzłem Pobierz zmienną, a zmieniasz węzłem Ustaw zmienną; z kodu: NazwaKlasy.x.
+Dopasuj widok: cały graf na ekranie (to samo robi Y).
+Następna uwaga: przeskakuje do kolejnej uwagi generatora i zaznacza jej węzeł (opis na dole górnego ekranu).
+Nazwa klasy: nazwa klasy, którą robi ten graf (domyślnie ta z nazwy pliku). Pod tą nazwą kod widzi graf: Gracz.x, Gracz.Skok(). Musi być inna niż nazwy pozostałych klas projektu; plik się nie zmienia.
+Klasa z obiektami (nie / tak) mówi, czy graf to jedna rzecz, czy szablon wielu rzeczy:
+- nie (domyślnie): graf jest jeden, jak menedżer gry. Zmienne i metody są static, Start, Update i Draw działają same. Dobre dla gracza, wyniku, sterowania.
+- tak: graf to szablon, jak klasa w kodzie (albo prefab w Unity). Sam z siebie nic nie robi: obiekty robisz w kodzie przez new, a każdy ma własne zmienne. Start, Update i Draw tu nie działają (są static, a obiektów może być wiele albo żaden), więc zrób węzły Metoda (wołana z kodu), np. Rusz i Rysuj, i wołaj je dla każdego obiektu. Dobre dla monet, pocisków, wrogów.
+Przykład: graf Moneta z klasą z obiektami = tak, zmiennymi x, y i węzłem Metoda o nazwie Rysuj. W kodzie:
+static List<Moneta> monety = new List<Moneta>();
+var m = new Moneta(); m.x = 50; m.y = 80; monety.Add(m);   // np. w Main
+foreach (var mo in monety) mo.Rysuj();                      // w Draw: każda moneta rysuje się sama
+Kolejność: liczba jak [Order(n)] w kodzie. Mniejsza = Start, Update i Draw tego grafu idą przed innymi plikami; domyślnie 0 (wtedy kolejność plików po nazwie).
+Zapisz: zapisuje plik na karcie (to samo SELECT). Kod pliku zmienia się od razu przy każdej zmianie grafu, więc Uruchom działa bez zapisu; przy wyjściu z edytora zapyta o niezapisane pliki.
 
 ## Kurs 1: pierwszy program
 Ten kurs prowadzi od zera do małej gry. Cała gra jest w przykładzie kurs.cs (uruchom ją z menu, a potem otwórz w edytorze).
