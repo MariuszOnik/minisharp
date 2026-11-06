@@ -4,6 +4,7 @@ D-pad: kursor. L + Lewo/Prawo: początek/koniec linii. L + Góra/Dół: strona w
 B: usuń znak. Y: cofnij. R: wstaw pierwszą podpowiedź. X: Help.
 SELECT: pliki projektu. START: wyjście do menu.
 Przycisk Uruchom zapisuje pliki i uruchamia program. Błąd pokazuje plik i linię, kursor tam przeskakuje.
+Przycisk Graf otwiera edytor grafu (w pliku z grafem) albo robi nowy plik z grafem (patrz Graf 1).
 
 ## Program
 Program to klasa z metodami static:
@@ -17,6 +18,48 @@ Projekt to folder: wszystkie pliki .cs w nim kompilują się razem i klasy widz�
 Obrazki i dźwięki są szukane w folderze projektu.
 Każda klasa może mieć własne static void Main(), Update() i Draw(), tak jak skrypty na scenie w Unity: program woła je wszystkie, w kolejności klas w projekcie (pliki po nazwie, klasy od góry). Tak działają też pliki z grafem.
 Dobrze jest pisać na początku każdego pliku: namespace NazwaProjektu;
+
+## Graf 1: edytor
+Graf to program z węzłów zamiast z tekstu (jak Bolt w Unity). Plik z grafem to zwykły plik .cs: jego kod powstaje z grafu, a sam graf jest w ostatniej linii (// @graph ...). W edytorze kodu taki plik jest tylko do czytania: zmieniasz go w Graf.
+Nowy graf: w projekcie (folderze) przycisk Graf na zwykłym pliku pyta o nazwę klasy i robi plik z węzłami Update i Draw.
+Przepływ (trójkąty) idzie od lewej do prawej i ustala kolejność. Wartości (kółka) to dane, np. wynik Input.Held albo liczba. Pełny znaczek = podłączony.
+Połącz: przeciągnij z portu do portu albo dotknij jednego portu, potem drugiego. Wyjście (po prawej) łączy się z wejściem (po lewej), przepływ z przepływem, wartość z wartością.
+Usuń połączenie: dotknij przewodu, potem Usuń (albo X). Albo przeciągnij przewód z podłączonego wejścia w puste miejsce. Cofnij wraca o krok.
+Węzeł: przesuwasz za nagłówek; dotknij wartości w węźle, żeby ją wpisać (tekst dostanie cudzysłów sam). + Węzeł (albo A): paleta z wyszukiwaniem, np. circle, held, jeśli, dodaj.
+L/R: przybliż / oddal. Y: cały graf na ekranie. Gałka albo przeciągnięcie tła: przesuń widok.
+Więcej: zmienne grafu, nazwa klasy, klasa z obiektami, następna uwaga, zapisz.
+Uwagi: pomarańczowa ramka i lista na górnym ekranie to podpowiedzi generatora, np. węzeł niepodłączony do żadnego zdarzenia.
+Każda zmiana od razu zapisuje kod pliku, więc Kod, potem Uruchom działa od razu.
+Rysuj tylko w Draw: Draw zaczyna się zwykle od Gfx.Clear, więc to, co narysujesz w Update, zniknie, zanim je zobaczysz.
+
+## Graf 2: własne węzły z kodu
+Każda metoda static w pliku z kodem projektu sama staje się węzłem w palecie (kategoria Kod: NazwaKlasy). Nic nie trzeba rejestrować.
+class Lib {
+    // Odległość dwóch punktów.            <- komentarz nad metodą = opis węzła
+    // @node Odległość                     <- (można pominąć) inny tytuł węzła
+    static float Dystans(float ax, float ay, float bx, float by) {
+        float dx = ax - bx, dy = ay - by;
+        return Mathf.Sqrt(dx * dx + dy * dy);
+    }
+    // @node hide                          <- metoda pomocnicza: bez węzła
+    static int Pomocnicza(int a) { return a * 2; }
+}
+Parametry to wejścia węzła (bez połączenia mają wartość domyślną z typu, np. 0, albo wpisaną), wynik to wyjście result, a przepływ wchodzi i wychodzi jak przy każdym wywołaniu.
+Pominięte: Main, Update, Draw (to zdarzenia) i metody bez static. Plik z błędem nie daje węzłów, dopóki go nie poprawisz.
+Paleta czyta kod przy wejściu w Graf: po dopisaniu metody wyjdź z grafu (Kod) i wejdź jeszcze raz.
+Dwie metody o tej samej nazwie dają jeden węzeł (z pierwszej). Taki węzeł nie pamięta nic między klatkami: to zwykłe wywołanie metody.
+Jeszcze nie ma: węzłów z pamięcią (klasa z wejściami i wyjściami) i węzłów złożonych z grafu (podgrafów).
+
+## Graf 3: graf i kod razem
+Graf to klasa (nazwa w Więcej > Nazwa klasy), a jego zmienne to pola static tej klasy:
+Ball.x = 100;            // z kodu: zmienna x grafu Ball
+Węzeł Metoda (wołana z kodu), np. o nazwie Skok, daje metodę grafu: w kodzie Ball.Skok();
+W grafie pole innej klasy odczytasz węzłem Wartość z wpisanym wyrażeniem, np. Game.wynik.
+Ustaw zmienną zmienia tylko zmienne własnego grafu. Pole innej klasy zmienisz przez metodę w kodzie, która od razu jest węzłem:
+static void DodajPunkty(int n) { Game.wynik += n; }
+Klasa z obiektami (Więcej): graf staje się klasą bez static, z której robisz obiekty, każdy z własnymi zmiennymi:
+var b = new Ball(); b.Skok();
+Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie. Gfx.Clear zrób tylko w jednym Draw (w pliku, który idzie pierwszy), bo późniejszy Clear zmaże to, co narysowały wcześniejsze pliki.
 
 ## Kurs 1: pierwszy program
 Ten kurs prowadzi od zera do małej gry. Cała gra jest w przykładzie kurs.cs (uruchom ją z menu, a potem otwórz w edytorze).
