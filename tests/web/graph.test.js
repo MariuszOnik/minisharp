@@ -282,6 +282,14 @@ same(expr((N, F) => { N("m", "op.mul", { defaults: { a: "x + 1", b: "2" } }); F(
 ok(gen(G.emptyGraph()).warnings.some((w) => /zdarzenia/.test(w.message)), "warning: no event node at all");
 ok(gen(build((N) => N("d", "event.Draw"))).warnings.length === 0, "a Draw-only graph is fine for the generator (Update may live in another file)");
 {
+  const inUpdate = build((N, F) => { N("u", "event.Update"); N("c", "api.Gfx.Circle"); F("u", "exit", "c", "enter"); });
+  ok(gen(inUpdate).warnings.some((w) => w.node === "c" && /rysuje w Update/.test(w.message)), "warning: drawing in Update is wiped by Draw's Gfx.Clear");
+  const inDraw = build((N, F) => { N("d", "event.Draw"); N("c", "api.Gfx.Circle"); F("d", "exit", "c", "enter"); });
+  ok(!gen(inDraw).warnings.some((w) => /rysuje/.test(w.message)), "drawing in Draw: no warning");
+  const screen = build((N, F) => { N("u", "event.Update"); N("s", "api.Gfx.Screen"); F("u", "exit", "s", "enter"); });
+  ok(!gen(screen).warnings.some((w) => /rysuje/.test(w.message)), "Gfx.Screen in Update is not drawing");
+}
+{
   const g = build((N, F) => { N("u", "event.Update"); N("s", "var.set", { name: "ghost" }); F("u", "exit", "s", "enter"); });
   ok(gen(g).warnings.some((w) => /ghost/.test(w.message)), "warning: undeclared variable");
 }

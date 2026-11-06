@@ -19,14 +19,19 @@
 #include "help.h"
 #include "bolt.h"
 
-#define ROW 26.0f
-#define HEAD 30.0f
-#define CHAR 7.4f
-#define GRID 10.0f
+/* A compact layout for the small screen: in the browser a row is 26 px; here rows are 16 and the text keeps
+   its size, so at 100 % about three times more nodes fit and stay readable. Positions in the file stay in the
+   browser's units (K converts), so a graph looks the same on both, only denser here. */
+#define K 0.6f
+#define ROW 16.0f
+#define HEAD 18.0f
+#define CHAR 5.0f
+#define GRID 6.0f
+#define WEB_GRID 10.0f
 #define BAR_H 24
 #define SW 320.0f
 #define SH 240.0f
-#define TEXT_SCALE 0.43f                /* the system font at this scale is about the browser's 13 px */
+#define TEXT_SCALE 0.37f                /* about 11 px at 100 %: fits a 16 px row */
 #define FLOW_COLOR 0xDFE5EE
 #define VALUE_COLOR 0x82AAFF
 
@@ -45,7 +50,7 @@ static FCatalog CAT, USER;
 static FGenResult ISS;                  /* the generator's notes for the current graph */
 static Lay* L; static int nL;
 static C2D_TextBuf TB;
-static float vx = 20, vy = 40, vs = 0.6f; /* view: screen = world * vs + (vx, vy) */
+static float vx = 20, vy = 40, vs = 1.0f; /* view: screen = world * vs + (vx, vy) */
 enum { SEL_NONE, SEL_NODE, SEL_EDGE };
 static int selKind, selIndex;           /* node index into graph.nodes, or edge index */
 static int pendNode = -1, pendDir, pendPort; /* a port waiting for the second tap (dir 0 in, 1 out) */
@@ -59,8 +64,11 @@ static int nnodes(void) { JVal* n = nodes(); return n ? n->n : 0; }
 static int nedges(void) { JVal* e = edges(); return e ? e->n : 0; }
 static JVal* node(int i) { return nodes()->items[i]; }
 static const char* sget(const JVal* o, const char* k) { const JVal* v = json_get(o, k); return v && v->t == JS_STR ? v->s : ""; }
-static float nx(int i) { return (float)json_number(json_get(node(i), "x"), 0); }
-static float ny(int i) { return (float)json_number(json_get(node(i), "y"), 0); }
+static float nx(int i) { return (float)json_number(json_get(node(i), "x"), 0) * K; }
+static float ny(int i) { return (float)json_number(json_get(node(i), "y"), 0) * K; }
+/* position in screen-layout units -> the file's (browser) units, snapped to its grid when asked */
+static JVal* file_coord(float v, int snap) { v /= K; return json_num(snap ? roundf(v / WEB_GRID) * WEB_GRID : roundf(v)); }
+static void set_pos(int i, float x, float y, int snap) { json_set(node(i), "x", file_coord(x, snap)); json_set(node(i), "y", file_coord(y, snap)); }
 static int node_index(const char* id) { for (int i = nnodes() - 1; i >= 0; i--) if (!strcmp(sget(node(i), "id"), id)) return i; return -1; }
 static const FDef* def_of(int i) { return fg_find(&CAT, sget(node(i), "type")); }
 static JVal* data_of(int i) {
@@ -138,7 +146,7 @@ static void relayout(void) {
         Lay* l = &L[i];
         const FDef* d = l->d = def_of(i);
         if (!d) {
-            l->w = 160; l->h = HEAD + ROW;
+            l->w = 100; l->h = HEAD + ROW;
             snprintf(buf, sizeof buf, "? %s", sget(node(i), "type"));
             parse(&l->title, buf);
             continue;
@@ -168,11 +176,11 @@ static void relayout(void) {
         int dataLen = 0;
         if (l->dataRows) { short_text(buf, sizeof buf, data_text(i, d, b3, sizeof b3), 24); parse(&l->data, buf); short_text(b2, sizeof b2, data_text(i, d, b3, sizeof b3), 16); dataLen = ulen(b2) + 2; }
         parse(&l->title, d->title);
-        float w = fmaxf(124, fmaxf(ulen(d->title) * CHAR * 1.05f + 26, fmaxf((left + right) * CHAR + 56, dataLen * CHAR + 30)));
-        if (w > 340) w = 340;
+        float w = fmaxf(76, fmaxf(ulen(d->title) * CHAR * 1.05f + 16, fmaxf((left + right) * CHAR + 34, dataLen * CHAR + 18)));
+        if (w > 210) w = 210;
         l->w = ceilf(w / GRID) * GRID;
         int rows = d->nin > d->nout ? d->nin : d->nout;
-        l->h = HEAD + (l->dataRows + rows) * ROW + 8;
+        l->h = HEAD + (l->dataRows + rows) * ROW + 5;
     }
 }
 static float in_y(int i, int k) { return HEAD + L[i].dataRows * ROW + k * ROW + ROW / 2; }
@@ -239,7 +247,7 @@ static void fit(void) {
     }
     float pad = 12, h = SH - BAR_H;
     float s = fminf((SW - 2 * pad) / (x1 - x0), (h - 2 * pad) / (y1 - y0));
-    s = fmaxf(0.3f, fminf(1.0f, s));
+    s = fmaxf(0.35f, fminf(1.3f, s));
     vs = s; vx = (SW - (x1 - x0) * s) / 2 - x0 * s; vy = BAR_H + (h - (y1 - y0) * s) / 2 - y0 * s;
 }
 static void center_on(int i) {
@@ -250,13 +258,13 @@ static void center_on(int i) {
 /* ---------------------------------------------------------------- drawing */
 static u32 C(uint32_t rgb) { return plat3ds_color(rgb); }
 static void bez(float ax, float ay, float bx, float by, float t, float* x, float* y) {   /* wirePath of the browser */
-    float dx = fmaxf(40, fabsf(bx - ax) / 2), u = 1 - t;
+    float dx = fmaxf(24, fabsf(bx - ax) / 2), u = 1 - t;
     float c1x = ax + dx, c2x = bx - dx;
     *x = u * u * u * ax + 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t * bx;
     *y = u * u * u * ay + 3 * u * u * t * ay + 3 * u * t * t * by + t * t * t * by;
 }
 static void draw_wire(float ax, float ay, float bx, float by, uint32_t col, float width) {   /* world coordinates */
-    float minx = fminf(ax, bx) - 60, maxx = fmaxf(ax, bx) + 60, miny = fminf(ay, by), maxy = fmaxf(ay, by);
+    float minx = fminf(ax, bx) - 40, maxx = fmaxf(ax, bx) + 40, miny = fminf(ay, by), maxy = fmaxf(ay, by);
     if (SX(maxx) < 0 || SX(minx) > SW || SY(maxy) < BAR_H || SY(miny) > SH) return;
     int segs = vs >= 0.5f ? 14 : 6;
     float lx = SX(ax), ly = SY(ay);
@@ -287,7 +295,7 @@ static void ring(float x, float y, float r, uint32_t col) {
     }
 }
 static void port_shape(float x, float y, int flow, int filled, uint32_t col) {          /* screen coordinates */
-    float r = 6 * vs;
+    float r = 4.5f * vs;
     if (flow) {
         C2D_DrawTriangle(x - r, y - r * 7 / 6, C(col), x + r, y, C(col), x - r, y + r * 7 / 6, C(col), 0.5f);
         if (!filled) { float q = r * 0.55f; C2D_DrawTriangle(x - q, y - q * 7 / 6, C(0x171C25), x + q * 0.8f, y, C(0x171C25), x - q, y + q * 7 / 6, C(0x171C25), 0.5f); }
@@ -321,7 +329,7 @@ static void draw_graph(void) {
     if (tempOn) draw_wire(tx0, ty0, tx1, ty1, tempFlow ? 0x9098A8 : 0x5A78B0, 2.5f);
     /* nodes */
     float ts = TEXT_SCALE * vs;
-    int withText = vs >= 0.38f;
+    int withText = vs >= 0.55f;           /* smaller text cannot be read on this screen */
     for (int i = 0; i < nnodes(); i++) {
         Lay* l = &L[i];
         float x = SX(nx(i)), y = SY(ny(i)), w = l->w * vs, h = l->h * vs;
@@ -333,32 +341,32 @@ static void draw_graph(void) {
         C2D_DrawRectSolid(x - bw, y - bw, 0.5f, w + 2 * bw, h + 2 * bw, C(border));
         C2D_DrawRectSolid(x, y, 0.5f, w, h, C(0x1E2531));
         C2D_DrawRectSolid(x, y, 0.5f, w, HEAD * vs, C(mix(color, 0x1E2531, 0.28f)));
-        if (withText) text_at(&l->title, x + 11 * vs, y + 7 * vs, ts, color, 0);
+        if (withText) text_at(&l->title, x + 6 * vs, y + 3 * vs, ts, color, 0);
         const FDef* d = l->d;
         if (!d) continue;
         if (l->dataRows) {
-            C2D_DrawRectSolid(x + 8 * vs, y + (HEAD + 3) * vs, 0.5f, w - 16 * vs, (ROW - 6) * vs, C(0x2A3342));
-            C2D_DrawRectSolid(x + 9 * vs, y + (HEAD + 4) * vs, 0.5f, w - 18 * vs, (ROW - 8) * vs, C(0x11151C));
+            C2D_DrawRectSolid(x + 5 * vs, y + (HEAD + 1) * vs, 0.5f, w - 10 * vs, (ROW - 2) * vs, C(0x2A3342));
+            C2D_DrawRectSolid(x + 6 * vs, y + (HEAD + 2) * vs, 0.5f, w - 12 * vs, (ROW - 4) * vs, C(0x11151C));
             if (withText) {
                 float tw; C2D_TextGetDimensions(&l->data, ts, ts, &tw, NULL);
-                text_at(&l->data, x + (w - tw) / 2, y + (HEAD + 6) * vs, ts, 0xE8ECF2, 0);
+                text_at(&l->data, x + (w - tw) / 2, y + (HEAD + 2) * vs, ts, 0xE8ECF2, 0);
             }
         }
         for (int k = 0; k < d->nin; k++) {
             const FPort* p = &d->in[k];
             float py = y + in_y(i, k) * vs;
             int conn = is_connected(i, 0, p->name);
-            if (withText && !l->inEmpty[k]) text_at(&l->inText[k], x + 14 * vs, py - 7 * vs, ts, !p->flow && !conn ? 0xC3E88D : 0xA6ACCD, 0);
+            if (withText && !l->inEmpty[k]) text_at(&l->inText[k], x + 9 * vs, py - 6 * vs, ts, !p->flow && !conn ? 0xC3E88D : 0xA6ACCD, 0);
             port_shape(x, py, p->flow, conn, p->flow ? FLOW_COLOR : VALUE_COLOR);
-            if (pendNode == i && pendDir == 0 && pendPort == k) ring(x, py, 12 * vs, 0xFFD479);
+            if (pendNode == i && pendDir == 0 && pendPort == k) ring(x, py, 8 * vs, 0xFFD479);
         }
         for (int k = 0; k < d->nout; k++) {
             const FPort* p = &d->out[k];
             float py = y + out_y(i, k) * vs;
             int conn = is_connected(i, 1, p->name);
-            if (withText && !l->outEmpty[k]) text_at(&l->outText[k], x + w - 14 * vs, py - 7 * vs, ts, 0xA6ACCD, 1);
+            if (withText && !l->outEmpty[k]) text_at(&l->outText[k], x + w - 9 * vs, py - 6 * vs, ts, 0xA6ACCD, 1);
             port_shape(x + w, py, p->flow, conn, p->flow ? FLOW_COLOR : VALUE_COLOR);
-            if (pendNode == i && pendDir == 1 && pendPort == k) ring(x + w, py, 12 * vs, 0xFFD479);
+            if (pendNode == i && pendDir == 1 && pendPort == k) ring(x + w, py, 8 * vs, 0xFFD479);
         }
     }
 }
@@ -558,10 +566,10 @@ static void free_spot(float cx, float cy, float w, float h, float* ox, float* oy
         for (int dy = -r; dy <= r; dy++)
             for (int dx = -r; dx <= r; dx++) {
                 if ((abs(dx) > abs(dy) ? abs(dx) : abs(dy)) != r) continue;
-                float x = bx + dx * 50, y = by + dy * 50;
+                float x = bx + dx * 30, y = by + dy * 30;
                 int busy = 0;
                 for (int i = 0; i < nnodes() && !busy; i++)
-                    if (x < nx(i) + L[i].w + 20 && x + w + 20 > nx(i) && y < ny(i) + L[i].h + 20 && y + h + 20 > ny(i)) busy = 1;
+                    if (x < nx(i) + L[i].w + 12 && x + w + 12 > nx(i) && y < ny(i) + L[i].h + 12 && y + h + 12 > ny(i)) busy = 1;
                 if (!busy) { *ox = x; *oy = y; return; }
             }
     *ox = bx; *oy = by;
@@ -571,7 +579,7 @@ static void free_spot(float cx, float cy, float w, float h, float* ox, float* oy
 static JVal* make_node(const char* id, const FDef* d, float x, float y, const char* methodName) {
     JVal* n = json_new(JS_OBJ);
     json_set(n, "id", json_str(id)); json_set(n, "type", json_str(d->id));
-    json_set(n, "x", json_num(x)); json_set(n, "y", json_num(y));
+    json_set(n, "x", file_coord(x, 1)); json_set(n, "y", file_coord(y, 1));
     JVal* data = json_new(JS_OBJ);
     if (!strcmp(d->kind, "lit")) json_set(data, "value", json_str("0"));
     if (!strcmp(d->kind, "getvar") || !strcmp(d->kind, "setvar")) {
@@ -600,7 +608,7 @@ static void add_node(const FDef* d) {
     float nw = L[me].w, nh = L[me].h, cx, cy, x, y;
     to_world(SW / 2, BAR_H + (SH - BAR_H) / 2, &cx, &cy);
     if (selKind == SEL_NODE && selIndex < me) {             /* to the right of the selected node: chains grow from left to right */
-        cx = nx(selIndex) + L[selIndex].w + 70 + nw / 2;
+        cx = nx(selIndex) + L[selIndex].w + 42 + nw / 2;
         cy = ny(selIndex) + nh / 2;
     }
     json_remove_at(nodes(), me);
@@ -628,7 +636,7 @@ static Hit hit_test(float x, float y) {
     Hit h = { H_BG, -1, 0, -1, -1 };
     float wx, wy;
     to_world(x, y, &wx, &wy);
-    float pr = fmaxf(17, 14 / vs);                          /* at least 14 screen pixels for a finger */
+    float pr = fmaxf(11, 14 / vs);                          /* at least 14 screen pixels for a stylus or finger */
     for (int i = nnodes() - 1; i >= 0; i--) {             /* ports first; the node drawn last wins */
         const FDef* d = L[i].d;
         if (!d) continue;
@@ -642,16 +650,16 @@ static Hit hit_test(float x, float y) {
         }
     }
     for (int i = nnodes() - 1; i >= 0; i--) {
-        float lx = wx - nx(i), ly = wy - ny(i);
-        if (lx < 0 || ly < 0 || lx > L[i].w || ly > L[i].h) continue;
+        float lx = wx - nx(i), ly = wy - ny(i), slack = 6 / vs;   /* a few pixels around the node still grab it */
+        if (lx < -slack || ly < -slack || lx > L[i].w + slack || ly > L[i].h + slack) continue;
         h.node = i;
         h.kind = H_NODE;
         const FDef* d = L[i].d;
         if (!d || ly < HEAD) return h;
-        if (L[i].dataRows && ly >= HEAD && ly < HEAD + ROW && lx > 8 && lx < L[i].w - 8) { h.kind = H_DATA; return h; }
+        if (L[i].dataRows && ly >= HEAD && ly < HEAD + ROW && lx > 5 && lx < L[i].w - 5) { h.kind = H_DATA; return h; }
         for (int k = 0; k < d->nin; k++) {
             float ry = in_y(i, k);
-            if (!d->in[k].flow && !is_connected(i, 0, d->in[k].name) && ly >= ry - ROW / 2 && ly < ry + ROW / 2 && lx >= 8 && lx < L[i].w / 2 + 30) {
+            if (!d->in[k].flow && !is_connected(i, 0, d->in[k].name) && ly >= ry - ROW / 2 && ly < ry + ROW / 2 && lx >= 5 && lx < L[i].w / 2 + 18) {
                 h.kind = H_DEFAULT; h.port = k; return h;
             }
         }
@@ -866,7 +874,7 @@ void bolt_mode(const BoltHost* h) {
     build_catalog();
     if (!load_from_text()) { H->status(0xFF6060, "Ten plik nie ma grafu (linii // @graph)"); fg_catalog_free(&CAT); fg_catalog_free(&USER); return; }
     fit();
-    int touching = 0, moved = 0, sx0 = 0, sy0 = 0, lx = 0, ly = 0;
+    int touching = 0, moved = 0, sx0 = 0, sy0 = 0, lx = 0, ly = 0, lost = 0;
     Hit g = { H_BG, -1, 0, -1, -1 };
     float x0 = 0, y0 = 0;
     while (aptMainLoop()) {
@@ -889,16 +897,19 @@ void bolt_mode(const BoltHost* h) {
         int px, py;
         plat3ds_touch(&px, &py);
         if ((k & KEY_TOUCH) && py >= BAR_H) {
-            touching = 1; moved = 0; sx0 = lx = px; sy0 = ly = py;
+            if (touching && lost) { lost = 0; lx = px; ly = py; goto drawn; }   /* contact back within the grace: the same gesture */
+            touching = 1; moved = 0; lost = 0; sx0 = lx = px; sy0 = ly = py;
             g = hit_test(px, py);
             if (g.kind == H_NODE) { selKind = SEL_NODE; selIndex = g.node; x0 = nx(g.node); y0 = ny(g.node); }
+        } else if (touching && !(held & KEY_TOUCH) && ++lost < 5) {
+            /* the resistive screen loses contact for a frame or two while dragging: keep the gesture a moment */
         } else if (touching && (held & KEY_TOUCH)) {
+            lost = 0;
             if (!moved && abs(px - sx0) + abs(py - sy0) > 6) moved = 1;
             if (moved) {
                 if (g.kind == H_BG || g.kind == H_WIRE || g.kind == H_DATA || g.kind == H_DEFAULT) { vx += px - lx; vy += py - ly; }
                 else if (g.kind == H_NODE) {
-                    json_set(node(g.node), "x", json_num(x0 + (px - sx0) / vs));
-                    json_set(node(g.node), "y", json_num(y0 + (py - sy0) / vs));
+                    set_pos(g.node, x0 + (px - sx0) / vs, y0 + (py - sy0) / vs, 0);
                 } else if (g.kind == H_PORT) {
                     float wx, wy, ax, ay;
                     to_world(px, py, &wx, &wy);
@@ -916,8 +927,7 @@ void bolt_mode(const BoltHost* h) {
             if (g.kind == H_BG) { if (!moved) { selKind = SEL_NONE; pendNode = -1; } }
             else if (g.kind == H_NODE) {
                 if (moved) {
-                    json_set(node(g.node), "x", json_num(roundf(nx(g.node) / GRID) * GRID));
-                    json_set(node(g.node), "y", json_num(roundf(ny(g.node) / GRID) * GRID));
+                    set_pos(g.node, nx(g.node), ny(g.node), 1);
                     changed();
                 }
             } else if (g.kind == H_PORT) {
@@ -942,6 +952,7 @@ void bolt_mode(const BoltHost* h) {
             else if (g.kind == H_DEFAULT) { if (!moved) { selKind = SEL_NODE; selIndex = g.node; edit_default(g.node, g.port); } }
             else if (g.kind == H_WIRE) { if (!moved) { selKind = SEL_EDGE; selIndex = g.edge; } }
         }
+    drawn:
         frame();
     }
     free_layout();

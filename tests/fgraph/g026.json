@@ -11,31 +11,29 @@
     "data": {}
    },
    {
-    "id": "s",
-    "type": "var.set",
+    "id": "c",
+    "type": "api.Gfx.Circle",
     "x": 0,
     "y": 0,
-    "data": {
-     "name": "ghost"
-    }
+    "data": {}
    }
   ],
   "edges": [
    {
     "from": "u",
     "out": "exit",
-    "to": "s",
+    "to": "c",
     "in": "enter"
    }
   ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        ghost = 0;\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Gfx.Circle(0, 0, 0, 0);\n    }\n}\n",
  "warnings": [
   {
-   "node": "s",
-   "message": "zmienna „ghost” nie jest zadeklarowana w grafie"
+   "node": "c",
+   "message": "„Gfx.Circle” rysuje w Update, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw"
   }
  ],
  "errors": []

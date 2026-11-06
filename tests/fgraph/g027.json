@@ -4,39 +4,32 @@
   "variables": [],
   "nodes": [
    {
-    "id": "u",
-    "type": "event.Update",
+    "id": "d",
+    "type": "event.Draw",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "s",
-    "type": "var.set",
+    "id": "c",
+    "type": "api.Gfx.Circle",
     "x": 0,
     "y": 0,
-    "data": {
-     "name": "1bad"
-    }
+    "data": {}
    }
   ],
   "edges": [
    {
-    "from": "u",
+    "from": "d",
     "out": "exit",
-    "to": "s",
+    "to": "c",
     "in": "enter"
    }
   ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Draw() {\n        Gfx.Circle(0, 0, 0, 0);\n    }\n}\n",
  "warnings": [],
- "errors": [
-  {
-   "node": "s",
-   "message": "„Ustaw zmienną” bez poprawnej nazwy"
-  }
- ]
+ "errors": []
 }

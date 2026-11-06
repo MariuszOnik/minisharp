@@ -1,1 +1,1 @@
-fgraph: 54 fixtures, all the same as the browser
+fgraph: 57 fixtures, all the same as the browser

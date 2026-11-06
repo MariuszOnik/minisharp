@@ -11,80 +11,49 @@
     "data": {}
    },
    {
-    "id": "d",
-    "type": "event.Draw",
+    "id": "a",
+    "type": "api.Audio.StopAll",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "dot",
-    "type": "user.Lib.Dot",
+    "id": "b",
+    "type": "api.Audio.StopAll",
     "x": 0,
     "y": 0,
     "data": {}
-   },
-   {
-    "id": "sq",
-    "type": "user.Lib.Sq",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "v": "10"
-     }
-    }
-   },
-   {
-    "id": "say",
-    "type": "user.Lib.Say",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "value_": "\"hi\"",
-      "result_": "3"
-     }
-    }
    }
   ],
   "edges": [
    {
-    "from": "d",
+    "from": "u",
     "out": "exit",
-    "to": "dot",
+    "to": "a",
     "in": "enter"
    },
    {
-    "from": "sq",
-    "out": "result",
-    "to": "dot",
-    "in": "x"
+    "from": "a",
+    "out": "exit",
+    "to": "b",
+    "in": "enter"
    },
    {
-    "from": "dot",
+    "from": "b",
     "out": "exit",
-    "to": "say",
+    "to": "a",
     "in": "enter"
    }
   ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n\n    static void Draw() {\n    }\n}\n",
- "warnings": [],
- "errors": [
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Audio.StopAll();\n        Audio.StopAll();\n    }\n}\n",
+ "warnings": [
   {
-   "node": "dot",
-   "message": "nieznany typ węzła „user.Lib.Dot”"
-  },
-  {
-   "node": "sq",
-   "message": "nieznany typ węzła „user.Lib.Sq”"
-  },
-  {
-   "node": "say",
-   "message": "nieznany typ węzła „user.Lib.Say”"
+   "node": "a",
+   "message": "pętla w przepływie: użyj węzła For albo While"
   }
- ]
+ ],
+ "errors": []
 }

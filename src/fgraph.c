@@ -636,6 +636,7 @@ typedef struct {
     Local* locals; int nloc, loccap;
     StrSet used, onPath, emitted;
     int* scopes; int nscopes, scopecap, scopeCount;
+    const char* method;                         /* the method being written */
 } Gen;
 
 static void msg(FMsg** arr, int* n, int* cap, const char* node, char* text) {
@@ -859,6 +860,11 @@ static const char* emit_node(Gen* g, const char* id, int depth) {
     const JVal* data = json_get(n, "data");
     const char* next = NULL;
     if (streq(d->kind, "call")) {
+        /* drawing outside Draw is wiped: Draw starts by clearing the screen after Update */
+        if (g->method && (!strcmp(g->method, "Update") || !strcmp(g->method, "Main")) && d->callee && !strncmp(d->callee, "Gfx.", 4) &&
+            streq(d->ret, "void") && strncmp(d->callee, "Gfx.Screen", 10) && strncmp(d->callee, "Gfx.Load", 8))
+            warn(g, id, sfmt("„%s” rysuje w %s, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw",
+                             d->title, !strcmp(g->method, "Main") ? "Start" : "Update"));
         char* a = call_args(g, n, d, &stack);
         char* call = sfmt("%s(%s)", d->callee, a);
         free(a);
@@ -1085,6 +1091,7 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     #define BODY(s) do { if (bodyLines++) ms_buf_add(&body, "\n", 1); ms_buf_add(&body, (s), -1); } while (0)
     for (int oi = 0; oi < no; oi++) {
         Method* M = &methods[order[oi]];
+        g->method = M->name;
         ms_buf_free(&g->lines); g->nlines = 0;
         for (int i = 0; i < g->nloc; i++) { free(g->locals[i].key); free(g->locals[i].name); }
         g->nloc = 0;

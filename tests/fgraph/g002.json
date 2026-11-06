@@ -43,6 +43,11 @@
  "user": [],
  "embed": false,
  "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Gfx.Clear(Color.Red);\n    }\n}\n",
- "warnings": [],
+ "warnings": [
+  {
+   "node": "c",
+   "message": "„Gfx.Clear” rysuje w Update, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw"
+  }
+ ],
  "errors": []
 }

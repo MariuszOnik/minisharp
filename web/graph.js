@@ -266,7 +266,7 @@ function generate(graph, catalog, opts) {
   if (graph.className && !IDENT.test(graph.className)) fail(null, `niepoprawna nazwa klasy „${graph.className}”`);
 
   // per method state
-  let lines, locals, usedNames, scopeStack, scopeCount, onPath;
+  let lines, locals, usedNames, scopeStack, scopeCount, onPath, curMethod;
   const emitted = new Set();
   const put = (depth, text) => lines.push("    ".repeat(depth) + text);
   const fresh = (base) => {
@@ -363,6 +363,9 @@ function generate(graph, catalog, opts) {
     const stack = new Set();
     switch (d.kind) {
       case "call": {
+        // drawing outside Draw is wiped: Draw starts by clearing the screen after Update
+        if ((curMethod === "Update" || curMethod === "Main") && /^Gfx\./.test(d.callee) && d.ret === "void" && !/^Gfx\.(Screen|Load)/.test(d.callee))
+          warn(id, `„${d.title}” rysuje w ${curMethod === "Main" ? "Start" : "Update"}, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw`);
         const call = `${d.callee}(${callArgs(n, d, stack).join(", ")})`;
         if (d.ret !== "void" && hasResultUse(id)) {
           const name = fresh(d.callee.split(".").pop());
@@ -450,7 +453,7 @@ function generate(graph, catalog, opts) {
   const body = [];
   const order = [...ENTRY.filter((m) => methods.has(m)), ...[...methods.keys()].filter((m) => !ENTRY.includes(m)).sort()];
   for (const m of order) {
-    lines = []; locals = new Map(); usedNames = new Set(); scopeStack = [0]; scopeCount = 0; onPath = new Set();
+    lines = []; locals = new Map(); usedNames = new Set(); scopeStack = [0]; scopeCount = 0; onPath = new Set(); curMethod = m;
     for (const evId of methods.get(m)) { emitted.add(evId); chainFrom(evId, "exit", 2); }
     if (body.length) body.push("");
     if (!ENTRY.includes(m)) body.push(`    // Do wywołania z kodu: ${inst ? `var o = new ${className}(); o.${m}();` : `${className}.${m}();`}`);

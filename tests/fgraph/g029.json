@@ -11,48 +11,31 @@
     "data": {}
    },
    {
-    "id": "a",
-    "type": "api.Audio.StopAll",
+    "id": "s",
+    "type": "var.set",
     "x": 0,
     "y": 0,
-    "data": {}
-   },
-   {
-    "id": "b",
-    "type": "api.Audio.StopAll",
-    "x": 0,
-    "y": 0,
-    "data": {}
+    "data": {
+     "name": "ghost"
+    }
    }
   ],
   "edges": [
    {
     "from": "u",
     "out": "exit",
-    "to": "a",
-    "in": "enter"
-   },
-   {
-    "from": "a",
-    "out": "exit",
-    "to": "b",
-    "in": "enter"
-   },
-   {
-    "from": "b",
-    "out": "exit",
-    "to": "a",
+    "to": "s",
     "in": "enter"
    }
   ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Audio.StopAll();\n        Audio.StopAll();\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        ghost = 0;\n    }\n}\n",
  "warnings": [
   {
-   "node": "a",
-   "message": "pętla w przepływie: użyj węzła For albo While"
+   "node": "s",
+   "message": "zmienna „ghost” nie jest zadeklarowana w grafie"
   }
  ],
  "errors": []
