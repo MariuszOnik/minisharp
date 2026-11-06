@@ -184,6 +184,7 @@ int main(int argc, char** argv) {
     if (ok && p->entryUpdate >= 0) {
         for (int f = 0; f < frames && ok; f++) {
             pc_begin_frame();
+            ms_clear_frame();                   /* like the console: every frame starts on Gfx.Background */
             ok = vm_call(vm, p->entryUpdate);
             if (ok) ok = vm_tick_coroutines(vm);    /* after Update, before Draw, like Unity */
             if (ok && p->entryDraw >= 0) ok = vm_call(vm, p->entryDraw);

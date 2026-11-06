@@ -862,7 +862,7 @@ static const char* emit_node(Gen* g, const char* id, int depth) {
     if (streq(d->kind, "call")) {
         /* drawing outside Draw is wiped: Draw starts by clearing the screen after Update */
         if (g->method && (!strcmp(g->method, "Update") || !strcmp(g->method, "Main")) && d->callee && !strncmp(d->callee, "Gfx.", 4) &&
-            streq(d->ret, "void") && strncmp(d->callee, "Gfx.Screen", 10) && strncmp(d->callee, "Gfx.Load", 8))
+            streq(d->ret, "void") && strncmp(d->callee, "Gfx.Screen", 10) && strncmp(d->callee, "Gfx.Load", 8) && strncmp(d->callee, "Gfx.Background", 14))
             warn(g, id, sfmt("„%s” rysuje w %s, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw",
                              d->title, !strcmp(g->method, "Main") ? "Start" : "Update"));
         char* a = call_args(g, n, d, &stack);

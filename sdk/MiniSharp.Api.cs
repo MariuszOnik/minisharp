@@ -158,6 +158,8 @@ public static class Gfx {
     public static void Screen(int screen) { }
     /// <summary>Wypełnia cały bieżący ekran kolorem.</summary>
     public static void Clear(int color) { }
+    /// <summary>Kolor tła: oba ekrany są nim czyszczone przed każdą klatką (jak kamera w Unity), więc w Draw nie trzeba Gfx.Clear. Domyślnie czarny; ustaw raz, np. w Main.</summary>
+    public static void Background(int color) { }
     public static void Rect(float x, float y, float w, float h, int color) { }
     /// <summary>Wypełnione koło o środku (x, y) i promieniu r.</summary>
     public static void Circle(float x, float y, float r, int color) { }

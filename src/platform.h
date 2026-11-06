@@ -28,6 +28,11 @@ float plat_stick_y(void);
 int plat_millis(void);
 int plat_fps(void);                             /* measured frames per second */
 
+/* Gfx.Background: the colour both screens are cleared with before every frame (like a camera in Unity).
+ * Black when a program starts (vm_new). The 3DS host clears with it itself; PC and web call ms_clear_frame(). */
+extern uint32_t ms_background;
+void ms_clear_frame(void);
+
 /* Images and sounds. Ids start at 0; loading the same path again gives the same id.
  * Everything is freed by plat_media_reset() when a program ends. */
 int plat_image_load(const char* path, char* err, int errlen);          /* id, or -1 and err */

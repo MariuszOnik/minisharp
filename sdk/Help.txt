@@ -30,7 +30,7 @@ L/R: przybliż / oddal. Y: cały graf na ekranie. Gałka albo przeciągnięcie t
 Więcej: zmienne grafu, nazwa klasy, klasa z obiektami, następna uwaga, zapisz.
 Uwagi: pomarańczowa ramka i lista na górnym ekranie to podpowiedzi generatora, np. węzeł niepodłączony do żadnego zdarzenia.
 Każda zmiana od razu zapisuje kod pliku, więc Kod, potem Uruchom działa od razu.
-Rysuj tylko w Draw: Draw zaczyna się zwykle od Gfx.Clear, więc to, co narysujesz w Update, zniknie, zanim je zobaczysz.
+Rysuj tylko w Draw: to, co narysujesz w Update, zniknie (Draw zwykle zaczyna od Gfx.Clear). Kolor tła ustaw raz: Gfx.Background w Start, wtedy Gfx.Clear nie jest potrzebne.
 
 ## Graf 2: własne węzły z kodu
 Każda metoda static w pliku z kodem projektu sama staje się węzłem w palecie (kategoria Kod: NazwaKlasy). Nic nie trzeba rejestrować.
@@ -59,7 +59,7 @@ Ustaw zmienną zmienia tylko zmienne własnego grafu. Pole innej klasy zmienisz 
 static void DodajPunkty(int n) { Game.wynik += n; }
 Klasa z obiektami (Więcej): graf staje się klasą bez static, z której robisz obiekty, każdy z własnymi zmiennymi:
 var b = new Ball(); b.Skok();
-Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie. Gfx.Clear zrób tylko w jednym Draw (w pliku, który idzie pierwszy), bo późniejszy Clear zmaże to, co narysowały wcześniejsze pliki.
+Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie. Tło ustaw raz, Gfx.Background(kolor) w Main: ekran czyści się nim sam przed każdą klatką, więc żaden Draw nie potrzebuje Gfx.Clear (Clear w późniejszym pliku zmazałby to, co narysowały wcześniejsze).
 
 ## Kurs 1: pierwszy program
 Ten kurs prowadzi od zera do małej gry. Cała gra jest w przykładzie kurs.cs (uruchom ją z menu, a potem otwórz w edytorze).

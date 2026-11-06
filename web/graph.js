@@ -364,7 +364,7 @@ function generate(graph, catalog, opts) {
     switch (d.kind) {
       case "call": {
         // drawing outside Draw is wiped: Draw starts by clearing the screen after Update
-        if ((curMethod === "Update" || curMethod === "Main") && /^Gfx\./.test(d.callee) && d.ret === "void" && !/^Gfx\.(Screen|Load)/.test(d.callee))
+        if ((curMethod === "Update" || curMethod === "Main") && /^Gfx\./.test(d.callee) && d.ret === "void" && !/^Gfx\.(Screen|Load|Background)/.test(d.callee))
           warn(id, `„${d.title}” rysuje w ${curMethod === "Main" ? "Start" : "Update"}, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw`);
         const call = `${d.callee}(${callArgs(n, d, stack).join(", ")})`;
         if (d.ret !== "void" && hasResultUse(id)) {
