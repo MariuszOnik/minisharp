@@ -9,4 +9,7 @@ const char* help_browse(const char* word);
  * *overloads gets how many there are. */
 const char* help_signature(const char* cls, int clen, const char* name, int nlen, int* overloads);
 
+/* the API entries of the Help (group, name, sig, doc, insert: the same layout as FHelpEntry in src/fgraph.h) */
+const void* help_api_entries(int* count);
+
 #endif

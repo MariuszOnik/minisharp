@@ -19,6 +19,7 @@
 #include "app.h"
 #include "editor.h"
 #include "grapheditor.h"
+#include "bolt.h"
 
 #define MAX_DOCS 32
 #define MAX_TEXT (512 * 1024)
@@ -60,6 +61,7 @@ static char g_sug[NSUGGEST][REPL_WORD];
 static int g_nsug, g_sugStart;
 
 #define D (&g_docs[g_cd])
+static int doc_is_graph(const Doc* d);
 
 static const char* KEYWORDS[] = {
     "class", "static", "public", "private", "void", "int", "float", "double", "bool", "char", "string",
@@ -347,6 +349,7 @@ static void update_suggestions(void) {
 
 static void apply_suggestion(int i) {
     Doc* d = D;
+    if (doc_is_graph(d)) return;              /* graph files change only through Graf */
     snapshot();
     if (d->cur > g_sugStart) raw_delete(g_sugStart, d->cur);
     raw_insert(g_sug[i], (int)strlen(g_sug[i]));
@@ -572,6 +575,42 @@ static void new_file(void) {
     set_status(0x60E060, "Utworzono %s", d->name);
 }
 
+/* a graph file: the generated code ends with the graph itself in a "// @graph {...}" line (edited in Graf) */
+static int doc_is_graph(const Doc* d) {
+    for (const char* p = d->text; p && (p = strstr(p, "// @graph ")) != NULL; p++) if (p == d->text || p[-1] == '\n') return 1;
+    return 0;
+}
+
+static void new_graph_file(void) {
+    if (!g_isProject) { ui_ask("Graf", "Graf to osobny plik w projekcie. Zrób projekt (L w menu) i dodaj w nim plik z grafem.", "OK", "Wróć", 0); return; }
+    if (ui_ask("Nowy graf", "Ten plik to kod. Utworzyć nowy plik z grafem? Graf to klasa z własnym Update i Draw, "
+               "a jej kod powstaje z grafu.", "Utwórz", "Wróć", 0) != 1) return;
+    if (g_ndocs == MAX_DOCS) { set_status(0xFF6060, "%s", "Za dużo plików w projekcie"); return; }
+    char name[40] = "Graf";
+    for (;;) {
+        if (!ui_prompt("Nowy graf", "Nazwa klasy grafu, np. Gracz. Powstanie plik Gracz.cs z grafem.", name, sizeof name)) return;
+        int bad = !valid_name(name), exists = 0;
+        for (int i = 0; i < g_ndocs; i++) { char cs[64]; snprintf(cs, sizeof cs, "%s.cs", name); if (!strcasecmp(g_docs[i].name, cs)) exists = 1; }
+        if (!bad && !exists) break;
+        ui_ask(bad ? "Zła nazwa" : "Taki plik już jest", bad ? "Nazwa musi zaczynać się literą i mieć tylko litery, cyfry i _." : "Wybierz inną nazwę.", "OK", "Popraw", 0);
+    }
+    char* text = bolt_new_graph_file(name);
+    if (!text) return;
+    Doc* d = &g_docs[g_ndocs];
+    memset(d, 0, sizeof *d);
+    snprintf(d->name, sizeof d->name, "%s.cs", name);
+    d->want = -1;
+    int n = (int)strlen(text);
+    if (!reserve(d, n)) { free(text); return; }
+    memcpy(d->text, text, (size_t)n + 1);
+    d->len = n;
+    free(text);
+    if (!doc_save(d)) { doc_free(d); set_status(0xFF6060, "%s", "Nie można utworzyć pliku"); return; }
+    g_cd = g_ndocs++;
+    g_wordsDirty = 2; g_lastEditCur = -1; g_textGen++;
+    set_status(0x60E060, "Utworzono graf %s", d->name);
+}
+
 static void delete_file(int i) {
     if (g_ndocs == 1) { set_status(0xFF6060, "%s", "Projekt musi mieć choć jeden plik"); return; }
     char q[128];
@@ -665,7 +704,7 @@ static void open_help(void) {
     }
     const char* ins = help_browse(word);
     kbd_reset();
-    if (!ins) return;
+    if (!ins || doc_is_graph(d)) return;
     /* "Gfx.Ci" typed before the cursor is replaced by "Gfx.Circle(" */
     char before[64];
     int s = word_before_cursor(d, before, sizeof before);
@@ -677,8 +716,6 @@ static void open_help(void) {
 
 /* ---------- graph mode (grapheditor.c) ---------- */
 static const char* gh_text(void) { return D->text; }
-static int gh_cursor(void) { return D->cur; }
-static void gh_set_cursor(int p) { Doc* d = D; d->cur = p < 0 ? 0 : p > d->len ? d->len : p; d->want = -1; }
 static void gh_replace(const char* t) {
     Doc* d = D;
     int n = (int)strlen(t);
@@ -694,9 +731,15 @@ static void gh_replace(const char* t) {
 static int gh_save(void) { return save_all(); }
 static void gh_status(uint32_t rgb, const char* m) { set_status(rgb, "%s", m); }
 
+static int gh_ndocs(void) { return g_ndocs; }
+static const char* gh_doc_name(int i) { return g_docs[i].name; }
+static const char* gh_doc_text(int i) { return g_docs[i].text; }
+
+/* Graf: the mini Bolt editor for a graph file (the old code <-> graph view, graph_mode(), stays on the main branch) */
 static void open_graph(void) {
-    GraphHost h = { gh_text, gh_cursor, gh_set_cursor, gh_replace, undo, gh_save, draw_top, gh_status };
-    graph_mode(&h);
+    if (!doc_is_graph(D)) { new_graph_file(); kbd_reset(); if (!doc_is_graph(D)) return; }
+    BoltHost h = { gh_text, gh_replace, undo, gh_save, gh_ndocs, gh_doc_name, gh_doc_text, gh_status, D->name };
+    bolt_mode(&h);
     kbd_reset();
     g_lastEditCur = -1;
 }
@@ -756,6 +799,8 @@ void editor_open(const char* name) {
         if ((k & KEY_START) && confirm_exit()) break;
 
         const char* t = kbd_update();
+        int readOnly = doc_is_graph(d);         /* its code is made from the graph: changes go through Graf */
+        if (readOnly && (t || (rep & KEY_B))) { set_status(0xF0D080, "%s", "Ten plik jest z grafu: zmieniaj go w Graf (kod powstaje z grafu)"); t = NULL; rep &= ~KEY_B; }
         if (t) {
             if (!strcmp(t, KBD_BACKSPACE)) edit_backspace();
             else if (!strcmp(t, KBD_ENTER)) edit_enter();
