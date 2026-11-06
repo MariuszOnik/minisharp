@@ -43,6 +43,8 @@ check repl "$($BIN --repl < tests/repl.txt 2>&1)" tests/expected/repl.txt
 check ci "$($BIN --ci tests/ci 2>&1)" tests/expected/ci.txt
 check ci_inherit "$($BIN --ci tests/ci_inherit 2>&1)" tests/expected/ci_inherit.txt
 check project_hooks "$($BIN tests/project_hooks --frames 2 2>&1)" tests/expected/project_hooks.txt
+check project_order "$($BIN tests/project_order --frames 1 2>&1)" tests/expected/project_order.txt
+check attrs "$($BIN tests/attrs.cs 2>&1)" tests/expected/attrs.txt
 for t in project project_err project_rt project_twomain; do
     check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
 done

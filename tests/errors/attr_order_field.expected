@@ -1,0 +1,1 @@
+compile error: line 2: [Order(n)] goes before a class, not before its members

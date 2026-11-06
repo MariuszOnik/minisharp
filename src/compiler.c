@@ -2125,12 +2125,15 @@ static void collect(C* c, ProgramAST* ast) {
  * the program calls all of them, in the order of the classes in the project (files by name, classes top to bottom).
  * With more than one, a small function made here does the calls, so the hosts keep calling a single entry. */
 static int entry_point(C* c, const char* name) {
-    int fns[256], n = 0;
+    int fns[256], ords[256], n = 0;
     for (int i = 0; i < c->nclasses; i++) {
         CMethod* m = find_own_method(c, i, name, (int)strlen(name));
         if (!m || !m->isStatic || m->np != 0 || m->ret->k != T_VOID) continue;
         if (n == 256) cfail(c, m->decl->line, "too many classes with 'static void %s()' (at most 256)", name);
-        fns[n++] = m->func;
+        /* [Order(n)] on the class: smaller numbers first; equal ones keep the order of the classes (files by name) */
+        int ord = c->classes[i].decl ? c->classes[i].decl->order : 0, k = n++;
+        while (k > 0 && ords[k - 1] > ord) { fns[k] = fns[k - 1]; ords[k] = ords[k - 1]; k--; }
+        fns[k] = m->func; ords[k] = ord;
     }
     if (n == 0) return -1;
     if (n == 1) return fns[0];

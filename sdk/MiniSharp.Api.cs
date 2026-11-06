@@ -249,3 +249,10 @@ public static class App {
     /// <summary>Kończy program i wraca do menu.</summary>
     public static void Quit() { }
 }
+
+// Attributes (for the .NET check of the code; MiniSharp reads them itself). Not API groups in the Help.
+// [Order(n)] before a class: its Main, Update and Draw run before those of higher numbers (0 by default), like DefaultExecutionOrder in Unity.
+public sealed class OrderAttribute : System.Attribute { public OrderAttribute(int order) { } }
+// [In] / [Out] before a field: an input / output port of a graph node.
+public sealed class InAttribute : System.Attribute { }
+public sealed class OutAttribute : System.Attribute { }

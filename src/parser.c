@@ -896,6 +896,31 @@ static Stmt* parse_stmt_(P* p) {
 }
 
 /* ---------- classes ---------- */
+/* [Order(-10)] before a class (like DefaultExecutionOrder in Unity); [In] / [Out] before a field (ports of a graph
+   node). Several in one [ ] or one after another. Returns FA_* flags; *order gets the number of Order. */
+static int parse_attributes(P* p, int* order) {
+    int attrs = 0;
+    while (at(p, TK_LBRACK)) {
+        next(p);
+        do {
+            Token* id = expect(p, TK_IDENT);
+            if (id->len == 5 && !memcmp(id->start, "Order", 5)) {
+                expect(p, TK_LPAREN);
+                int neg = accept(p, TK_MINUS);
+                Token* n = next(p);
+                if (n->kind != TK_INT) fail(p->c, n->line, "[Order(...)] needs a whole number, e.g. [Order(-10)]");
+                *order = neg ? -n->ival : n->ival;
+                expect(p, TK_RPAREN);
+                attrs |= FA_ORDER;
+            } else if (id->len == 2 && !memcmp(id->start, "In", 2)) attrs |= FA_IN;
+            else if (id->len == 3 && !memcmp(id->start, "Out", 3)) attrs |= FA_OUT;
+            else fail(p->c, id->line, "attribute [%.*s] is not supported (only [Order(n)] before a class, [In] and [Out] before a field)", id->len, id->start);
+        } while (accept(p, TK_COMMA));
+        expect(p, TK_RBRACK);
+    }
+    return attrs;
+}
+
 static void parse_method_rest(P* p, MethodDecl* m) {
     expect(p, TK_LPAREN);
     int pcap = 0;
@@ -962,6 +987,8 @@ static void parse_class(P* p, ClassDecl* cd) {
         if (at(p, TK_EOF)) fail(p->c, cd->line, "%s '%.*s' is never closed with '}'", what, cd->nlen, cd->name);
         int isStatic = 0, kind = cd->isInterface ? MK_ABSTRACT : MK_NONE;
         int mst = p->pos;
+        int morder = 0, mattrs = parse_attributes(p, &morder);
+        if (mattrs & FA_ORDER) fail(p->c, p->t[mst].line, "[Order(n)] goes before a class, not before its members");
         Token* mod = peek(p);
         for (;;) {
             Token* m = peek(p);
@@ -985,6 +1012,7 @@ static void parse_class(P* p, ClassDecl* cd) {
             if (isStatic) fail(p->c, t->line, "static constructors are not supported");
             if (cd->isInterface) fail(p->c, t->line, "an interface cannot have a constructor");
             if (kind != MK_NONE) fail(p->c, t->line, "a constructor cannot be virtual, override or abstract");
+            if (mattrs) fail(p->c, t->line, "[In] and [Out] go before a field (a port of a node), not before a constructor");
             next(p);
             cd->methods = (MethodDecl*)arena_grow(p->c->A, cd->methods, cd->nmethods, &mcap, sizeof(MethodDecl));
             MethodDecl* m = &cd->methods[cd->nmethods++];
@@ -998,6 +1026,7 @@ static void parse_class(P* p, ClassDecl* cd) {
         TypeNode* tn = parse_type(p);
         Token* name = expect(p, TK_IDENT);
         if (at(p, TK_LPAREN)) {
+            if (mattrs) fail(p->c, name->line, "[In] and [Out] go before a field (a port of a node), not before a method");
             cd->methods = (MethodDecl*)arena_grow(p->c->A, cd->methods, cd->nmethods, &mcap, sizeof(MethodDecl));
             MethodDecl* m = &cd->methods[cd->nmethods++];
             memset(m, 0, sizeof *m);
@@ -1015,7 +1044,7 @@ static void parse_class(P* p, ClassDecl* cd) {
         for (;;) {
             cd->fields = (FieldDecl*)arena_grow(p->c->A, cd->fields, cd->nfields, &fcap, sizeof(FieldDecl));
             FieldDecl* f = &cd->fields[cd->nfields++];
-            f->line = name->line; f->isStatic = isStatic; f->tn = tn; f->name = name->start; f->nlen = name->len;
+            f->line = name->line; f->isStatic = isStatic; f->tn = tn; f->name = name->start; f->nlen = name->len; f->attrs = mattrs;
             f->init = accept(p, TK_ASSIGN) ? parse_expr(p) : NULL;
             if (!accept(p, TK_COMMA)) break;
             name = expect(p, TK_IDENT);
@@ -1044,7 +1073,9 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
             continue;
         }
         if (nsDepth > 0 && accept(&p, TK_RBRACE)) { nsDepth--; continue; }
-        int isAbstract = 0, cst = p.pos;
+        int isAbstract = 0, cst = p.pos, order = 0;
+        int attrs = parse_attributes(&p, &order);
+        if (attrs & (FA_IN | FA_OUT)) fail(c, toks[cst].line, "[In] and [Out] go before a field (a port of a node); before a class only [Order(n)]");
         for (;;) {
             if (accept(&p, TK_PUBLIC) || accept(&p, TK_PRIVATE) || accept(&p, TK_STATIC) || accept(&p, TK_SEALED)) {}
             else if (accept(&p, TK_ABSTRACT)) isAbstract = 1;
@@ -1057,7 +1088,7 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
         prog->classes = (ClassDecl*)arena_grow(c->A, prog->classes, prog->nclasses, &cap, sizeof(ClassDecl));
         ClassDecl* cd = &prog->classes[prog->nclasses++];
         memset(cd, 0, sizeof *cd);
-        cd->isAbstract = isAbstract; cd->isInterface = t->kind == TK_INTERFACE;
+        cd->isAbstract = isAbstract; cd->isInterface = t->kind == TK_INTERFACE; cd->order = order;
         parse_class(&p, cd);
         cd->s0 = toks[cst].start; cd->s1 = prev_end(&p);
     }

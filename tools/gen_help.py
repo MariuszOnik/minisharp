@@ -32,6 +32,9 @@ for raw in open(os.path.join(root, "sdk", "MiniSharp.Api.cs"), encoding="utf-8")
         summary = re.sub(r"</?\w+>", "", m.group(1)).replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
         continue
     m = re.match(r"public (?:static |sealed )*class (\w+)", line)
+    if m and m.group(1).endswith("Attribute"):     # [Order], [In], [Out]: for .NET only, not API groups
+        summary = None
+        continue
     if m:
         cls = m.group(1)
         groups.append((cls, summary or "", 1))
