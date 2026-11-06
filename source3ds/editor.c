@@ -18,6 +18,7 @@
 #include "help.h"
 #include "app.h"
 #include "editor.h"
+#include "grapheditor.h"
 
 #define MAX_DOCS 32
 #define MAX_TEXT (512 * 1024)
@@ -494,11 +495,13 @@ static void draw_top(void) {
     }
 }
 
-static const char* TOOLS[] = { "Pliki", "Uruchom", "Cofnij", "Help", "Zapisz" };
+static const char* TOOLS[] = { "Pliki", "Uruchom", "Cofnij", "Graf", "Help", "Zapisz" };
+#define NTOOLS 6
+#define TOOL_W (320.0f / NTOOLS)
 
 static void draw_bottom(void) {
     plat_screen(1);
-    for (int i = 0; i < 5; i++) ui_button(i * 64, 0, 64, 30, TOOLS[i], i == 1 ? 0x2F6B3A : 0x34405A);
+    for (int i = 0; i < NTOOLS; i++) ui_button(i * TOOL_W, 0, TOOL_W, 30, TOOLS[i], i == 1 ? 0x2F6B3A : i == 3 ? 0x5A3F7A : 0x34405A);
     char hint[200];
     const char* h = call_hint(hint, sizeof hint);
     plat_text(4, 31, h ? h : "B: usuń  Y: cofnij  X: Help  R: podpowiedź  L+D-pad: szybciej", 0.4f, h ? 0xF0D080 : 0x8090A0);
@@ -672,6 +675,32 @@ static void open_help(void) {
     g_lastEditCur = -1;
 }
 
+/* ---------- graph mode (grapheditor.c) ---------- */
+static const char* gh_text(void) { return D->text; }
+static int gh_cursor(void) { return D->cur; }
+static void gh_set_cursor(int p) { Doc* d = D; d->cur = p < 0 ? 0 : p > d->len ? d->len : p; d->want = -1; }
+static void gh_replace(const char* t) {
+    Doc* d = D;
+    int n = (int)strlen(t);
+    g_lastEditCur = -1;                 /* every graph action is its own undo step */
+    snapshot();
+    if (!reserve(d, n)) { set_status(0xFF6060, "%s", "Plik jest za duży"); return; }
+    memcpy(d->text, t, (size_t)n + 1);
+    d->len = n;
+    if (d->cur > n) d->cur = n;
+    edited(d);
+    g_lastEditCur = -1;
+}
+static int gh_save(void) { return save_all(); }
+static void gh_status(uint32_t rgb, const char* m) { set_status(rgb, "%s", m); }
+
+static void open_graph(void) {
+    GraphHost h = { gh_text, gh_cursor, gh_set_cursor, gh_replace, undo, gh_save, draw_top, gh_status };
+    graph_mode(&h);
+    kbd_reset();
+    g_lastEditCur = -1;
+}
+
 static int confirm_exit(void) {
     if (!any_dirty()) return 1;
     int a = ui_ask("Niezapisane zmiany", "Zapisać pliki przed wyjściem?", "Zapisz", "Nie zapisuj", 1);
@@ -748,12 +777,13 @@ void editor_open(const char* name) {
         if ((k & KEY_R) && g_nsug) apply_suggestion(0);
         for (int i = 0; i < NSUGGEST; i++) if (i < g_nsug && ui_tapped(i * 80, 44, 80, 33)) apply_suggestion(i);
         int tool = -1;
-        for (int i = 0; i < 5; i++) if (ui_tapped(i * 64, 0, 64, 30)) tool = i;
+        for (int i = 0; i < NTOOLS; i++) if (ui_tapped(i * TOOL_W, 0, TOOL_W, 30)) tool = i;
         if ((k & KEY_SELECT) || tool == 0) files_screen();
         if (tool == 1) run_program();
         if (tool == 2) undo();
-        if ((k & KEY_X) || tool == 3) open_help();
-        if (tool == 4) { if (save_all()) set_status(0x60E060, "%s", "Zapisano"); }
+        if (tool == 3) open_graph();
+        if ((k & KEY_X) || tool == 4) open_help();
+        if (tool == 5) { if (save_all()) set_status(0x60E060, "%s", "Zapisano"); }
         update_suggestions();
 
         ui_frame_begin(0x0F1218, 0x0C0C0C);

@@ -76,7 +76,8 @@ int gr_delete(Graph* g, int node, MsPatch* out, char* err, int errlen);
 /* Applies a code patch to the graph's source and carries this method's node positions and open/closed inputs
    over to the new code (nodes keep their place when their code only moved). Returns the new source with an
    updated @layout comment (malloc'd), or NULL and err when the new code does not parse. */
-char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen);
+char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen, char* newKey, int keycap);
+/* newKey (may be NULL): the key of the first flow node that is new after the change ("" when none) */
 /* layout-only changes: the new source (malloc'd) with this method's @layout line rewritten */
 char* gr_move(Graph* g, int node, float x, float y);
 char* gr_fold(Graph* g, int node, int input, int open);

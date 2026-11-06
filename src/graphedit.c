@@ -458,7 +458,8 @@ static void place_new(Graph* g) {
     }
 }
 
-char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen) {
+char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen, char* newKey, int keycap) {
+    if (newKey && keycap > 0) newKey[0] = 0;
     char* nsrc = ms_patch_apply(g->src, p);
     if (!nsrc) { fail(err, errlen, "out of memory"); return NULL; }
     Arena A = { 0 };
@@ -473,7 +474,10 @@ char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen) {
     GLayoutItem* items = NULL; int n = 0, cap = 0;
     for (int i = 0; i < g1->nn; i++) {
         int k = old_twin(g, &sh, g1, i);
-        if (k < 0) continue;
+        if (k < 0) {
+            if (newKey && !newKey[0] && g1->n[i].kind == GN_FLOW) snprintf(newKey, (size_t)keycap, "%s", g1->n[i].key);
+            continue;
+        }
         GLayoutItem it; memset(&it, 0, sizeof it);
         snprintf(it.key, sizeof it.key, "%s", g1->n[i].key);
         snprintf(it.tag, sizeof it.tag, "%s", g1->n[i].tag);

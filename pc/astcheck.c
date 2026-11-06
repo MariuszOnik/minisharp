@@ -362,10 +362,10 @@ static char* edit_step(char* src, const char* method, const char* line, MsBuf* l
             int port = !strcmp(a1, "next") ? 0 : !strcmp(a1, "true") || !strcmp(a1, "body") ? 1 : !strcmp(a1, "false") ? 2 : a1[0] == 'c' ? 1 + atoi(a1 + 1) : -1;
             ok = gr_insert(g, node, port, text, &p, err, sizeof err);
         }
-        if (ok) out = gr_apply(g, &p, err, sizeof err);
+        if (ok) out = gr_apply(g, &p, err, sizeof err, NULL, 0);
     } else if (!strcmp(cmd, "delete")) {
         ok = gr_delete(g, node, &p, err, sizeof err);
-        if (ok) out = gr_apply(g, &p, err, sizeof err);
+        if (ok) out = gr_apply(g, &p, err, sizeof err, NULL, 0);
     } else if (!strcmp(cmd, "move")) {
         float x = 0, y = 0;
         sscanf(rest, "%f %f", &x, &y);
