@@ -83,7 +83,7 @@ Wyrażenie to drzewo, więc węzły wartości też tworzą drzewo: każde wyjśc
 Wartość użyta dwa razy to w kodzie zmienna lokalna, a w grafie węzeł „nowa zmienna” plus dwa węzły „pobierz”.
 
 **Zwijanie.** Nie każde wyrażenie musi być osobnym węzłem. Wejście pokazuje wyrażenie jako tekst, jeśli jest *małe*:
-literał, nazwa, `a.b`, albo krótki operator na dwóch takich (`x + 1`, `hp <= 0`). Większe rozwija się w węzły.
+literał, nazwa, `a.b`, lambda, albo tekst w kodzie ma najwyżej 24 znaki i jedną linię (`x + 1`, `Input.Held(Btn.Right)`). Większe rozwija się w węzły.
 Użytkownik może rozwinąć albo zwinąć dowolne wejście; ten wybór zapisuje się w układzie (punkt 4), bo nie zmienia kodu.
 Tekst w wejściu edytuje się klawiaturą. To jest zwykła łatka zakresu tego wyrażenia; jeśli się nie sparsuje, łatka nie wchodzi i edytor pokazuje błąd.
 
@@ -113,17 +113,18 @@ Pozycje nie należą do kodu, ale muszą przetrwać zamknięcie edytora. Zapis: 
 
 ```csharp
 /* @layout
-Gracz.Update 0:12,4 1:12,40 1.t0:30,60 1.t0.a0:-60,60 1.t0.a0=open
-Gracz.Draw 0:12,4
+Gracz.Update e:entry:0,0 0:if:12,4 0.t0:set:30,60 0.t0.a0:val:-60,60 0.t0.a0=open
+Gracz.Draw e:entry:0,0 0:call:12,4
 */
 ```
 
-- klucz węzła = ścieżka w drzewie metody: numer instrukcji, `.t`/`.f`/`.b`/`.cN` dla gałęzi tak/nie/ciało/case, `.aN` dla wejścia wartości,
+- wpis węzła = `klucz:rodzaj:x,y`; klucz to ścieżka w drzewie metody: numer instrukcji, `.t`/`.f`/`.b`/`.cN_` dla gałęzi tak/nie/ciało/case, `.aN` dla wejścia wartości
+  (`e` to węzeł wejścia metody); rodzaj (`if`, `call`, `set`, `var`, `for`, `val`, ...) pozwala zauważyć, że pod tym kluczem jest już inna instrukcja,
 - `=open` / `=closed` zapisuje ręczne rozwinięcie lub zwinięcie wejścia,
 - edytor kodu na 3DS może ten blok zwijać, żeby nie przeszkadzał.
 
 Po ręcznej zmianie kodu ścieżki mogą wskazywać złe węzły. Zasada: przy budowaniu grafu węzeł z kluczem, który nie pasuje (inny rodzaj instrukcji),
-dostaje pozycję z **automatycznego układu**, a nie starą. Automatyczny układ jest też dla węzłów bez wpisu, więc plik bez `@layout` (każdy dzisiejszy program)
+dostaje pozycję z **automatycznego układu**, a nie starą. Węzeł wartości bez własnego wpisu przesuwa się razem z węzłem, który zasila. Automatyczny układ jest też dla węzłów bez wpisu, więc plik bez `@layout` (każdy dzisiejszy program)
 od razu ma czytelny graf. Edytor grafu przepisuje blok `@layout` przy każdej swojej łatce, dzięki czemu ścieżki zgadzają się z kodem.
 
 **Automatyczny układ** (proponowany, do sprawdzenia na prototypie): przepływ idzie **z góry na dół** (łańcuch instrukcji w kolumnie,
@@ -187,7 +188,9 @@ Pliki z `// @graph {json}` są zwykłym C#, więc migracja to usunięcie tej lin
 
 1. ✔ Zakresy w AST + test 1 (zakresy) na wszystkich plikach: `minisharp --spans pliki.cs...` (test `spans` w `run_tests.sh`; 13 289 zakresów w 58 plikach). Narzędzie: `pc/astcheck.c`.
 2. ✔ Drukarka (`src/printer.c`, `minisharp --print plik.cs`) + test 2: każdy plik wydrukowany na nowo parsuje się do tego samego drzewa i drukuje się tak samo; 12 programów wydrukowanych na nowo daje ten sam wynik co oryginał (`print/*` w `run_tests.sh`).
-3. `gr_build`, `--graph` (tekstowy zrzut), automatyczny układ, `@layout` + testy 3–4.
+3. ✔ `gr_build` (`src/graph.c`), `--graph plik.cs [Klasa.Metoda]` (tekstowy zrzut), `--graph-layout plik.cs`, automatyczny układ, `@layout` + testy:
+   graf każdej metody w każdym pliku ma dokładnie jeden węzeł na instrukcję (w `--spans`), `tests/graph_kinds.cs` (wszystkie rodzaje instrukcji,
+   `@layout` z pozycją, złym rodzajem, `=open`, `=closed`), zapis i odczyt układu `loch.cs` daje te same pozycje.
    Równolegle: prototyp rysowania na 3DS na danych z `--graph` (najpierw sztuczne, potem prawdziwe).
 4. Akcje → łatki + `--graph-edit`.
 5. Edytor grafu na 3DS (dotyk: przesuwanie, wybór węzła, paleta po nazwie, klawiatura do tekstu wejść).

@@ -7,4 +7,5 @@ int ms_check_spans(const char* file, const char* src, int* checked);   /* *check
 int ms_check_print(const char* file, const char* src);
 /* *out = src printed by the AST printer (malloc'd); returns nonzero on a syntax error (message in err). */
 int ms_print_file(const char* src, char* err, int errlen, char** out);
+int ms_graph_tool(const char* src, const char* which, int layoutOnly);   /* --graph / --graph-layout */
 #endif

@@ -1,9 +1,9 @@
 # Build the PC version for testing:  make -f Makefile.pc
 CC ?= gcc
 CFLAGS ?= -O2 -g -Wall -Wextra -std=c99 -D_DEFAULT_SOURCE
-SRC = src/parser.c src/compiler.c src/vm.c src/natives.c src/disasm.c src/media.c src/repl.c src/project.c src/codeindex.c src/printer.c pc/main_pc.c pc/platform_pc.c pc/astcheck.c
+SRC = src/parser.c src/compiler.c src/vm.c src/natives.c src/disasm.c src/media.c src/repl.c src/project.c src/codeindex.c src/printer.c src/graph.c pc/main_pc.c pc/platform_pc.c pc/astcheck.c
 
-minisharp: $(SRC) src/ms.h src/ast.h src/platform.h src/media.h src/repl.h src/project.h src/codeindex.h pc/astcheck.h src/printer.h
+minisharp: $(SRC) src/ms.h src/ast.h src/platform.h src/media.h src/repl.h src/project.h src/codeindex.h pc/astcheck.h src/printer.h src/graph.h
 	$(CC) $(CFLAGS) -o $@ $(SRC) -lm
 
 test: minisharp

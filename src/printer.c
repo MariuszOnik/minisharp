@@ -23,6 +23,7 @@ static void put(MsBuf* b, const char* s, int len) {
     b->n += len;
     b->p[b->n] = 0;
 }
+void ms_buf_add(MsBuf* b, const char* s, int len) { put(b, s, len < 0 ? (int)strlen(s) : len); }
 static void puts_(MsBuf* b, const char* s) { put(b, s, (int)strlen(s)); }
 static void putc_(MsBuf* b, char c) { put(b, &c, 1); }
 static void indent(MsBuf* b, int level) { for (int i = 0; i < level; i++) puts_(b, "    "); }
@@ -247,6 +248,7 @@ static void expr(MsBuf* b, Expr* e, int minprec, int level) {
 }
 
 void ms_print_expr(MsBuf* b, Expr* e) { expr(b, e, P_ASSIGN, 0); }
+const char* ms_op_text(int op) { return opstr(op); }
 
 /* ---------- statements ---------- */
 static void block(MsBuf* b, Stmt* s, int level) {     /* '{' here, '}' on its own line */

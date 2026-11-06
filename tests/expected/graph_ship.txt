@@ -1,0 +1,79 @@
+graph Ship.Update (16 nodes)
+n0 e entry "void Update()" @0,0 86x17
+n1 0 if "if" <- n0.next @0,25 164x37
+    cond: Input.Held(Btn.Left)
+n2 0.t0 set "x -=" <- n1.true @28,70 56x27
+    value: 3
+n3 1 if "if" <- n1.next @0,105 170x37
+    cond: Input.Held(Btn.Right)
+n4 1.t0 set "x +=" <- n3.true @28,150 56x27
+    value: 3
+n5 2 if "if" <- n3.next @0,185 152x37
+    cond: Input.Held(Btn.Up)
+n6 2.t0 set "y -=" <- n5.true @28,230 56x27
+    value: 3
+n7 3 if "if" <- n5.next @0,265 164x37
+    cond: Input.Held(Btn.Down)
+n8 3.t0 set "y +=" <- n7.true @28,310 56x27
+    value: 3
+n9 4 set "x +=" <- n7.next @0,345 158x27
+    value: Input.StickX() * 4
+n10 5 set "y +=" <- n9.next @0,380 158x27
+    value: Input.StickY() * 4
+n11 6 set "x =" <- n10.next @0,415 188x27
+    value: Mathf.Clamp(x, 12, 388)
+n12 7 set "y =" <- n11.next @0,450 188x27
+    value: Mathf.Clamp(y, 12, 228)
+n13 8 if "if" <- n12.next @0,485 164x37
+    cond: Input.Pressed(Btn.A)
+n14 8.t0 call ".Add" <- n13.true @28,530 158x37
+    obj: Game.bullets
+    a1: new Bullet(x, y - 12)
+n15 8.t1 inc "Game.shots++" <- n14.next @28,575 80x17
+
+graph Ship.Draw (5 nodes)
+n0 e entry "void Draw()" @0,0 74x17
+n1 0 call "Gfx.Line" <- n0.next @0,25 92x67
+    a1: x
+    a2: y - 12
+    a3: x - 10
+    a4: y + 10
+    a5: Color.Cyan
+n2 1 call "Gfx.Line" <- n1.next @0,100 92x67
+    a1: x
+    a2: y - 12
+    a3: x + 10
+    a4: y + 10
+    a5: Color.Cyan
+n3 2 call "Gfx.Line" <- n2.next @0,175 92x67
+    a1: x - 10
+    a2: y + 10
+    a3: x + 10
+    a4: y + 10
+    a5: Color.Cyan
+n4 3 call "Gfx.Circle" <- n3.next @0,250 104x57
+    a1: x
+    a2: y + 12
+    a3: 3
+    a4: Color.Orange
+
+graph Bullet.Bullet (3 nodes)
+n0 e entry "Bullet(x0, y0)" @0,0 92x17
+n1 0 set "x =" <- n0.next @0,25 62x27
+    value: x0
+n2 1 set "y =" <- n1.next @0,60 62x27
+    value: y0
+
+graph Bullet.Move (2 nodes)
+n0 e entry "void Move()" @0,0 74x17
+n1 0 set "y -=" <- n0.next @0,25 56x27
+    value: 6
+
+graph Bullet.Draw (2 nodes)
+n0 e entry "void Draw()" @0,0 74x17
+n1 0 call "Gfx.Rect" <- n0.next @0,25 104x67
+    a1: x - 1
+    a2: y - 4
+    a3: 2
+    a4: 8
+    a5: Color.Yellow

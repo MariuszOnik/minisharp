@@ -204,6 +204,7 @@ int ms_check_spans(const char* file, const char* src, int* checked) {
 
 /* ---------- printer round trip ---------- */
 #include "../src/printer.h"
+static int check_graphs(const char* file, const char* src, ProgramAST* pr);
 
 static ProgramAST* parse_text(Arena* A, const char* src, char* err, int errlen) {
     jmp_buf jb;
@@ -243,9 +244,88 @@ int ms_check_print(const char* file, const char* src) {
                 bad = 1;
             }
         ms_print_program(&p2, re);
+        bad |= check_graphs(file, src, pr);
         if (!bad && (!p2.p || strcmp(p1.p, p2.p))) { printf("%s: printing the printed code changes it\n", file); bad = 1; }
     }
     ms_buf_free(&p1); ms_buf_free(&p2);
     arena_free(&A); arena_free(&B);
     return bad;
+}
+
+/* ---------- graphs ---------- */
+#include "../src/graph.h"
+
+/* statements that become flow nodes: everything in a chain (not for-init, not 'int a, b' parts, not lambda bodies) */
+static int count_flow(Stmt* s) {
+    if (!s) return 0;
+    int n = 0;
+    Stmt** list = s->k == S_BLOCK ? s->list : &s;
+    int cnt = s->k == S_BLOCK ? s->n : 1;
+    for (int i = 0; i < cnt; i++) {
+        Stmt* t = list[i];
+        n++;
+        switch (t->k) {
+            case S_IF: n += count_flow(t->body) + count_flow(t->els); break;
+            case S_WHILE: case S_DO: case S_FOR: case S_FOREACH: n += count_flow(t->body); break;
+            case S_BLOCK: n += count_flow(t); break;
+            case S_SWITCH: for (int j = 0; j < t->n; j++) { Stmt b = { 0 }; b.k = S_BLOCK; b.list = t->list[j]->list; b.n = t->list[j]->n; n += count_flow(&b); } break;
+        }
+    }
+    return n;
+}
+
+static int check_graphs(const char* file, const char* src, ProgramAST* pr) {
+    int bad = 0;
+    for (int c = 0; c < pr->nclasses; c++) {
+        ClassDecl* cd = &pr->classes[c];
+        for (int j = 0; j < cd->nmethods; j++) {
+            MethodDecl* m = &cd->methods[j];
+            Graph* g = gr_build(pr, src, cd->name, cd->nlen, m->name, m->nlen);
+            if (!g) { printf("%s: no graph for %.*s.%.*s\n", file, cd->nlen, cd->name, m->nlen, m->name); bad = 1; continue; }
+            if (g->m != m) { gr_free(g); continue; }        /* an overload with the same name: the graph shows the first one */
+            int flow = 0;
+            for (int i = 0; i < g->nn; i++) {
+                if (g->n[i].kind != GN_FLOW) continue;
+                flow++;
+                for (int k = i + 1; k < g->nn; k++)
+                    if (g->n[k].kind == GN_FLOW && g->n[k].st == g->n[i].st) { printf("%s: %s: statement shown twice\n", file, g->name); bad = 1; }
+            }
+            int want = m->body ? count_flow(m->body) : 0;
+            if (flow != want) { printf("%s: %s: %d flow nodes for %d statements\n", file, g->name, flow, want); bad = 1; }
+            gr_free(g);
+        }
+    }
+    return bad;
+}
+
+/* `--graph file.cs [Class.Method]`: dump one graph or all of them; `--graph-layout file.cs`: the @layout comment */
+int ms_graph_tool(const char* src, const char* which, int layoutOnly) {
+    Arena A = { 0 };
+    char err[256];
+    ProgramAST* pr = parse_text(&A, src, err, sizeof err);
+    if (!pr) { fprintf(stderr, "%s\n", err); arena_free(&A); return 1; }
+    MsBuf out = { 0 };
+    int found = 0;
+    if (layoutOnly) ms_buf_add(&out, "/* @layout\n", -1);
+    for (int c = 0; c < pr->nclasses; c++) {
+        ClassDecl* cd = &pr->classes[c];
+        for (int j = 0; j < cd->nmethods; j++) {
+            MethodDecl* m = &cd->methods[j];
+            char name[160];
+            snprintf(name, sizeof name, "%.*s.%.*s", cd->nlen, cd->name, m->nlen, m->name);
+            if (which && strcmp(which, name)) continue;
+            Graph* g = gr_build(pr, src, cd->name, cd->nlen, m->name, m->nlen);
+            if (!g || g->m != m) { gr_free(g); continue; }
+            found++;
+            if (layoutOnly) { gr_layout_line(g, &out); ms_buf_add(&out, "\n", 1); }
+            else { if (found > 1) ms_buf_add(&out, "\n", 1); gr_dump(g, &out); }
+            gr_free(g);
+        }
+    }
+    if (layoutOnly) ms_buf_add(&out, "*/\n", -1);
+    if (out.p) fputs(out.p, stdout);
+    ms_buf_free(&out);
+    arena_free(&A);
+    if (!found) { fprintf(stderr, "no method %s\n", which ? which : "(none in the file)"); return 1; }
+    return 0;
 }

@@ -57,6 +57,16 @@ done
 $BIN --print tests/coroutines.cs > "$PR/coroutines.cs" && check print/coroutines "$($BIN "$PR/coroutines.cs" --frames 40 2>&1)" tests/expected/coroutines.txt
 $BIN --print examples/loch.cs > "$PR/loch.cs" && check print/loch_bot "$($BIN "$PR/loch.cs" --frames 6000 --press "$(cat tests/loch_press.txt)" 2>&1)" tests/expected/loch_bot.txt
 rm -rf "$PR"
+# graphs: every statement kind as a node, @layout read and written, layout survives a save and load
+check graph_kinds "$($BIN tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds.txt
+check graph_kinds_dump "$($BIN --graph tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds_dump.txt
+check graph_kinds_layout "$($BIN --graph-layout tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds_layout.txt
+check graph_ship "$($BIN --graph examples/Kosmos/Ship.cs 2>&1)" tests/expected/graph_ship.txt
+GL=$(mktemp -d)
+{ cat examples/loch.cs; $BIN --graph-layout examples/loch.cs; } > "$GL/loch.cs"
+if [ "$($BIN --graph examples/loch.cs)" = "$($BIN --graph "$GL/loch.cs" | sed 's/ placed$//')" ] && $BIN --graph "$GL/loch.cs" | grep -q ' placed$'; then
+    pass=$((pass+1)); else fail=$((fail+1)); echo "FAIL: graph_layout_roundtrip"; fi
+rm -rf "$GL"
 for f in tests/errors/*.cs; do
     n=$(basename "$f" .cs)
     check "error/$n" "$($BIN "$f" 2>&1 >/dev/null)" "tests/errors/$n.expected"

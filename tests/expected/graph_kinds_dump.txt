@@ -1,0 +1,75 @@
+graph Kinds.Sum (25 nodes)
+n0 e entry "static int Sum(xs, limit)" @0,0 158x17
+n1 0 var "int s, n" <- n0.next @0,25 56x37
+    s: 0
+    n: 0
+n2 1 each "foreach var x" <- n1.next @50,60 86x37 placed
+    in: xs
+n3 1.b0 if "if" <- n2.body @28,115 74x37
+    cond: x < 0
+n4 1.b0.t0 cont "continue" <- n3.true @56,160 56x17
+n5 1.b0.f0 if "if" <- n3.false @56,185 98x37
+    cond: x > limit
+n6 1.b0.f0.t0 break "break" <- n5.true @84,230 38x17
+n7 1.b1 set "s +=" <- n3.next @28,255 56x27
+    value: x
+n8 2 for "for" <- n2.next @0,290 116x57
+    init: int i = 0
+    cond: i < xs.Count
+    step: i++
+n9 2.b0 inc "n++" <- n8.body @28,355 26x17
+n10 3 while "while" <- n8.next @0,380 74x37
+    cond: n > 0
+n11 3.b0 inc "n--" <- n10.body @28,425 26x17
+n12 4 do "do ... while" <- n10.next @0,450 80x37
+    cond: n < 3
+n13 4.b0 inc "n++" <- n12.body @28,495 26x17
+n14 5 switch "switch" <- n12.next @0,520 152x37
+    value: s % 3
+n15 5.c0_0 set "total +=" <- n14.case 0 @28,565 56x27
+    value: s
+n16 5.c0_1 break "break" <- n15.next @28,600 38x17
+n17 5.c1_0 set "total -=" <- n14.case 1.. @28,625 218x27
+    value: Mathf.Max(s, limit * 2 + (n - 1) * 4)
+n18 5.c1_1 break "break" <- n17.next @28,660 38x17
+n19 5.c2_0 break "break" <- n14.default @28,685 38x17
+n20 6 block "{ }" <- n14.next @0,710 38x27
+n21 6.b0 var "int t" <- n20.body @28,745 38x27
+    t: s
+n22 7 block "{ }" <- n20.next @0,780 38x27
+n23 8 ret "return" <- n22.next @0,815 50x27
+    value <- n24
+n24 8.a0 val "? :" -> n23.value @-100,815 86x47
+    cond: s > 100
+    then: 100
+    else: s
+
+graph Kinds.Blink (5 nodes)
+n0 e entry "static IEnumerator Blink()" @0,0 164x17
+n1 0 while "while" <- n0.next @0,25 68x37
+    cond: true
+n2 0.b0 yield "yield return" <- n1.body @28,70 194x27
+    value: new WaitForSeconds(0.5f)
+n3 0.b1 if "if" <- n2.next @28,105 104x37
+    cond: total > 10
+n4 0.b1.t0 ybreak "yield break" <- n3.true @56,150 74x17
+
+graph Kinds.Area (2 nodes)
+n0 e entry "int Area()" @0,0 68x17
+n1 0 ret "return" <- n0.next @0,25 104x27
+    value: total * 2
+
+graph Kinds.Main (5 nodes)
+n0 e entry "static void Main()" @0,0 116x17
+n1 0 var "var list" <- n0.next @200,10 56x27 placed
+    list <- n2
+n2 0.a0 val "new List<int>" -> n1.list @100,10 86x57
+    a1: 1
+    a2: -2
+    a3: 3
+    a4: 40
+n3 1 call "Console.WriteLine" <- n1.next @-5,-6 110x27 placed
+    a1 <- n4
+n4 1.a0 val "+" -> n3.a1 @-159,-6 140x37
+    a: Sum(list, 10) + " "
+    b: total

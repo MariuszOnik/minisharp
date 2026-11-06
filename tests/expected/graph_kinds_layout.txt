@@ -1,0 +1,6 @@
+/* @layout
+Kinds.Sum e:entry:0,0 0:var:0,25 1:each:50,60 1.b0:if:28,115 1.b0.t0:cont:56,160 1.b0.f0:if:56,185 1.b0.f0.t0:break:84,230 1.b1:set:28,255 2:for:0,290 2.b0:inc:28,355 3:while:0,380 3.b0:inc:28,425 4:do:0,450 4.b0:inc:28,495 5:switch:0,520 5.c0_0:set:28,565 5.c0_1:break:28,600 5.c1_0:set:28,625 5.c1_1:break:28,660 5.c2_0:break:28,685 6:block:0,710 6.b0:var:28,745 7:block:0,780 8:ret:0,815 8.a0:val:-100,815 5.c1_0.a0=closed 8.a0=open
+Kinds.Blink e:entry:0,0 0:while:0,25 0.b0:yield:28,70 0.b1:if:28,105 0.b1.t0:ybreak:56,150
+Kinds.Area e:entry:0,0 0:ret:0,25
+Kinds.Main e:entry:0,0 0:var:200,10 0.a0:val:100,10 1:call:-5,-6 1.a0:val:-159,-6 1.a0=open
+*/

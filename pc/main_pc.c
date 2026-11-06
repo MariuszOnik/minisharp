@@ -100,6 +100,13 @@ int main(int argc, char** argv) {
 #endif
     if (argc == 2 && !strcmp(argv[1], "--repl")) return repl_main();
     if (argc == 3 && !strcmp(argv[1], "--ci")) return ci_main(argv[2]);
+    if (argc >= 3 && argc <= 4 && (!strcmp(argv[1], "--graph") || !strcmp(argv[1], "--graph-layout"))) {
+        char* text = read_file(argv[2]);       /* --graph file.cs [Class.Method]   --graph-layout file.cs */
+        if (!text) { fprintf(stderr, "cannot read %s\n", argv[2]); return 2; }
+        int r = ms_graph_tool(text, argc == 4 ? argv[3] : NULL, !strcmp(argv[1], "--graph-layout"));
+        free(text);
+        return r;
+    }
     if (argc == 3 && !strcmp(argv[1], "--print")) {     /* the file printed again by the AST printer */
         char* text = read_file(argv[2]);
         if (!text) { fprintf(stderr, "cannot read %s\n", argv[2]); return 2; }
