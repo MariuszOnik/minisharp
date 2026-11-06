@@ -254,5 +254,7 @@ public static class App {
 // [Order(n)] before a class: its Main, Update and Draw run before those of higher numbers (0 by default), like DefaultExecutionOrder in Unity.
 public sealed class OrderAttribute : System.Attribute { public OrderAttribute(int order) { } }
 // [In] / [Out] before a field: an input / output port of a graph node.
+// Node: the base of graph nodes with memory (MiniSharp adds it itself when the project has no class Node).
+public abstract class Node { public virtual void Run() { } }
 public sealed class InAttribute : System.Attribute { }
 public sealed class OutAttribute : System.Attribute { }

@@ -2154,6 +2154,19 @@ static int entry_point(C* c, const char* name) {
     return fi;
 }
 
+/* Graph nodes with memory derive from Node. Unless the program has its own class Node (an A* graph node, say),
+   one is added to the parsed program; it is parsed on its own, so the program's text and lines stay as they are. */
+static void add_node_class(C* c, ProgramAST* ast) {
+    for (int i = 0; i < ast->nclasses; i++) if (ast->classes[i].nlen == 4 && !memcmp(ast->classes[i].name, "Node", 4)) return;
+    static const char NODE_CLASS[] = "abstract class Node { public virtual void Run() { } }";
+    int n;
+    Token* t = ms_lex(&c->pc, NODE_CLASS, &n);
+    ProgramAST* extra = ms_parse(&c->pc, t, n);
+    int cap = ast->nclasses;
+    ast->classes = (ClassDecl*)arena_grow(&c->A, ast->classes, ast->nclasses, &cap, sizeof(ClassDecl));
+    ast->classes[ast->nclasses++] = extra->classes[0];
+}
+
 static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {
     C* c = (C*)calloc(1, sizeof(C));
     if (!c) { snprintf(err, errlen, "out of memory"); return NULL; }
@@ -2172,6 +2185,7 @@ static Program* compile(const char* src, char* err, int errlen, char* replDecls,
     int ntok;
     Token* toks = ms_lex(&c->pc, src, &ntok);
     ProgramAST* ast = ms_parse(&c->pc, toks, ntok);
+    add_node_class(c, ast);
     collect(c, ast);
     if (replDecls) {
         int ci = find_class(c, "Repl", 4);
