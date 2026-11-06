@@ -52,7 +52,18 @@ Pominięte: Main, Update, Draw (to zdarzenia) i metody bez static. Plik z błęd
 Paleta czyta kod przy wejściu w Graf: po dopisaniu metody wyjdź z grafu (Kod) i wejdź jeszcze raz.
 Dwie metody o tej samej nazwie dają jeden węzeł (z pierwszej). Taki węzeł nie pamięta nic między klatkami: to zwykłe wywołanie metody.
 Pola static też są węzłami (jak Get/Set w Bolcie): static float x; w klasie Game daje węzeł Game.x (odczyt) i Ustaw Game.x (przepływ i wartość: Game.x = ...;). Pole const albo readonly ma tylko odczyt. Komentarz nad polem to opis, // @node hide chowa pole.
-Jeszcze nie ma: węzłów z pamięcią (klasa z wejściami i wyjściami) i węzłów złożonych z grafu (podgrafów).
+Węzeł z pamięcią to klasa z polami [In] (wejścia) i [Out] (wyjścia) oraz metodą Run(). Też nic nie trzeba rejestrować:
+// Liczy kroki.
+// @node Licznik kroków
+class Licznik : Node {
+    [In]  public int krok = 1;
+    [Out] public int suma;
+    [Out] public bool ponadDziesiec;
+    public override void Run() { suma += krok; ponadDziesiec = suma > 10; }
+}
+Każdy taki węzeł w grafie ma własny obiekt, więc pamięta stan między klatkami (suma rośnie). Przepływ wpisuje podłączone albo wpisane wejścia, woła Run(), a wyjścia to pola [Out].
+Node to gotowa klasa bazowa (MiniSharp ją dodaje); można też bez niej: wystarczą pola [In]/[Out] i public void Run(). Jeśli projekt ma własną klasę Node (np. do A*), ta gotowa się nie dodaje.
+Jeszcze nie ma: węzłów złożonych z grafu (podgrafów).
 
 ## Graf 3: graf i kod razem
 Graf to klasa (nazwa w Więcej > Nazwa klasy), a jego zmienne to pola static tej klasy:
