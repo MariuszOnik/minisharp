@@ -14,6 +14,7 @@
 #include "platform_3ds.h"
 #include "terminal.h"
 #include "editor.h"
+#include "graphview.h"
 #include "keyboard.h"
 #include "app.h"
 #include "samples.h"
@@ -250,7 +251,7 @@ static void draw_menu(void) {
     text(10, 222, status, 0x80C080);
 
     plat_screen(1);
-    text(8, 6, "A: run  R: edit  L: new project", 0xFFFFFF);
+    text(8, 6, "A: run  R: edit  B: graph  L: new project", 0xFFFFFF);
     text(8, 22, "SELECT: terminal  Y: refresh  X: FPS", 0xA0A0A0);
     text(8, 38, "START: exit (in a game: back here)", 0xA0A0A0);
     text(8, 58, "Last program output:", 0x7FB2FF);
@@ -288,6 +289,7 @@ int main(void) {
             if (k & KEY_LEFT) { sel -= 10; if (sel < 0) sel = 0; }
             if (k & KEY_A) { run_file(files[sel]); continue; }
             if (k & KEY_R) { editor_open(files[sel]); scan_files(); continue; }
+            if (k & KEY_B) { graphview_open(files[sel]); continue; }     /* graph prototype */
         }
         if (k & KEY_L) {
             char made[64];

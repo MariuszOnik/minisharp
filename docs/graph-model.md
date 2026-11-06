@@ -179,6 +179,13 @@ więc **tekst jest głównym kosztem**:
 Pomiar: sztuczne grafy z 50 / 100 / 200 węzłów oraz prawdziwy graf `Update` z `loch.cs`, przesuwanie i powiększanie, czas rysowania w logu
 (jak `editor closed: ... drawing avg`). Cel: **poniżej 8 ms przy 100 widocznych węzłach**, żeby został zapas na edytor.
 
+**Wyniki (2026-11-06, `source3ds/graphview.c`, B w menu, SELECT = pomiar do logu; `loch.cs` na konsoli):**
+- rysowanie: CPU najwyżej **7,9 ms** (najgorszy przypadek: `Game.NowyPotwor` ×4, powiększenie 0,5, 22 widoczne węzły, 617 prostokątów razem z literami),
+  zwykle 2–4 ms; GPU stale ok. 2 ms. Na ekranie 320×240 i tak widać najwyżej 20–30 węzłów, więc 100 widocznych węzłów nie zdarza się w praktyce.
+- **koszt to tekst**: bez tekstu (powiększenie 0,35) rysowanie trwa 0,1–0,4 ms. Litera kosztuje ok. 10 µs CPU, więc dalsze oszczędzanie = mniej liter na ekranie.
+- budowanie: parsowanie całego `loch.cs` (12,7 kB) 20,5 ms, graf metody razem z przygotowaniem tekstu 1–12 ms (`Game.Draw`, 47 węzłów).
+  Edycja = ok. 30 ms raz na dotknięcie, do przyjęcia; przy dużych plikach (1800 linii) warto parsować tylko zmienioną metodę.
+
 ## 8. Przeglądarka i stare grafy
 
 Pliki z `// @graph {json}` są zwykłym C#, więc migracja to usunięcie tej linii: kod zostaje, graf zbuduje się z kodu, a pozycje dostaną automatyczny układ.
