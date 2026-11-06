@@ -1970,7 +1970,7 @@ static void collect(C* c, ProgramAST* ast) {
         k->type->isa = isa;
     }
 
-    int nfuncs = 1 + ast->nlambdas;  /* static init, lambdas */
+    int nfuncs = 1 + 3 + ast->nlambdas;  /* static init, the Main/Update/Draw dispatchers, lambdas */
     for (int i = 0; i < nc; i++) nfuncs += 1 + ast->classes[i].nmethods;
     P->funcs = (Func*)calloc(nfuncs, sizeof(Func));
     P->capfuncs = nfuncs;
@@ -2121,17 +2121,34 @@ static void collect(C* c, ProgramAST* ast) {
     }
 }
 
-static int find_entry(C* c, const char* name) {
-    int found = -1;
+/* Every class may have 'static void Main()', 'static void Update()' and 'static void Draw()' (like the Unity scripts of one scene):
+ * the program calls all of them, in the order of the classes in the project (files by name, classes top to bottom).
+ * With more than one, a small function made here does the calls, so the hosts keep calling a single entry. */
+static int entry_point(C* c, const char* name) {
+    int fns[256], n = 0;
     for (int i = 0; i < c->nclasses; i++) {
         CMethod* m = find_own_method(c, i, name, (int)strlen(name));
         if (!m || !m->isStatic || m->np != 0 || m->ret->k != T_VOID) continue;
-        if (found >= 0)
-            cfail(c, m->decl->line, "'static void %s()' is in two classes ('%.*s' and '%.*s'); the program can only have one",
-                  name, c->classes[found].nlen, c->classes[found].name, c->classes[i].nlen, c->classes[i].name);
-        found = i;
+        if (n == 256) cfail(c, m->decl->line, "too many classes with 'static void %s()' (at most 256)", name);
+        fns[n++] = m->func;
     }
-    return found >= 0 ? find_own_method(c, found, name, (int)strlen(name))->func : -1;
+    if (n == 0) return -1;
+    if (n == 1) return fns[0];
+    Program* P = c->P;
+    if (P->nfuncs >= P->capfuncs) cfail(c, 1, "internal error: no room for the '%s' dispatcher", name);
+    int fi = P->nfuncs++;
+    Func* f = &P->funcs[fi];
+    int len = 3 * n + 1;
+    f->code = (int32_t*)malloc(sizeof(int32_t) * len);
+    f->lines = (int*)calloc(len, sizeof(int));
+    if (!f->code || !f->lines) cfail(c, 1, "out of memory");
+    int k = 0;
+    for (int j = 0; j < n; j++) { f->code[k++] = OP_CALL; f->code[k++] = fns[j]; f->code[k++] = 0; }
+    f->code[k++] = OP_RET;
+    f->len = f->cap = len;
+    f->nparams = 0; f->nlocals = 0;
+    snprintf(f->name, sizeof f->name, "%s (all classes)", name);
+    return fi;
 }
 
 static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {
@@ -2168,9 +2185,9 @@ static Program* compile(const char* src, char* err, int errlen, char* replDecls,
             if (c->classes[i].methods[j].func >= 0) compile_method(c, i, &c->classes[i].methods[j]);
     }
     compile_static_init(c, c->P->staticInit);
-    c->P->entryMain = find_entry(c, "Main");
-    c->P->entryUpdate = find_entry(c, "Update");
-    c->P->entryDraw = find_entry(c, "Draw");
+    c->P->entryMain = entry_point(c, "Main");
+    c->P->entryUpdate = entry_point(c, "Update");
+    c->P->entryDraw = entry_point(c, "Draw");
     if (c->P->entryMain < 0 && c->P->entryUpdate < 0)
         cfail(c, 1, "no entry point: add 'static void Main()' or 'static void Update()'");
     Program* P = c->P;

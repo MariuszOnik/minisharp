@@ -1,1 +1,0 @@
-compile error: B.cs line 2: 'static void Main()' is in two classes ('A' and 'B'); the program can only have one

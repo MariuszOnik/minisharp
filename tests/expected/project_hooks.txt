@@ -1,0 +1,10 @@
+Game.Main
+Hud.Main
+Game.Update 1
+Hud.Update 10
+Game.Draw 1
+Hud.Draw 10
+Game.Update 2
+Hud.Update 20
+Game.Draw 2
+Hud.Draw 20

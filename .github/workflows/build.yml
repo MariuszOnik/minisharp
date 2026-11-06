@@ -12,6 +12,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build and run tests on PC
         run: make -f Makefile.pc test
+      - name: Web tests (code completion, graph generator; the generated programs go through the real compiler)
+        run: |
+          node tests/web/complete.test.js
+          node tests/web/graph.test.js
+          node tests/web/guide.test.js
 
   build-3ds:
     runs-on: ubuntu-latest

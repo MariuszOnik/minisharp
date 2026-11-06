@@ -174,11 +174,11 @@ Kolory to zwykłe `int` w formacie `0xRRGGBB`.
 3. Podgląd na PC w oknie na żywo (sterowanie klawiaturą/myszą, ta sama czcionka co na 3DS).
 4. ~~Sprite'y z PNG i dźwięk~~ (przykład `examples/sprites.cs`; Ctrl+Shift+B wysyła też obrazki i dźwięki leżące obok programu). Później: OGG/muzyka strumieniowa, sprite batching.
 5. Programowanie grafami (w stylu Unity Bolt), na konsoli i na PC:
-   - **graf → kod:** graf zapisuje się jako zwykły plik `.cs`, który kompiluje MiniSharp,
+   - ~~**graf → kod:** graf zapisuje się jako zwykły plik `.cs`, który kompiluje MiniSharp~~ (generator `web/graph.js` i testy `tests/web/graph.test.js`) oraz ~~edytor grafów w przeglądarce~~ (`web/grapheditor.js`: węzły, paleta z wyszukiwaniem, łączenie portów dotykiem, zmienne grafu; osobna karta „Graf” w przeglądarce; plik `.cs` z linią `// @graph` to plik z grafem); dalej kod → graf i wersja na 3DS; przewodnik z obrazkami: [web/przewodnik.html](web/przewodnik.html) (jeden plik, otwiera się też z okna Pomocy); hooki jak w Unity: każda klasa i każdy graf może mieć własne `Main`/`Update`/`Draw`, program woła je wszystkie,
    - **kod → graf:** parser wczytuje `.cs` i pokazuje go jako graf; konstrukcje, których nie da się narysować, stają się węzłem „blok kodu”,
    - pozycje węzłów trzymane w komentarzach `// @node x,y`, więc plik dalej jest czystym C#,
    - notatki projektowe (model portów, katalog węzłów): [docs/graphs-notes.md](docs/graphs-notes.md),
-   - **nowe węzły bez pisania C:** każda funkcja API to węzeł automatycznie, a każda metoda `static` w pliku `.cs` (np. biblioteka `nodes/*.cs`) staje się nowym węzłem.
+   - ~~**nowe węzły bez pisania C:** każda funkcja API to węzeł automatycznie, a każda metoda `static` w pliku `.cs` staje się nowym węzłem~~ (w przeglądarce działa: paleta pokazuje je na górze, opis bierze z komentarza nad metodą, szczegóły w [docs/graphs-notes.md](docs/graphs-notes.md); biblioteka `nodes/*.cs` i wersja na 3DS jeszcze nie),
 6. ~~Terminal (REPL) z klawiaturą dotykową i podpowiedziami~~, ~~projekty z wielu plików (folder = projekt)~~. Dalej edytor MiniSharp na konsoli, który umie też tworzyć projekty (nowy folder z szablonem `Game.cs`), dodawać i usuwać w nich pliki; pisanie kodu na dolnym ekranie (klawiatura dotykowa), autouzupełnianie z tabeli API (tej samej co paleta węzłów), podświetlanie błędów, uruchamianie jednym przyciskiem i przełączanie kod ↔ graf. Do tego terminal (REPL) na tej samej klawiaturze: górny ekran pokazuje wynik, np. `Math.Sqrt(2)` albo `Gfx.Circle(...)` od razu.
 7. Backend generujący natywny kod ARM (opcjonalnie, jeśli zabraknie wydajności).
 

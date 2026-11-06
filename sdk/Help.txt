@@ -15,7 +15,7 @@ Jeśli jest Update, program działa jako gra; START wraca do menu.
 ## Projekt
 Projekt to folder: wszystkie pliki .cs w nim kompilują się razem i klasy widzą się nawzajem.
 Obrazki i dźwięki są szukane w folderze projektu.
-Tylko jedna klasa może mieć Main (i jedna Update, jedna Draw).
+Każda klasa może mieć własne static void Main(), Update() i Draw(), tak jak skrypty na scenie w Unity: program woła je wszystkie, w kolejności klas w projekcie (pliki po nazwie, klasy od góry). Tak działają też pliki z grafem.
 Dobrze jest pisać na początku każdego pliku: namespace NazwaProjektu;
 
 ## Kurs 1: pierwszy program

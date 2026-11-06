@@ -15,7 +15,7 @@
   <div class="tools">
     <select id="examples" aria-label="Przykłady"><option value="">Przykłady…</option></select>
     <button id="share" type="button"><span class="long">Udostępnij</span><span class="short">Link</span></button>
-    <button id="helpBtn" type="button">Pomoc</button>
+    <button id="helpBtn" type="button" aria-label="Pomoc"><span class="long">Pomoc</span><span class="short">?</span></button>
     <button id="stop" type="button" class="stopbtn">■ Stop</button>
     <button id="run" type="button" class="primary" disabled>▶ Uruchom</button>
   </div>
@@ -23,6 +23,7 @@
 
 <nav class="viewtabs" aria-label="Widok">
   <button type="button" data-view-btn="code" class="active">Kod</button>
+  <button type="button" data-view-btn="graph">Graf</button>
   <button type="button" data-view-btn="game">Gra</button>
 </nav>
 
@@ -31,7 +32,20 @@
     <div id="files" class="files"></div>
     <div class="editor">
       <pre id="gutter" aria-hidden="true"></pre>
-      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Kod programu"></textarea>
+      <div class="codewrap">
+        <pre id="hl" aria-hidden="true"></pre>
+        <span id="acm" aria-hidden="true">MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM</span>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" aria-label="Kod programu"></textarea>
+        <div id="ac" class="ac" hidden></div>
+      </div>
+    </div>
+    <div id="graphpane" class="graphpane">
+      <div id="graphhost"></div>
+      <div id="graphempty" class="gempty" hidden>
+        <p><strong>Ten projekt nie ma jeszcze grafu.</strong></p>
+        <p>Graf to programowanie węzłami: łączysz klocki, a kod powstaje sam.</p>
+        <button id="graphNew" class="primary" type="button">+ Nowy graf</button>
+      </div>
     </div>
     <div id="error" class="error" hidden>
       <div class="errhead"><strong id="errorTitle"></strong><button id="errorClose" type="button" aria-label="Zamknij">×</button></div>
@@ -90,12 +104,26 @@
 
 <footer id="status" role="status"></footer>
 
+<dialog id="projects">
+  <div class="helptop">
+    <div class="helphead"><strong>Projekty i pliki</strong><button id="projectsClose" type="button" aria-label="Zamknij">×</button></div>
+  </div>
+  <div id="projectsBody"></div>
+</dialog>
+
 <dialog id="help">
-  <div class="helphead"><strong>Pomoc: język MiniSharp</strong><button id="helpClose" type="button" aria-label="Zamknij">×</button></div>
-  <p class="helpnote">Ten sam kod działa w przeglądarce i w aplikacji MiniSharp na Nintendo 3DS.</p>
+  <div class="helptop">
+    <div class="helphead"><strong>Pomoc: język MiniSharp</strong><button id="helpClose" type="button" aria-label="Zamknij">×</button></div>
+    <input id="helpSearch" type="search" placeholder="Szukaj w pomocy i API (np. Rect, Held, lambda)" autocomplete="off" autocapitalize="off" spellcheck="false">
+  </div>
+  <p class="helpnote">Ten sam kod działa w przeglądarce i w aplikacji MiniSharp na Nintendo 3DS. „Wstaw” wkleja wywołanie do kodu w miejscu kursora. <small id="build"></small></p>
+  <p class="helpnote"><a href="przewodnik.html" target="_blank" rel="noopener">Pełny przewodnik z obrazkami (otwiera się w nowej karcie)</a></p>
   <div id="helpBody"></div>
 </dialog>
 
+<script src="complete.js"></script>
+<script src="graph.js"></script>
+<script src="grapheditor.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
