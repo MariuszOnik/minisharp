@@ -985,15 +985,17 @@ static void parse_class(P* p, ClassDecl* cd) {
     int fcap = 0, mcap = 0;
     while (!at(p, TK_RBRACE)) {
         if (at(p, TK_EOF)) fail(p->c, cd->line, "%s '%.*s' is never closed with '}'", what, cd->nlen, cd->name);
-        int isStatic = 0, kind = cd->isInterface ? MK_ABSTRACT : MK_NONE;
+        int isStatic = 0, kind = cd->isInterface ? MK_ABSTRACT : MK_NONE, readOnly = 0;
         int mst = p->pos;
         int morder = 0, mattrs = parse_attributes(p, &morder);
         if (mattrs & FA_ORDER) fail(p->c, p->t[mst].line, "[Order(n)] goes before a class, not before its members");
         Token* mod = peek(p);
         for (;;) {
             Token* m = peek(p);
-            if (accept(p, TK_STATIC) || accept(p, TK_CONST)) isStatic = 1;   /* const fields are static */
-            else if (accept(p, TK_PUBLIC) || accept(p, TK_PRIVATE) || accept(p, TK_READONLY) || accept(p, TK_SEALED)) {}
+            if (accept(p, TK_STATIC)) isStatic = 1;
+            else if (accept(p, TK_CONST)) isStatic = readOnly = 1;                /* const fields are static */
+            else if (accept(p, TK_READONLY)) readOnly = 1;
+            else if (accept(p, TK_PUBLIC) || accept(p, TK_PRIVATE) || accept(p, TK_SEALED)) {}
             else if (m->kind == TK_IDENT && m->len == 5 && !memcmp(m->start, "event", 5) && peekn(p, 1)->kind == TK_IDENT) next(p);   /* 'event Action x;' is a delegate field */
             else if (accept(p, TK_VIRTUAL) || accept(p, TK_OVERRIDE) || accept(p, TK_ABSTRACT)) {
                 if (cd->isInterface) fail(p->c, m->line, "interface members cannot be '%.*s'", m->len, m->start);
@@ -1044,7 +1046,7 @@ static void parse_class(P* p, ClassDecl* cd) {
         for (;;) {
             cd->fields = (FieldDecl*)arena_grow(p->c->A, cd->fields, cd->nfields, &fcap, sizeof(FieldDecl));
             FieldDecl* f = &cd->fields[cd->nfields++];
-            f->line = name->line; f->isStatic = isStatic; f->tn = tn; f->name = name->start; f->nlen = name->len; f->attrs = mattrs;
+            f->line = name->line; f->isStatic = isStatic; f->tn = tn; f->name = name->start; f->nlen = name->len; f->attrs = mattrs; f->readOnly = readOnly;
             f->init = accept(p, TK_ASSIGN) ? parse_expr(p) : NULL;
             if (!accept(p, TK_COMMA)) break;
             name = expect(p, TK_IDENT);

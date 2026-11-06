@@ -4,25 +4,207 @@
   "variables": [],
   "nodes": [
    {
-    "id": "m",
-    "type": "event.Method",
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "d",
+    "type": "event.Draw",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "dot",
+    "type": "user.Lib.Dot",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "sq",
+    "type": "user.Lib.Sq",
     "x": 0,
     "y": 0,
     "data": {
-     "name": "Update"
+     "defaults": {
+      "v": "10"
+     }
+    }
+   },
+   {
+    "id": "say",
+    "type": "user.Lib.Say",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value_": "\"hi\"",
+      "result_": "3"
+     }
     }
    }
   ],
-  "edges": []
+  "edges": [
+   {
+    "from": "d",
+    "out": "exit",
+    "to": "dot",
+    "in": "enter"
+   },
+   {
+    "from": "sq",
+    "out": "result",
+    "to": "dot",
+    "in": "x"
+   },
+   {
+    "from": "dot",
+    "out": "exit",
+    "to": "say",
+    "in": "enter"
+   }
+  ]
  },
- "user": [],
- "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n",
- "warnings": [],
- "errors": [
+ "user": [
   {
-   "node": "m",
-   "message": "„Update” to wejście programu: użyj węzła Start, Update albo Draw"
+   "id": "user.Lib.Sq",
+   "title": "Lib.Sq",
+   "category": "Kod: Lib",
+   "kind": "call",
+   "user": true,
+   "file": "Lib.cs",
+   "callee": "Lib.Sq",
+   "ret": "float",
+   "params": [
+    {
+     "type": "float",
+     "name": "v",
+     "port": "v"
+    }
+   ],
+   "sig": "float Sq(float v)",
+   "doc": "Kwadrat liczby.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "v",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "result",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Lib.Dot",
+   "title": "Narysuj kropkę",
+   "category": "Kod: Lib",
+   "kind": "call",
+   "user": true,
+   "file": "Lib.cs",
+   "callee": "Lib.Dot",
+   "ret": "void",
+   "params": [
+    {
+     "type": "float",
+     "name": "x",
+     "port": "x"
+    },
+    {
+     "type": "float",
+     "name": "y",
+     "port": "y"
+    }
+   ],
+   "sig": "void Dot(float x, float y)",
+   "doc": "Kropka w danym miejscu",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "float",
+     "def": "0"
+    },
+    {
+     "name": "y",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Lib.Say",
+   "title": "Lib.Say",
+   "category": "Kod: Lib",
+   "kind": "call",
+   "user": true,
+   "file": "Lib.cs",
+   "callee": "Lib.Say",
+   "ret": "void",
+   "params": [
+    {
+     "type": "string",
+     "name": "value",
+     "port": "value_"
+    },
+    {
+     "type": "int",
+     "name": "result",
+     "port": "result_"
+    }
+   ],
+   "sig": "void Say(string value, int result)",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value_",
+     "type": "string",
+     "def": "\"\""
+    },
+    {
+     "name": "result_",
+     "type": "int",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
   }
- ]
+ ],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n\n    static void Draw() {\n        Lib.Dot(Lib.Sq(10), 0);\n        Lib.Say(\"hi\", 3);\n    }\n}\n",
+ "warnings": [],
+ "errors": []
 }

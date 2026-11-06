@@ -358,6 +358,31 @@ ok(sq.inputs.map((p) => p.name).join() === "enter,v" && sq.outputs.map((p) => p.
 ok(dot.outputs.map((p) => p.name).join() === "exit", "a void method has no result port");
 const say = un.find((d) => d.id === "user.Lib.Say");
 ok(say.inputs.map((p) => p.name).join() === "enter,value_,result_", "parameter names that clash with port names get a trailing _", say.inputs.map((p) => p.name));
+{
+  const FIELDS = `class Game {
+    // Pozycja gracza.
+    public static float x = 200, y;
+    public static readonly int max = 3;
+    const int Limit = 5;
+    // @node hide
+    static int ukryte;
+    int inst;
+    static void Skok() { }
+}
+`;
+  const uf = G.userNodes([{ name: "Game.cs", text: FIELDS }]);
+  ok(uf.map((d) => d.id).join() === "user.Game.x.get,user.Game.x.set,user.Game.y.get,user.Game.y.set,user.Game.max.get,user.Game.Limit.get,user.Game.Skok",
+     "static fields: get and set nodes (const and readonly: get only; not hidden or instance fields), in the order of the code", uf.map((d) => d.id));
+  ok(uf[0].doc === "Pozycja gracza." && uf[0].title === "Game.x" && uf[1].title === "Ustaw Game.x" && uf[1].category === "Kod: Game", "titles, category and the comment above", uf.slice(0, 2));
+  const catF = G.buildCatalog(help, uf);
+  const g = build((N, F) => { N("u", "event.Update"); N("set", "user.Game.x.set"); N("get", "user.Game.max.get"); N("sety", "user.Game.y.set", { defaults: { value: "1.5f" } });
+    F("u", "exit", "set", "enter"); F("get", "value", "set", "value"); F("set", "exit", "sety", "enter"); });
+  const out = G.generate(g, catF, { embed: false });
+  ok(out.code.includes("        Game.x = Game.max;\n        Game.y = 1.5f;"), "set node: Game.x = <value>; get node: Game.max", out.code);
+  ok(out.warnings.length === 0 && out.errors.length === 0, "no notes", out.warnings.concat(out.errors));
+  const lone = G.generate(build((N) => { N("u", "event.Update"); N("s", "user.Game.x.set"); }), catF, { embed: false });
+  ok(lone.warnings.some((w) => w.node === "s"), "a set node not on a flow is reported like Ustaw zmienną");
+}
 const catU = G.buildCatalog(help, un);
 ok(catU.types.has("user.Lib.Dot") && catU.types.has("api.Gfx.Rect"), "the catalog holds both the API and the project's nodes");
 ok(G.searchCatalog(catU, "kropk")[0].id === "user.Lib.Dot" && G.searchCatalog(catU, "dot")[0].id === "user.Lib.Dot", "palette search finds them by title and by name", G.searchCatalog(catU, "kropk").slice(0, 2).map((d) => d.id));

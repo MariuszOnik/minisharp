@@ -11,80 +11,209 @@
     "data": {}
    },
    {
-    "id": "d",
-    "type": "event.Draw",
+    "id": "set",
+    "type": "user.Game.x.set",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "dot",
-    "type": "user.Lib.Dot",
+    "id": "get",
+    "type": "user.Game.max.get",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "sq",
-    "type": "user.Lib.Sq",
+    "id": "sety",
+    "type": "user.Game.y.set",
     "x": 0,
     "y": 0,
     "data": {
      "defaults": {
-      "v": "10"
-     }
-    }
-   },
-   {
-    "id": "say",
-    "type": "user.Lib.Say",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "value_": "\"hi\"",
-      "result_": "3"
+      "value": "1.5f"
      }
     }
    }
   ],
   "edges": [
    {
-    "from": "d",
+    "from": "u",
     "out": "exit",
-    "to": "dot",
+    "to": "set",
     "in": "enter"
    },
    {
-    "from": "sq",
-    "out": "result",
-    "to": "dot",
-    "in": "x"
+    "from": "get",
+    "out": "value",
+    "to": "set",
+    "in": "value"
    },
    {
-    "from": "dot",
+    "from": "set",
     "out": "exit",
-    "to": "say",
+    "to": "sety",
     "in": "enter"
    }
   ]
  },
- "user": [],
- "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n\n    static void Draw() {\n    }\n}\n",
- "warnings": [],
- "errors": [
+ "user": [
   {
-   "node": "dot",
-   "message": "nieznany typ węzła „user.Lib.Dot”"
+   "id": "user.Game.x.get",
+   "title": "Game.x",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
   },
   {
-   "node": "sq",
-   "message": "nieznany typ węzła „user.Lib.Sq”"
+   "id": "user.Game.x.set",
+   "title": "Ustaw Game.x",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
   },
   {
-   "node": "say",
-   "message": "nieznany typ węzła „user.Lib.Say”"
+   "id": "user.Game.y.get",
+   "title": "Game.y",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.y.set",
+   "title": "Ustaw Game.y",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Game.max.get",
+   "title": "Game.max",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.max",
+   "sig": "int max",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Limit.get",
+   "title": "Game.Limit",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Limit",
+   "sig": "int Limit",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Skok",
+   "title": "Game.Skok",
+   "category": "Kod: Game",
+   "kind": "call",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Skok",
+   "ret": "void",
+   "params": [],
+   "sig": "void Skok()",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
   }
- ]
+ ],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Game.x = Game.max;\n        Game.y = 1.5f;\n    }\n}\n",
+ "warnings": [],
+ "errors": []
 }

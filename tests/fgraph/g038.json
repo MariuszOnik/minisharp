@@ -1,110 +1,187 @@
 {
  "graph": {
-  "className": "Graph",
-  "variables": [
-   {
-    "name": "n",
-    "type": "int",
-    "init": "0"
-   }
-  ],
+  "className": "Game",
+  "variables": [],
   "nodes": [
    {
-    "id": "m1",
-    "type": "event.Method",
+    "id": "u",
+    "type": "event.Update",
     "x": 0,
     "y": 0,
-    "data": {
-     "name": "Tick"
-    }
-   },
-   {
-    "id": "m2",
-    "type": "event.Method",
-    "x": 0,
-    "y": 100,
-    "data": {
-     "name": "Alpha"
-    }
-   },
-   {
-    "id": "d",
-    "type": "event.Draw",
-    "x": 0,
-    "y": 200,
     "data": {}
    },
    {
     "id": "s",
-    "type": "var.set",
+    "type": "user.Game.x.set",
     "x": 0,
     "y": 0,
-    "data": {
-     "name": "n"
-    }
-   },
-   {
-    "id": "add",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "b": "1"
-     }
-    }
-   },
-   {
-    "id": "g",
-    "type": "var.get",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "n"
-    }
-   },
-   {
-    "id": "w",
-    "type": "api.Console.WriteLine/1",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "value": "\"a\""
-     }
-    }
+    "data": {}
    }
   ],
-  "edges": [
-   {
-    "from": "m1",
-    "out": "exit",
-    "to": "s",
-    "in": "enter"
-   },
-   {
-    "from": "g",
-    "out": "value",
-    "to": "add",
-    "in": "a"
-   },
-   {
-    "from": "add",
-    "out": "result",
-    "to": "s",
-    "in": "value"
-   },
-   {
-    "from": "m2",
-    "out": "exit",
-    "to": "w",
-    "in": "enter"
-   }
-  ]
+  "edges": []
  },
- "user": [],
+ "user": [
+  {
+   "id": "user.Game.x.get",
+   "title": "Game.x",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.x.set",
+   "title": "Ustaw Game.x",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Game.y.get",
+   "title": "Game.y",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.y.set",
+   "title": "Ustaw Game.y",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Game.max.get",
+   "title": "Game.max",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.max",
+   "sig": "int max",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Limit.get",
+   "title": "Game.Limit",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Limit",
+   "sig": "int Limit",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Skok",
+   "title": "Game.Skok",
+   "category": "Kod: Game",
+   "kind": "call",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Skok",
+   "ret": "void",
+   "params": [],
+   "sig": "void Skok()",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  }
+ ],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Graph {\n    static int n = 0;\n\n    static void Draw() {\n    }\n\n    // Do wywołania z kodu: Graph.Alpha();\n    static void Alpha() {\n        Console.WriteLine(\"a\");\n    }\n\n    // Do wywołania z kodu: Graph.Tick();\n    static void Tick() {\n        n += 1;\n    }\n}\n",
- "warnings": [],
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n}\n",
+ "warnings": [
+  {
+   "node": "s",
+   "message": "węzeł „Ustaw Game.x” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu"
+  }
+ ],
  "errors": []
 }

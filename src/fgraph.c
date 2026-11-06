@@ -433,8 +433,52 @@ void fg_user_nodes(FCatalog* out, const char* fileName, const char* src) {
     for (int c = 0; c < pr->nclasses; c++) {
         ClassDecl* cd = &pr->classes[c];
         if (cd->isInterface) continue;
-        for (int m = 0; m < cd->nmethods; m++) {
-            MethodDecl* md = &cd->methods[m];
+        /* members in the order of the text (as the browser lists them): fields and methods merged by position */
+        for (int fi = 0, m = 0; fi < cd->nfields || m < cd->nmethods; ) {
+            int takeField = fi < cd->nfields && (m >= cd->nmethods || (cd->fields[fi].s0 && cd->methods[m].s0 && cd->fields[fi].s0 < cd->methods[m].s0));
+            if (takeField) {
+                FieldDecl* fd = &cd->fields[fi++];
+                if (!fd->isStatic || !fd->s0) continue;
+                char cname[80], fname[80];
+                snprintf(cname, sizeof cname, "%.*s", cd->nlen, cd->name);
+                snprintf(fname, sizeof fname, "%.*s", fd->nlen, fd->name);
+                char lines[24][160];
+                int nl = doc_above(src, fd->s0, lines, 24), hide = 0;
+                MsBuf doc = { 0 };
+                for (int i = 0; i < nl; i++) {
+                    const char* l = lines[i];
+                    if (!strncmp(l, "@node", 5) && !(isalnum((unsigned char)l[5]) || l[5] == '_')) {
+                        const char* t = l + 5;
+                        while (isspace((unsigned char)*t)) t++;
+                        char* tt = trim_copy(t, (int)strlen(t));
+                        if (tolower((unsigned char)tt[0]) == 'h' && tolower((unsigned char)tt[1]) == 'i' && tolower((unsigned char)tt[2]) == 'd' && tolower((unsigned char)tt[3]) == 'e' && !tt[4]) hide = 1;
+                        free(tt);
+                        continue;
+                    }
+                    if (doc.n) ms_buf_add(&doc, " ", 1);
+                    ms_buf_add(&doc, l, -1);
+                }
+                if (hide) { ms_buf_free(&doc); continue; }
+                MsBuf ty = { 0 }; ms_print_type(&ty, fd->tn);
+                for (int set = 0; set < 2; set++) {
+                    if (set && fd->readOnly) break;
+                    FDef d; memset(&d, 0, sizeof d);
+                    d.id = sfmt("user.%s.%s.%s", cname, fname, set ? "set" : "get");
+                    d.title = set ? sfmt("Ustaw %s.%s", cname, fname) : sfmt("%s.%s", cname, fname);
+                    d.category = sfmt("Kod: %s", cname); d.kind = sdup(set ? "setfield" : "const"); d.user = 1;
+                    d.file = sdup(fileName); d.callee = sfmt("%s.%s", cname, fname);
+                    d.sig = sfmt("%s %s", ty.p ? ty.p : "", fname); d.doc = sdup(doc.p ? doc.p : "");
+                    if (set) {
+                        FPort in[] = { FLOW("enter"), VAL("value", ty.p ? ty.p : "", default_for(ty.p)) }, out[] = { FLOW("exit") };
+                        add_ports(&d.in, &d.nin, in, 2); add_ports(&d.out, &d.nout, out, 1);
+                    } else { FPort out[] = { VAL("value", ty.p ? ty.p : "", NULL) }; add_ports(&d.out, &d.nout, out, 1); }
+                    if (out->n == out->cap) { int nc = out->cap ? out->cap * 2 : 16; out->d = (FDef*)realloc(out->d, (size_t)nc * sizeof(FDef)); out->cap = nc; }
+                    out->d[out->n++] = d;
+                }
+                ms_buf_free(&ty); ms_buf_free(&doc);
+                continue;
+            }
+            MethodDecl* md = &cd->methods[m++];
             if (!md->isStatic || md->isCtor || !md->s0) continue;
             char mname[80]; snprintf(mname, sizeof mname, "%.*s", md->nlen, md->name);
             if (!strcmp(mname, "Main") || !strcmp(mname, "Update") || !strcmp(mname, "Draw")) continue;
@@ -909,6 +953,11 @@ static const char* emit_node(Gen* g, const char* id, int depth) {
         char* line = sfmt("%s = %s;", name, v.code);
         put(g, depth, line); free(line); free(v.code);
         next = flow_next(g, id, "exit");
+    } else if (streq(d->kind, "setfield")) {             /* a static field of the project's code: Game.x = value; */
+        X v = expr_input(g, n, d, "value", &stack);
+        char* line = sfmt("%s = %s;", d->callee, v.code);
+        put(g, depth, line); free(line); free(v.code);
+        next = flow_next(g, id, "exit");
     } else if (streq(d->kind, "if")) {
         X cond = expr_input(g, n, d, "cond", &stack);
         const char* t = flow_next(g, id, "true"), *f = flow_next(g, id, "false");
@@ -1118,7 +1167,7 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     for (int i = 0; i < g->nn; i++) {
         const FDef* d = def_of(g, g->nodes[i]);
         if (!d || set_has(&g->emitted, g->nodeIds[i])) continue;
-        int isFlow = streq(d->kind, "setvar") || streq(d->kind, "if") || streq(d->kind, "for") || streq(d->kind, "while") ||
+        int isFlow = streq(d->kind, "setvar") || streq(d->kind, "setfield") || streq(d->kind, "if") || streq(d->kind, "for") || streq(d->kind, "while") ||
                      (streq(d->kind, "call") && streq(d->ret, "void"));
         if (isFlow) warn(g, g->nodeIds[i], sfmt("węzeł „%s” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu", d->title));
     }

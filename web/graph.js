@@ -137,6 +137,8 @@ function buildCatalog(help, userDefs) {
 /* Nodes from the project's own code: every "static" method of a class in a file that is not itself a graph file
  * (Main, Update and Draw are the program's entry points and are skipped).  The lines of // comments right above the
  * method are its description; "// @node Title" gives the node another title, "// @node hide" keeps a helper out of the palette.
+ * Every static field gives a get node ("Game.x") and, unless it is const or readonly, a set node ("Ustaw Game.x"),
+ * as the Get/Set units of Bolt; "// @node hide" above the field keeps both out.
  *   files: [{ name, text }] */
 function userNodes(files) {
   const MSC = root.MSComplete || (typeof require !== "undefined" ? require("./complete.js") : null);
@@ -150,6 +152,21 @@ function userNodes(files) {
     for (const c of classes) {
       if (c.kind !== "class") continue;
       for (const m of c.members) {
+        if (m.kind === "field") {
+          if (!m.isStatic) continue;
+          const doc = [];
+          let hide = false;
+          for (const line of m.docLines || []) {
+            const t = /^@node\b\s*(.*)$/.exec(line);
+            if (!t) doc.push(line); else if (/^hide$/i.test(t[1].trim())) hide = true;
+          }
+          if (hide) continue;
+          const name = `${c.name}.${m.name}`, common = { category: `Kod: ${c.name}`, user: true, file: f.name, callee: name, sig: `${m.type} ${m.name}`, doc: doc.join(" ") };
+          defs.push({ id: `user.${name}.get`, title: name, kind: "const", ...common, inputs: [], outputs: [val("value", m.type)] });
+          if (!m.readOnly) defs.push({ id: `user.${name}.set`, title: `Ustaw ${name}`, kind: "setfield", ...common,
+            inputs: [flowIn("enter"), val("value", m.type, defaultFor(m.type))], outputs: [flowIn("exit")] });
+          continue;
+        }
         if (m.kind !== "method" || !m.isStatic || ["Main", "Update", "Draw"].includes(m.name)) continue;
         let title = `${c.name}.${m.name}`, hide = false;
         const doc = [];
@@ -393,6 +410,10 @@ function generate(graph, catalog, opts) {
         put(depth, `${name} = ${exprInput(n, d, "value", stack).code};`);
         return flowNext(id, "exit");
       }
+      case "setfield": {                                 // a static field of the project's code: Game.x = value;
+        put(depth, `${d.callee} = ${exprInput(n, d, "value", stack).code};`);
+        return flowNext(id, "exit");
+      }
       case "if": {
         const cond = exprInput(n, d, "cond", stack);
         const t = flowNext(id, "true"), f = flowNext(id, "false");
@@ -466,7 +487,7 @@ function generate(graph, catalog, opts) {
   for (const n of graph.nodes) {
     const d = defOf(n);
     if (!d || emitted.has(n.id)) continue;
-    const isFlow = ["setvar", "if", "for", "while"].includes(d.kind) || (d.kind === "call" && d.ret === "void");
+    const isFlow = ["setvar", "setfield", "if", "for", "while"].includes(d.kind) || (d.kind === "call" && d.ret === "void");
     if (isFlow) warn(n.id, `węzeł „${d.title}” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu`);
   }
 

@@ -109,7 +109,7 @@ function parseMembers(body, cls, text, bodyStart) {
     if (m && !(KW.has(m[1]) && !TYPEKW.has(m[1]))) {
       for (const part of splitTop(m[2])) {
         const n = /^([A-Za-z_]\w*)\s*(?:=|$)/.exec(part);
-        if (n) members.push({ name: n[1], kind: "field", type: m[1], params: "", isStatic, cls, docLines });
+        if (n) members.push({ name: n[1], kind: "field", type: m[1], params: "", isStatic, cls, docLines, readOnly: mods.includes("const") || mods.includes("readonly") });
       }
     }
   }

@@ -51,14 +51,15 @@ Parametry to wejścia węzła (bez połączenia mają wartość domyślną z typ
 Pominięte: Main, Update, Draw (to zdarzenia) i metody bez static. Plik z błędem nie daje węzłów, dopóki go nie poprawisz.
 Paleta czyta kod przy wejściu w Graf: po dopisaniu metody wyjdź z grafu (Kod) i wejdź jeszcze raz.
 Dwie metody o tej samej nazwie dają jeden węzeł (z pierwszej). Taki węzeł nie pamięta nic między klatkami: to zwykłe wywołanie metody.
+Pola static też są węzłami (jak Get/Set w Bolcie): static float x; w klasie Game daje węzeł Game.x (odczyt) i Ustaw Game.x (przepływ i wartość: Game.x = ...;). Pole const albo readonly ma tylko odczyt. Komentarz nad polem to opis, // @node hide chowa pole.
 Jeszcze nie ma: węzłów z pamięcią (klasa z wejściami i wyjściami) i węzłów złożonych z grafu (podgrafów).
 
 ## Graf 3: graf i kod razem
 Graf to klasa (nazwa w Więcej > Nazwa klasy), a jego zmienne to pola static tej klasy:
 Ball.x = 100;            // z kodu: zmienna x grafu Ball
 Węzeł Metoda (wołana z kodu), np. o nazwie Skok, daje metodę grafu: w kodzie Ball.Skok();
-W grafie pole innej klasy odczytasz węzłem Wartość z wpisanym wyrażeniem, np. Game.wynik.
-Ustaw zmienną zmienia tylko zmienne własnego grafu. Pole innej klasy zmienisz przez metodę w kodzie, która od razu jest węzłem:
+Pole static innej klasy (np. Game.wynik) ma w palecie własne węzły: Game.wynik (odczyt) i Ustaw Game.wynik (Graf 2).
+Ustaw zmienną zmienia zmienne własnego grafu; bardziej złożone zmiany zrób metodą w kodzie, która od razu jest węzłem:
 static void DodajPunkty(int n) { Game.wynik += n; }
 Klasa z obiektami (Więcej): graf staje się klasą bez static, z której robisz obiekty, każdy z własnymi zmiennymi:
 var b = new Ball(); b.Skok();

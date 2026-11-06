@@ -1,0 +1,163 @@
+{
+ "files": [
+  {
+   "name": "Game.cs",
+   "text": "class Game {\n    // Pozycja gracza.\n    public static float x = 200, y;\n    public static readonly int max = 3;\n    const int Limit = 5;\n    // @node hide\n    static int ukryte;\n    int inst;\n    static void Skok() { }\n}\n"
+  }
+ ],
+ "defs": [
+  {
+   "id": "user.Game.x.get",
+   "title": "Game.x",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.x.set",
+   "title": "Ustaw Game.x",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.x",
+   "sig": "float x",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Game.y.get",
+   "title": "Game.y",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.y.set",
+   "title": "Ustaw Game.y",
+   "kind": "setfield",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.y",
+   "sig": "float y",
+   "doc": "Pozycja gracza.",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "value",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  },
+  {
+   "id": "user.Game.max.get",
+   "title": "Game.max",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.max",
+   "sig": "int max",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Limit.get",
+   "title": "Game.Limit",
+   "kind": "const",
+   "category": "Kod: Game",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Limit",
+   "sig": "int Limit",
+   "doc": "",
+   "inputs": [],
+   "outputs": [
+    {
+     "name": "value",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.Game.Skok",
+   "title": "Game.Skok",
+   "category": "Kod: Game",
+   "kind": "call",
+   "user": true,
+   "file": "Game.cs",
+   "callee": "Game.Skok",
+   "ret": "void",
+   "params": [],
+   "sig": "void Skok()",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  }
+ ]
+}
