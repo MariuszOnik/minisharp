@@ -1,0 +1,67 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Main",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "w",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "w2",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "rnd",
+    "type": "api.Random.Float",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "w",
+    "in": "enter"
+   },
+   {
+    "from": "w",
+    "out": "exit",
+    "to": "w2",
+    "in": "enter"
+   },
+   {
+    "from": "rnd",
+    "out": "result",
+    "to": "w",
+    "in": "value"
+   },
+   {
+    "from": "rnd",
+    "out": "result",
+    "to": "w2",
+    "in": "value"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Main() {\n        Console.WriteLine(Random.Float());\n        Console.WriteLine(Random.Float());\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

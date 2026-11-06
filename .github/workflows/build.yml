@@ -17,6 +17,10 @@ jobs:
           node tests/web/complete.test.js
           node tests/web/graph.test.js
           node tests/web/guide.test.js
+      - name: The C graph generator (3DS) gives the same code as the browser one, on fixtures made fresh by the browser tests
+        run: |
+          MS_DUMP_GRAPHS=/tmp/fgfx node tests/web/graph.test.js > /dev/null
+          ./minisharp --fgraph-check /tmp/fgfx
 
   build-3ds:
     runs-on: ubuntu-latest

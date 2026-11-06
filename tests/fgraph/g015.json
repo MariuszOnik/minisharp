@@ -1,0 +1,97 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Main",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "fa",
+    "type": "for",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "first": "10",
+      "last": "0",
+      "step": "-2"
+     }
+    }
+   },
+   {
+    "id": "w",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "fb",
+    "type": "for",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "last": "3",
+      "step": "2"
+     }
+    }
+   },
+   {
+    "id": "w2",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "fa",
+    "in": "enter"
+   },
+   {
+    "from": "fa",
+    "out": "body",
+    "to": "w",
+    "in": "enter"
+   },
+   {
+    "from": "fa",
+    "out": "index",
+    "to": "w",
+    "in": "value"
+   },
+   {
+    "from": "fa",
+    "out": "exit",
+    "to": "fb",
+    "in": "enter"
+   },
+   {
+    "from": "fb",
+    "out": "body",
+    "to": "w2",
+    "in": "enter"
+   },
+   {
+    "from": "fb",
+    "out": "index",
+    "to": "w2",
+    "in": "value"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Main() {\n        for (int i = 10; i > 0; i += -2) {\n            Console.WriteLine(i);\n        }\n        for (int i = 0; i < 3; i += 2) {\n            Console.WriteLine(i);\n        }\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

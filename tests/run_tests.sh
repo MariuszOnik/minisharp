@@ -67,6 +67,9 @@ GE=$(mktemp -d)
 $BIN --graph-edit tests/graph_edit.cs tests/graph_edit.txt | sed '1,/^----$/d' > "$GE/edited.cs"
 check graph_edit_run "$($BIN "$GE/edited.cs" 2>&1)" tests/expected/graph_edit_run.txt
 rm -rf "$GE"
+# flow graphs ("mini Bolt"): the C generator gives the same code, warnings and errors as web/graph.js
+# (fixtures: MS_DUMP_GRAPHS=tests/fgraph node tests/web/graph.test.js)
+check fgraph "$($BIN --fgraph-check tests/fgraph 2>&1 | tail -1)" tests/expected/fgraph.txt
 GL=$(mktemp -d)
 { cat examples/loch.cs; $BIN --graph-layout examples/loch.cs; } > "$GL/loch.cs"
 if [ "$($BIN --graph examples/loch.cs)" = "$($BIN --graph "$GL/loch.cs" | sed 's/ placed$//')" ] && $BIN --graph "$GL/loch.cs" | grep -q ' placed$'; then

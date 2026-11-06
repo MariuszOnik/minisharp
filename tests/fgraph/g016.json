@@ -1,0 +1,120 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [
+   {
+    "name": "n",
+    "type": "int",
+    "init": "10"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Main",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "w",
+    "type": "while",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "g",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "n"
+    }
+   },
+   {
+    "id": "gt",
+    "type": "cmp.gt",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "0"
+     }
+    }
+   },
+   {
+    "id": "s",
+    "type": "var.set",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "n"
+    }
+   },
+   {
+    "id": "sub",
+    "type": "op.sub",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "1"
+     }
+    }
+   },
+   {
+    "id": "g2",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "n"
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "w",
+    "in": "enter"
+   },
+   {
+    "from": "g",
+    "out": "value",
+    "to": "gt",
+    "in": "a"
+   },
+   {
+    "from": "gt",
+    "out": "result",
+    "to": "w",
+    "in": "cond"
+   },
+   {
+    "from": "w",
+    "out": "body",
+    "to": "s",
+    "in": "enter"
+   },
+   {
+    "from": "g2",
+    "out": "value",
+    "to": "sub",
+    "in": "a"
+   },
+   {
+    "from": "sub",
+    "out": "result",
+    "to": "s",
+    "in": "value"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static int n = 10;\n\n    static void Main() {\n        while (n > 0) {\n            n -= 1;\n        }\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

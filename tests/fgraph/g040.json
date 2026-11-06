@@ -1,0 +1,98 @@
+{
+ "graph": {
+  "className": "Ball",
+  "variables": [
+   {
+    "name": "x",
+    "type": "float",
+    "init": "200"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Method",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "Tick"
+    }
+   },
+   {
+    "id": "s",
+    "type": "var.set",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "x"
+    }
+   },
+   {
+    "id": "add",
+    "type": "op.add",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "1"
+     }
+    }
+   },
+   {
+    "id": "gx",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "x"
+    }
+   },
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 100,
+    "data": {}
+   },
+   {
+    "id": "w",
+    "type": "api.Audio.StopAll",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "s",
+    "in": "enter"
+   },
+   {
+    "from": "gx",
+    "out": "value",
+    "to": "add",
+    "in": "a"
+   },
+   {
+    "from": "add",
+    "out": "result",
+    "to": "s",
+    "in": "value"
+   },
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "w",
+    "in": "enter"
+   }
+  ],
+  "instance": false
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Ball {\n    static float x = 200;\n\n    static void Update() {\n        Audio.StopAll();\n    }\n\n    // Do wywołania z kodu: Ball.Tick();\n    static void Tick() {\n        x += 1;\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

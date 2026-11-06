@@ -1,0 +1,28 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "n1",
+    "type": "lit",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "value": "\"a b */ c\""
+    }
+   }
+  ],
+  "edges": []
+ },
+ "user": [],
+ "embed": true,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n\n// @graph {\"className\":\"Game\",\"variables\":[],\"nodes\":[{\"id\":\"n1\",\"type\":\"lit\",\"x\":0,\"y\":0,\"data\":{\"value\":\"\\\"a\\u2028b */ c\\\"\"}}],\"edges\":[]}\n",
+ "warnings": [
+  {
+   "node": null,
+   "message": "graf nie ma żadnego węzła zdarzenia (Start, Update, Draw albo Metoda), więc nic się nie wykona"
+  }
+ ],
+ "errors": []
+}

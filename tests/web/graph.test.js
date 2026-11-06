@@ -16,6 +16,30 @@ fs.unlinkSync(helpFile);
 const G = require(path.join(root, "web", "graph.js"));
 const catalog = G.buildCatalog(help);
 
+// MS_DUMP_GRAPHS=dir: every generate() and userNodes() call of these tests is written to dir as a fixture,
+// and the C port (src/fgraph.c, `minisharp --fgraph-check dir`) must give the same results for each.
+if (process.env.MS_DUMP_GRAPHS) {
+  const dir = process.env.MS_DUMP_GRAPHS;
+  fs.mkdirSync(dir, { recursive: true });
+  let k = 0;
+  const save = (name, obj) => fs.writeFileSync(path.join(dir, name), JSON.stringify(obj, null, 1) + "\n");
+  save("catalog.json", catalog.list.map((d) => ({ id: d.id, title: d.title, category: d.category, kind: d.kind, callee: d.callee, ret: d.ret,
+    params: d.params, inputs: d.inputs, outputs: d.outputs })));
+  const generate = G.generate, userNodes = G.userNodes;
+  G.generate = (graph, cat, opts) => {
+    const before = JSON.stringify(graph);
+    const r = generate(graph, cat, opts);
+    save(`g${String(++k).padStart(3, "0")}.json`, { graph: JSON.parse(before), user: cat.list.filter((d) => d.user),
+      embed: !(opts && opts.embed === false), code: r.code, warnings: r.warnings, errors: r.errors });
+    return r;
+  };
+  G.userNodes = (files) => {
+    const r = userNodes(files);
+    save(`u${String(++k).padStart(3, "0")}.json`, { files, defs: r });
+    return r;
+  };
+}
+
 let pass = 0, fail = 0;
 function ok(cond, msg, extra) { (cond ? pass++ : fail++); console.log((cond ? "PASS " : "FAIL ") + msg + (cond ? "" : "  -> " + (typeof extra === "string" ? "\n" + extra : JSON.stringify(extra)))); }
 const same = (actual, expected, msg) => ok(actual === expected, msg, "--- got:\n" + actual + "\n--- expected:\n" + expected);
