@@ -1,110 +1,144 @@
 {
  "graph": {
-  "className": "Graph",
-  "variables": [
-   {
-    "name": "n",
-    "type": "int",
-    "init": "0"
-   }
-  ],
+  "className": "Game",
+  "variables": [],
   "nodes": [
    {
-    "id": "m1",
+    "id": "m",
     "type": "event.Method",
     "x": 0,
     "y": 0,
     "data": {
-     "name": "Tick"
+     "name": "Krok"
     }
    },
    {
-    "id": "m2",
-    "type": "event.Method",
+    "id": "n1",
+    "type": "user.node.Licznik",
     "x": 0,
-    "y": 100,
-    "data": {
-     "name": "Alpha"
-    }
-   },
-   {
-    "id": "d",
-    "type": "event.Draw",
-    "x": 0,
-    "y": 200,
+    "y": 0,
     "data": {}
-   },
-   {
-    "id": "s",
-    "type": "var.set",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "n"
-    }
-   },
-   {
-    "id": "add",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "b": "1"
-     }
-    }
-   },
-   {
-    "id": "g",
-    "type": "var.get",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "n"
-    }
-   },
-   {
-    "id": "w",
-    "type": "api.Console.WriteLine/1",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "value": "\"a\""
-     }
-    }
    }
   ],
   "edges": [
    {
-    "from": "m1",
+    "from": "m",
     "out": "exit",
-    "to": "s",
-    "in": "enter"
-   },
-   {
-    "from": "g",
-    "out": "value",
-    "to": "add",
-    "in": "a"
-   },
-   {
-    "from": "add",
-    "out": "result",
-    "to": "s",
-    "in": "value"
-   },
-   {
-    "from": "m2",
-    "out": "exit",
-    "to": "w",
+    "to": "n1",
     "in": "enter"
    }
-  ]
+  ],
+  "instance": true
  },
- "user": [],
+ "user": [
+  {
+   "id": "user.node.Licznik",
+   "title": "Licznik kroków",
+   "category": "Kod: Licznik",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Licznik",
+   "sig": "class Licznik",
+   "doc": "Liczy kroki.",
+   "params": [
+    {
+     "type": "int",
+     "name": "krok",
+     "port": "krok"
+    },
+    {
+     "type": "int",
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "outs": [
+    {
+     "name": "suma",
+     "port": "suma"
+    },
+    {
+     "name": "ponadDziesiec",
+     "port": "ponadDziesiec"
+    },
+    {
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "krok",
+     "type": "int",
+     "def": "0"
+    },
+    {
+     "name": "value_",
+     "type": "int",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "suma",
+     "type": "int"
+    },
+    {
+     "name": "ponadDziesiec",
+     "type": "bool"
+    },
+    {
+     "name": "value_",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.node.Wlasny",
+   "title": "Wlasny",
+   "category": "Kod: Wlasny",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Wlasny",
+   "sig": "class Wlasny",
+   "doc": "",
+   "params": [],
+   "outs": [
+    {
+     "name": "x",
+     "port": "x"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "int"
+    }
+   ]
+  }
+ ],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Graph {\n    static int n = 0;\n\n    static void Draw() {\n    }\n\n    // Do wywołania z kodu: Graph.Alpha();\n    static void Alpha() {\n        Console.WriteLine(\"a\");\n    }\n\n    // Do wywołania z kodu: Graph.Tick();\n    static void Tick() {\n        n += 1;\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    Licznik n1 = new Licznik();\n\n    // Do wywołania z kodu: var o = new Game(); o.Krok();\n    void Krok() {\n        n1.Run();\n    }\n}\n",
  "warnings": [],
  "errors": []
 }

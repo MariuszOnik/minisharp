@@ -139,6 +139,9 @@ function buildCatalog(help, userDefs) {
  * method are its description; "// @node Title" gives the node another title, "// @node hide" keeps a helper out of the palette.
  * Every static field gives a get node ("Game.x") and, unless it is const or readonly, a set node ("Ustaw Game.x"),
  * as the Get/Set units of Bolt; "// @node hide" above the field keeps both out.
+ * A class with [In] / [Out] fields and a Run() method (its own, or it derives from Node) is a node with memory:
+ * every such node in a graph gets its own object; the flow sets the wired inputs, calls Run() and the outputs
+ * are its [Out] fields.
  *   files: [{ name, text }] */
 function userNodes(files) {
   const MSC = root.MSComplete || (typeof require !== "undefined" ? require("./complete.js") : null);
@@ -151,6 +154,27 @@ function userNodes(files) {
     try { classes = MSC.parseClasses(f.text); } catch (e) { continue; }
     for (const c of classes) {
       if (c.kind !== "class") continue;
+      // a node class: instance fields marked [In] / [Out] and Run()
+      const has = (m, a) => m.kind === "field" && !m.isStatic && (m.attrs || []).includes(a);
+      const ins = c.members.filter((m) => has(m, "In")), outs = c.members.filter((m) => has(m, "Out"));
+      const hasRun = c.members.some((m) => m.kind === "method" && !m.isStatic && m.name === "Run" && !(m.params || "").trim());
+      if (!c.isAbstract && (ins.length || outs.length) && (hasRun || c.bases.includes("Node"))) {
+        let title = c.name, hide = false;
+        const doc = [];
+        for (const line of c.docLines || []) {
+          const t = /^@node\b\s*(.*)$/.exec(line);
+          if (!t) { doc.push(line); continue; }
+          if (/^hide$/i.test(t[1].trim())) hide = true; else if (t[1].trim()) title = t[1].trim();
+        }
+        const port = (n) => (RESERVED.has(n) ? n + "_" : n);
+        if (!hide) defs.push({
+          id: `user.node.${c.name}`, title, category: `Kod: ${c.name}`, kind: "nodeobj", user: true, file: f.name, callee: c.name,
+          sig: `class ${c.name}`, doc: doc.join(" "),
+          params: ins.map((m) => ({ type: m.type, name: m.name, port: port(m.name) })), outs: outs.map((m) => ({ name: m.name, port: port(m.name) })),
+          inputs: [flowIn("enter"), ...ins.map((m) => val(port(m.name), m.type, defaultFor(m.type)))],
+          outputs: [flowIn("exit"), ...outs.map((m) => val(port(m.name), m.type))],
+        });
+      }
       for (const m of c.members) {
         if (m.kind === "field") {
           if (!m.isStatic) continue;
@@ -352,11 +376,22 @@ function generate(graph, catalog, opts) {
           return { code: `${d.callee}(${callArgs(n, d, stack).join(", ")})`, prec: 100 };
         }
         case "for": warn(id, "indeks pętli For użyty poza pętlą"); return { code: "i", prec: 100 };
+        case "nodeobj": {
+          const o = (d.outs || []).find((x) => (x.port || x.name) === port);
+          if (!o) { fail(id, `„${d.title}” nie ma wartości „${port}”`); return bad; }
+          return { code: `${nodeField.get(id)}.${o.name}`, prec: 100 };
+        }
         default: fail(id, `węzeł „${d.title}” nie ma wartości do użycia w wyrażeniu`); return bad;
       }
     } finally { stack.delete(id); }
   }
 
+  // every node made from a node class has its own object, a field of the graph's class
+  const nodeField = new Map();
+  graph.nodes.forEach((n, i) => {
+    const d = defOf(n);
+    if (d && d.kind === "nodeobj") nodeField.set(n.id, IDENT.test(n.id) && !(graph.variables || []).some((v) => v.name === n.id) ? n.id : `node${i + 1}`);
+  });
   const negate = (x) => (x.prec >= 90 ? "!" + x.code : `!(${x.code})`);
   const hasResultUse = (id) => (outE.get(id + "/result") || []).length > 0;
 
@@ -408,6 +443,16 @@ function generate(graph, catalog, opts) {
           }
         }
         put(depth, `${name} = ${exprInput(n, d, "value", stack).code};`);
+        return flowNext(id, "exit");
+      }
+      case "nodeobj": {                                  // the wired (or typed) inputs, then Run()
+        const f = nodeField.get(id);
+        for (const p of d.params) {
+          const port = p.port || p.name, given = n.data && n.data.defaults && n.data.defaults[port];
+          if ((inE.get(id + "/" + port) || []).length || (given !== undefined && given !== ""))
+            put(depth, `${f}.${p.name} = ${exprInput(n, d, port, stack).code};`);
+        }
+        put(depth, `${f}.Run();`);
         return flowNext(id, "exit");
       }
       case "setfield": {                                 // a static field of the project's code: Game.x = value;
@@ -487,7 +532,7 @@ function generate(graph, catalog, opts) {
   for (const n of graph.nodes) {
     const d = defOf(n);
     if (!d || emitted.has(n.id)) continue;
-    const isFlow = ["setvar", "setfield", "if", "for", "while"].includes(d.kind) || (d.kind === "call" && d.ret === "void");
+    const isFlow = ["setvar", "setfield", "nodeobj", "if", "for", "while"].includes(d.kind) || (d.kind === "call" && d.ret === "void");
     if (isFlow) warn(n.id, `węzeł „${d.title}” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu`);
   }
 
@@ -496,6 +541,7 @@ function generate(graph, catalog, opts) {
     if (!IDENT.test(v.name || "")) { fail(null, `niepoprawna nazwa zmiennej „${v.name}”`); continue; }
     fields.push(`    ${stat}${v.type || "float"} ${v.name}${v.init !== undefined && v.init !== "" ? " = " + v.init : ""};`);
   }
+  for (const [nid, name] of nodeField) { const d = defOf(nodes.get(nid)); fields.push(`    ${stat}${d.callee} ${name} = new ${d.callee}();`); }
   const out = ["// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów."];
   if (Number.isInteger(graph.order) && graph.order) out.push(`[Order(${graph.order})]`);   // like DefaultExecutionOrder in Unity
   out.push(`class ${className} {`);

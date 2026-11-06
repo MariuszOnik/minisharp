@@ -1,8 +1,55 @@
 {
  "graph": {
   "className": "Game",
-  "variables": [],
+  "variables": [
+   {
+    "name": "score",
+    "type": "int",
+    "init": "0"
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "init": "0"
+   }
+  ],
   "nodes": [
+   {
+    "id": "m",
+    "type": "event.Main",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "load",
+    "type": "api.Gfx.LoadImage",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "path": "\"x.png\""
+     }
+    }
+   },
+   {
+    "id": "snd",
+    "type": "api.new.WaitForSeconds",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "seconds": "1.5f"
+     }
+    }
+   },
+   {
+    "id": "sc",
+    "type": "api.Coroutines.StartCoroutine",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
    {
     "id": "u",
     "type": "event.Update",
@@ -11,187 +58,206 @@
     "data": {}
    },
    {
-    "id": "d",
+    "id": "w",
+    "type": "while",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "sg",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "score"
+    }
+   },
+   {
+    "id": "lt",
+    "type": "cmp.lt",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "3"
+     }
+    }
+   },
+   {
+    "id": "i",
+    "type": "if",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "ab",
+    "type": "api.Mathf.Abs",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "ss",
+    "type": "var.set",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "score"
+    }
+   },
+   {
+    "id": "add",
+    "type": "op.add",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "1"
+     }
+    }
+   },
+   {
+    "id": "sg2",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "score"
+    }
+   },
+   {
+    "id": "t5",
+    "type": "api.Gfx.Text/5",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "text": "\"hi\"",
+      "scale": "1.5f"
+     }
+    }
+   },
+   {
+    "id": "t4",
+    "type": "api.Gfx.Text/4",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "dr",
     "type": "event.Draw",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "cl",
-    "type": "api.Gfx.Clear",
-    "x": 0,
-    "y": 0,
-    "data": {}
-   },
-   {
-    "id": "a",
-    "type": "user.Lib.Dot",
+    "id": "sc2",
+    "type": "api.Gfx.Screen",
     "x": 0,
     "y": 0,
     "data": {
      "defaults": {
-      "y": "20"
-     }
-    }
-   },
-   {
-    "id": "b",
-    "type": "user.Lib.Dot",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "x": "150"
-     }
-    }
-   },
-   {
-    "id": "s1",
-    "type": "user.Lib.Sq",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "v": "10"
-     }
-    }
-   },
-   {
-    "id": "s2",
-    "type": "user.Lib.Sq",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "v": "7"
+      "screen": "Screen.Bottom"
      }
     }
    }
   ],
   "edges": [
    {
-    "from": "d",
+    "from": "m",
     "out": "exit",
-    "to": "cl",
+    "to": "load",
     "in": "enter"
    },
    {
-    "from": "cl",
+    "from": "load",
     "out": "exit",
-    "to": "a",
+    "to": "sc",
     "in": "enter"
    },
    {
-    "from": "a",
+    "from": "u",
     "out": "exit",
-    "to": "b",
+    "to": "w",
     "in": "enter"
    },
    {
-    "from": "s1",
+    "from": "sg",
+    "out": "value",
+    "to": "lt",
+    "in": "a"
+   },
+   {
+    "from": "lt",
     "out": "result",
-    "to": "a",
-    "in": "x"
+    "to": "w",
+    "in": "cond"
    },
    {
-    "from": "s2",
+    "from": "w",
+    "out": "body",
+    "to": "i",
+    "in": "enter"
+   },
+   {
+    "from": "lt",
     "out": "result",
-    "to": "b",
-    "in": "y"
+    "to": "i",
+    "in": "cond"
+   },
+   {
+    "from": "i",
+    "out": "false",
+    "to": "ss",
+    "in": "enter"
+   },
+   {
+    "from": "sg2",
+    "out": "value",
+    "to": "add",
+    "in": "a"
+   },
+   {
+    "from": "add",
+    "out": "result",
+    "to": "ss",
+    "in": "value"
+   },
+   {
+    "from": "i",
+    "out": "true",
+    "to": "t5",
+    "in": "enter"
+   },
+   {
+    "from": "t5",
+    "out": "exit",
+    "to": "t4",
+    "in": "enter"
+   },
+   {
+    "from": "dr",
+    "out": "exit",
+    "to": "sc2",
+    "in": "enter"
    }
   ]
  },
- "user": [
+ "user": [],
+ "embed": true,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static int score = 0;\n    static float t = 0;\n\n    static void Main() {\n        Gfx.LoadImage(\"x.png\");\n        StartCoroutine(null);\n    }\n\n    static void Update() {\n        while (score < 3) {\n            if (score < 3) {\n                Gfx.Text(0, 0, \"hi\", 1.5f, 0);\n                Gfx.Text(0, 0, \"\", 0);\n            } else {\n                score += 1;\n            }\n        }\n    }\n\n    static void Draw() {\n        Gfx.Screen(Screen.Bottom);\n    }\n}\n\n// @graph {\"className\":\"Game\",\"variables\":[{\"name\":\"score\",\"type\":\"int\",\"init\":\"0\"},{\"name\":\"t\",\"type\":\"float\",\"init\":\"0\"}],\"nodes\":[{\"id\":\"m\",\"type\":\"event.Main\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"load\",\"type\":\"api.Gfx.LoadImage\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"path\":\"\\\"x.png\\\"\"}}},{\"id\":\"snd\",\"type\":\"api.new.WaitForSeconds\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"seconds\":\"1.5f\"}}},{\"id\":\"sc\",\"type\":\"api.Coroutines.StartCoroutine\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"u\",\"type\":\"event.Update\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"w\",\"type\":\"while\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"sg\",\"type\":\"var.get\",\"x\":0,\"y\":0,\"data\":{\"name\":\"score\"}},{\"id\":\"lt\",\"type\":\"cmp.lt\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"b\":\"3\"}}},{\"id\":\"i\",\"type\":\"if\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"ab\",\"type\":\"api.Mathf.Abs\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"ss\",\"type\":\"var.set\",\"x\":0,\"y\":0,\"data\":{\"name\":\"score\"}},{\"id\":\"add\",\"type\":\"op.add\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"b\":\"1\"}}},{\"id\":\"sg2\",\"type\":\"var.get\",\"x\":0,\"y\":0,\"data\":{\"name\":\"score\"}},{\"id\":\"t5\",\"type\":\"api.Gfx.Text/5\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"text\":\"\\\"hi\\\"\",\"scale\":\"1.5f\"}}},{\"id\":\"t4\",\"type\":\"api.Gfx.Text/4\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"dr\",\"type\":\"event.Draw\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"sc2\",\"type\":\"api.Gfx.Screen\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"screen\":\"Screen.Bottom\"}}}],\"edges\":[{\"from\":\"m\",\"out\":\"exit\",\"to\":\"load\",\"in\":\"enter\"},{\"from\":\"load\",\"out\":\"exit\",\"to\":\"sc\",\"in\":\"enter\"},{\"from\":\"u\",\"out\":\"exit\",\"to\":\"w\",\"in\":\"enter\"},{\"from\":\"sg\",\"out\":\"value\",\"to\":\"lt\",\"in\":\"a\"},{\"from\":\"lt\",\"out\":\"result\",\"to\":\"w\",\"in\":\"cond\"},{\"from\":\"w\",\"out\":\"body\",\"to\":\"i\",\"in\":\"enter\"},{\"from\":\"lt\",\"out\":\"result\",\"to\":\"i\",\"in\":\"cond\"},{\"from\":\"i\",\"out\":\"false\",\"to\":\"ss\",\"in\":\"enter\"},{\"from\":\"sg2\",\"out\":\"value\",\"to\":\"add\",\"in\":\"a\"},{\"from\":\"add\",\"out\":\"result\",\"to\":\"ss\",\"in\":\"value\"},{\"from\":\"i\",\"out\":\"true\",\"to\":\"t5\",\"in\":\"enter\"},{\"from\":\"t5\",\"out\":\"exit\",\"to\":\"t4\",\"in\":\"enter\"},{\"from\":\"dr\",\"out\":\"exit\",\"to\":\"sc2\",\"in\":\"enter\"}]}\n",
+ "warnings": [
   {
-   "id": "user.Lib.Sq",
-   "title": "Lib.Sq",
-   "category": "Kod: Lib",
-   "kind": "call",
-   "user": true,
-   "file": "Lib.cs",
-   "callee": "Lib.Sq",
-   "ret": "float",
-   "params": [
-    {
-     "type": "float",
-     "name": "v",
-     "port": "v"
-    }
-   ],
-   "sig": "float Sq(float v)",
-   "doc": "",
-   "inputs": [
-    {
-     "name": "enter",
-     "flow": true
-    },
-    {
-     "name": "v",
-     "type": "float",
-     "def": "0"
-    }
-   ],
-   "outputs": [
-    {
-     "name": "exit",
-     "flow": true
-    },
-    {
-     "name": "result",
-     "type": "float"
-    }
-   ]
+   "node": "t5",
+   "message": "„Gfx.Text (5)” rysuje w Update, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw"
   },
   {
-   "id": "user.Lib.Dot",
-   "title": "Lib.Dot",
-   "category": "Kod: Lib",
-   "kind": "call",
-   "user": true,
-   "file": "Lib.cs",
-   "callee": "Lib.Dot",
-   "ret": "void",
-   "params": [
-    {
-     "type": "float",
-     "name": "x",
-     "port": "x"
-    },
-    {
-     "type": "float",
-     "name": "y",
-     "port": "y"
-    }
-   ],
-   "sig": "void Dot(float x, float y)",
-   "doc": "",
-   "inputs": [
-    {
-     "name": "enter",
-     "flow": true
-    },
-    {
-     "name": "x",
-     "type": "float",
-     "def": "0"
-    },
-    {
-     "name": "y",
-     "type": "float",
-     "def": "0"
-    }
-   ],
-   "outputs": [
-    {
-     "name": "exit",
-     "flow": true
-    }
-   ]
+   "node": "t4",
+   "message": "„Gfx.Text (4)” rysuje w Update, a ekran rysuje się w Draw (zwykle zaczyna od Gfx.Clear), więc tego nie zobaczysz: podłącz ten węzeł do zdarzenia Draw"
   }
  ],
- "embed": true,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n\n    static void Draw() {\n        Gfx.Clear(0);\n        Lib.Dot(Lib.Sq(10), 20);\n        Lib.Dot(150, Lib.Sq(7));\n    }\n}\n\n// @graph {\"className\":\"Game\",\"variables\":[],\"nodes\":[{\"id\":\"u\",\"type\":\"event.Update\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"d\",\"type\":\"event.Draw\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"cl\",\"type\":\"api.Gfx.Clear\",\"x\":0,\"y\":0,\"data\":{}},{\"id\":\"a\",\"type\":\"user.Lib.Dot\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"y\":\"20\"}}},{\"id\":\"b\",\"type\":\"user.Lib.Dot\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"x\":\"150\"}}},{\"id\":\"s1\",\"type\":\"user.Lib.Sq\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"v\":\"10\"}}},{\"id\":\"s2\",\"type\":\"user.Lib.Sq\",\"x\":0,\"y\":0,\"data\":{\"defaults\":{\"v\":\"7\"}}}],\"edges\":[{\"from\":\"d\",\"out\":\"exit\",\"to\":\"cl\",\"in\":\"enter\"},{\"from\":\"cl\",\"out\":\"exit\",\"to\":\"a\",\"in\":\"enter\"},{\"from\":\"a\",\"out\":\"exit\",\"to\":\"b\",\"in\":\"enter\"},{\"from\":\"s1\",\"out\":\"result\",\"to\":\"a\",\"in\":\"x\"},{\"from\":\"s2\",\"out\":\"result\",\"to\":\"b\",\"in\":\"y\"}]}\n",
- "warnings": [],
  "errors": []
 }

@@ -67,7 +67,8 @@ static void free_def(FDef* d) {
     for (int i = 0; i < d->nin; i++) { free(d->in[i].name); free(d->in[i].type); free(d->in[i].def); }
     for (int i = 0; i < d->nout; i++) { free(d->out[i].name); free(d->out[i].type); free(d->out[i].def); }
     for (int i = 0; i < d->nparams; i++) { free(d->params[i].type); free(d->params[i].name); free(d->params[i].port); }
-    free(d->in); free(d->out); free(d->params);
+    for (int i = 0; i < d->nouts; i++) { free(d->outs[i].type); free(d->outs[i].name); free(d->outs[i].port); }
+    free(d->in); free(d->out); free(d->params); free(d->outs);
     memset(d, 0, sizeof *d);
 }
 
@@ -376,6 +377,11 @@ void fg_catalog_build(FCatalog* c, const FHelpEntry* help, int nhelp, const FCat
                 for (int k = 0; k < u->nparams; k++) { d.params[k].type = sdup(u->params[k].type); d.params[k].name = sdup(u->params[k].name); d.params[k].port = sdup(u->params[k].port); }
                 d.nparams = u->nparams;
             }
+            if (u->nouts) {
+                d.outs = (FParam*)calloc((size_t)u->nouts, sizeof(FParam));
+                for (int k = 0; k < u->nouts; k++) { d.outs[k].type = sdup(u->outs[k].type); d.outs[k].name = sdup(u->outs[k].name); d.outs[k].port = sdup(u->outs[k].port); }
+                d.nouts = u->nouts;
+            }
             cat_set(c, &d);
         }
 }
@@ -395,6 +401,7 @@ static int doc_above(const char* src, const char* at, char lines[][160], int max
         const char* a = s, *b = prevEnd;
         while (a < b && isspace((unsigned char)*a)) a++;
         while (b > a && isspace((unsigned char)b[-1])) b--;
+        if (b > a && a[0] == '[') { end = s; continue; }      /* an attribute line ([Order(1)], [In]): look above it */
         if (b - a < 2 || a[0] != '/' || a[1] != '/') break;
         a += 2;
         if (a < b && *a == '/') a++;
@@ -433,6 +440,73 @@ void fg_user_nodes(FCatalog* out, const char* fileName, const char* src) {
     for (int c = 0; c < pr->nclasses; c++) {
         ClassDecl* cd = &pr->classes[c];
         if (cd->isInterface) continue;
+        /* a node class: instance fields marked [In] / [Out] and Run() (its own, or it derives from Node) */
+        int nin = 0, nout = 0, hasRun = 0, fromNode = 0;
+        for (int k = 0; k < cd->nfields; k++) if (!cd->fields[k].isStatic) { nin += !!(cd->fields[k].attrs & FA_IN); nout += !!(cd->fields[k].attrs & FA_OUT); }
+        for (int k = 0; k < cd->nmethods; k++) {
+            MethodDecl* md = &cd->methods[k];
+            if (!md->isStatic && !md->isCtor && md->nparams == 0 && md->nlen == 3 && !memcmp(md->name, "Run", 3)) hasRun = 1;
+        }
+        for (int k = 0; k < cd->nbases; k++) if (cd->bases[k]->nlen == 4 && !memcmp(cd->bases[k]->name, "Node", 4)) fromNode = 1;
+        if (!cd->isAbstract && (nin || nout) && (hasRun || fromNode) && cd->s0) {
+            char cname[80];
+            snprintf(cname, sizeof cname, "%.*s", cd->nlen, cd->name);
+            char* title = sdup(cname);
+            int hide = 0;
+            char lines[24][160];
+            int nl = doc_above(src, cd->s0, lines, 24);
+            MsBuf doc = { 0 };
+            for (int i = 0; i < nl; i++) {
+                const char* l = lines[i];
+                if (!strncmp(l, "@node", 5) && !(isalnum((unsigned char)l[5]) || l[5] == '_')) {
+                    const char* t = l + 5;
+                    while (isspace((unsigned char)*t)) t++;
+                    char* tt = trim_copy(t, (int)strlen(t));
+                    if (tolower((unsigned char)tt[0]) == 'h' && tolower((unsigned char)tt[1]) == 'i' && tolower((unsigned char)tt[2]) == 'd' && tolower((unsigned char)tt[3]) == 'e' && !tt[4]) hide = 1;
+                    else if (tt[0]) { free(title); title = sdup(tt); }
+                    free(tt);
+                    continue;
+                }
+                if (doc.n) ms_buf_add(&doc, " ", 1);
+                ms_buf_add(&doc, l, -1);
+            }
+            if (hide) { free(title); ms_buf_free(&doc); }
+            else {
+                FDef d; memset(&d, 0, sizeof d);
+                d.id = sfmt("user.node.%s", cname); d.title = title; d.category = sfmt("Kod: %s", cname); d.kind = sdup("nodeobj");
+                d.user = 1; d.file = sdup(fileName); d.callee = sdup(cname); d.sig = sfmt("class %s", cname); d.doc = sdup(doc.p ? doc.p : "");
+                d.hasParams = 1;
+                d.params = nin ? (FParam*)calloc((size_t)nin, sizeof(FParam)) : NULL;
+                d.outs = nout ? (FParam*)calloc((size_t)nout, sizeof(FParam)) : NULL;
+                FPort enter = FLOW("enter"), ex = FLOW("exit");
+                add_ports(&d.in, &d.nin, &enter, 1);
+                add_ports(&d.out, &d.nout, &ex, 1);
+                for (int pass = 0; pass < 2; pass++)
+                    for (int k = 0; k < cd->nfields; k++) {
+                        FieldDecl* fd = &cd->fields[k];
+                        if (fd->isStatic || !(fd->attrs & (pass ? FA_OUT : FA_IN))) continue;
+                        MsBuf t = { 0 }; ms_print_type(&t, fd->tn);
+                        char fn[80]; snprintf(fn, sizeof fn, "%.*s", fd->nlen, fd->name);
+                        int reserved = !strcmp(fn, "enter") || !strcmp(fn, "exit") || !strcmp(fn, "result") || !strcmp(fn, "value");
+                        char* portName = reserved ? sfmt("%s_", fn) : sdup(fn);
+                        if (!pass) {
+                            FParam* q = &d.params[d.nparams++];
+                            q->type = sdup(t.p ? t.p : ""); q->name = sdup(fn); q->port = portName;
+                            FPort pp = VAL(q->port, q->type, default_for(q->type));
+                            add_ports(&d.in, &d.nin, &pp, 1);
+                        } else {
+                            FParam* q = &d.outs[d.nouts++];
+                            q->type = sdup(t.p ? t.p : ""); q->name = sdup(fn); q->port = portName;
+                            FPort pp = VAL(q->port, q->type, NULL);
+                            add_ports(&d.out, &d.nout, &pp, 1);
+                        }
+                        ms_buf_free(&t);
+                    }
+                if (out->n == out->cap) { int nc = out->cap ? out->cap * 2 : 16; out->d = (FDef*)realloc(out->d, (size_t)nc * sizeof(FDef)); out->cap = nc; }
+                out->d[out->n++] = d;
+                ms_buf_free(&doc);
+            }
+        }
         /* members in the order of the text (as the browser lists them): fields and methods merged by position */
         for (int fi = 0, m = 0; fi < cd->nfields || m < cd->nmethods; ) {
             int takeField = fi < cd->nfields && (m >= cd->nmethods || (cd->fields[fi].s0 && cd->methods[m].s0 && cd->fields[fi].s0 < cd->methods[m].s0));
@@ -571,6 +645,12 @@ void fg_defs_from_json(FCatalog* out, const JVal* list) {
         if (!d.kind) d.kind = sdup("");
         ports_from_json(json_get(o, "inputs"), &d.in, &d.nin);
         ports_from_json(json_get(o, "outputs"), &d.out, &d.nout);
+        const JVal* os = json_get(o, "outs");
+        if (os && os->t == JS_ARR && os->n) {
+            d.outs = (FParam*)calloc((size_t)os->n, sizeof(FParam));
+            for (int k = 0; k < os->n; k++) { d.outs[k].type = jdup(os->items[k], "type"); d.outs[k].name = jdup(os->items[k], "name"); d.outs[k].port = jdup(os->items[k], "port"); }
+            d.nouts = os->n;
+        }
         const JVal* ps = json_get(o, "params");
         if (ps && ps->t == JS_ARR) {
             d.hasParams = 1;
@@ -681,6 +761,7 @@ typedef struct {
     StrSet used, onPath, emitted;
     int* scopes; int nscopes, scopecap, scopeCount;
     const char* method;                         /* the method being written */
+    char** nodeField;                           /* per node: the field holding its object (node classes), or NULL */
 } Gen;
 
 static void msg(FMsg** arr, int* n, int* cap, const char* node, char* text) {
@@ -801,6 +882,11 @@ static char* raw_default(const JVal* n, const FDef* d, const char* portName) {
 
 static X expr_of(Gen* g, const char* id, const char* portName, StrSet* stack);
 
+static const char* node_field(Gen* g, const char* id) {        /* the field of the node object with this id */
+    for (int i = 0; i < g->nn; i++) if (g->nodeField[i] && !strcmp(g->nodeIds[i], id)) return g->nodeField[i];
+    return "node";
+}
+
 static X expr_input(Gen* g, const JVal* n, const FDef* d, const char* portName, StrSet* stack) {
     const Edge* e = first_in(g, id_of(g, n), portName);
     if (e) return expr_of(g, e->from, e->out, stack);
@@ -866,6 +952,12 @@ static X expr_of(Gen* g, const char* id, const char* portName, StrSet* stack) {
             free(a);
         }
     } else if (streq(d->kind, "for")) { warn(g, id, sdup("indeks pętli For użyty poza pętlą")); r = mkx(sdup("i"), 100); }
+    else if (streq(d->kind, "nodeobj")) {
+        const FParam* o = NULL;
+        for (int k = 0; k < d->nouts; k++) if (!strcmp(d->outs[k].port ? d->outs[k].port : d->outs[k].name, portName)) { o = &d->outs[k]; break; }
+        if (!o) { fail(g, id, sfmt("„%s” nie ma wartości „%s”", d->title, portName)); r = bad(); }
+        else r = mkx(sfmt("%s.%s", node_field(g, id), o->name), 100);
+    }
     else { fail(g, id, sfmt("węzeł „%s” nie ma wartości do użycia w wyrażeniu", d->title)); r = bad(); }
     set_del(stack, id);
     return r;
@@ -952,6 +1044,21 @@ static const char* emit_node(Gen* g, const char* id, int depth) {
         X v = expr_input(g, n, d, "value", &stack);
         char* line = sfmt("%s = %s;", name, v.code);
         put(g, depth, line); free(line); free(v.code);
+        next = flow_next(g, id, "exit");
+    } else if (streq(d->kind, "nodeobj")) {              /* the wired (or typed) inputs, then Run() */
+        const char* f = node_field(g, id);
+        const JVal* defs = json_truthy(data) ? json_get(data, "defaults") : NULL;
+        for (int k = 0; k < d->nparams; k++) {
+            const char* port = d->params[k].port ? d->params[k].port : d->params[k].name;
+            const JVal* given = json_truthy(defs) ? json_get(defs, port) : NULL;
+            if (first_in(g, id, port) || (given && !(given->t == JS_STR && !given->s[0]))) {
+                X v = expr_input(g, n, d, port, &stack);
+                char* line = sfmt("%s.%s = %s;", f, d->params[k].name, v.code);
+                put(g, depth, line); free(line); free(v.code);
+            }
+        }
+        char* line = sfmt("%s.Run();", f);
+        put(g, depth, line); free(line);
         next = flow_next(g, id, "exit");
     } else if (streq(d->kind, "setfield")) {             /* a static field of the project's code: Game.x = value; */
         X v = expr_input(g, n, d, "value", &stack);
@@ -1074,6 +1181,17 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     }
 
     validate(g);
+    /* every node made from a node class has its own object, a field of the graph's class (Map semantics: per id, last node wins) */
+    g->nodeField = (char**)calloc((size_t)(g->nn > 0 ? g->nn : 1), sizeof(char*));
+    for (int i = 0; i < g->nn; i++) {
+        const FDef* d = def_of(g, g->nodes[i]);
+        if (!d || !streq(d->kind, "nodeobj")) continue;
+        int first = i;                                       /* a repeated id keeps the place of its first node */
+        for (int k = 0; k < i; k++) if (!strcmp(g->nodeIds[k], g->nodeIds[i]) && g->nodeField[k]) { first = k; break; }
+        char* name = is_ident(g->nodeIds[i]) && !var_declared(g, g->nodeIds[i]) ? sdup(g->nodeIds[i]) : sfmt("node%d", i + 1);
+        if (first != i) { free(g->nodeField[first]); g->nodeField[first] = name; }
+        else g->nodeField[i] = name;
+    }
     const JVal* cn = json_get(graph, "className");
     snprintf(g->className, sizeof g->className, "%s", ident_v(cn) ? S(cn) : "Game");
     g->inst = json_truthy(json_get(graph, "instance"));
@@ -1167,7 +1285,7 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     for (int i = 0; i < g->nn; i++) {
         const FDef* d = def_of(g, g->nodes[i]);
         if (!d || set_has(&g->emitted, g->nodeIds[i])) continue;
-        int isFlow = streq(d->kind, "setvar") || streq(d->kind, "setfield") || streq(d->kind, "if") || streq(d->kind, "for") || streq(d->kind, "while") ||
+        int isFlow = streq(d->kind, "setvar") || streq(d->kind, "setfield") || streq(d->kind, "nodeobj") || streq(d->kind, "if") || streq(d->kind, "for") || streq(d->kind, "while") ||
                      (streq(d->kind, "call") && streq(d->ret, "void"));
         if (isFlow) warn(g, g->nodeIds[i], sfmt("węzeł „%s” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu", d->title));
     }
@@ -1182,6 +1300,15 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
         char ty[96]; snprintf(ty, sizeof ty, "%s", json_truthy(type) ? S(type) : "float");
         if (hasInit) { char iv[256]; snprintf(iv, sizeof iv, "%s", S(init)); f = sfmt("    %s%s %s = %s;", g->stat, ty, S(name), iv); }
         else f = sfmt("    %s%s %s;", g->stat, ty, S(name));
+        if (nf++) ms_buf_add(&fields, "\n", 1);
+        ms_buf_add(&fields, f, -1);
+        free(f);
+    }
+    for (int i = 0; i < g->nn; i++) {
+        if (!g->nodeField[i]) continue;
+        const FDef* d = def_of(g, node_by_id(g, g->nodeIds[i]));
+        if (!d) continue;
+        char* f = sfmt("    %s%s %s = new %s();", g->stat, d->callee, g->nodeField[i], d->callee);
         if (nf++) ms_buf_add(&fields, "\n", 1);
         ms_buf_add(&fields, f, -1);
         free(f);
@@ -1215,6 +1342,8 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     set_clear(&g->used); set_clear(&g->onPath); set_clear(&g->emitted);
     for (int i = 0; i < g->nn; i++) free(g->nodeIds[i]);
     for (int i = 0; i < g->ne * 4; i++) free(edgeStr[i]);
+    for (int i = 0; i < g->nn; i++) free(g->nodeField[i]);
+    free(g->nodeField);
     free(edgeStr); free(g->nodeIds); free(g->nodes); free(g->edges);
 }
 

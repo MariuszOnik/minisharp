@@ -18,6 +18,7 @@ typedef struct {
     FPort* in; int nin;
     FPort* out; int nout;
     FParam* params; int nparams; int hasParams;
+    FParam* outs; int nouts;            /* node classes: [Out] fields (name, port) */
 } FDef;
 
 typedef struct { FDef* d; int n, cap; } FCatalog;

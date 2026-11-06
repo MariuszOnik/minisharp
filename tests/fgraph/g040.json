@@ -11,80 +11,167 @@
     "data": {}
    },
    {
-    "id": "d",
-    "type": "event.Draw",
+    "id": "n1",
+    "type": "user.node.Licznik",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "krok": "2"
+     }
+    }
+   },
+   {
+    "id": "n2",
+    "type": "user.node.Licznik",
     "x": 0,
     "y": 0,
     "data": {}
    },
    {
-    "id": "dot",
-    "type": "user.Lib.Dot",
+    "id": "w",
+    "type": "api.Console.WriteLine/1",
     "x": 0,
     "y": 0,
     "data": {}
-   },
-   {
-    "id": "sq",
-    "type": "user.Lib.Sq",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "v": "10"
-     }
-    }
-   },
-   {
-    "id": "say",
-    "type": "user.Lib.Say",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "value_": "\"hi\"",
-      "result_": "3"
-     }
-    }
    }
   ],
   "edges": [
    {
-    "from": "d",
+    "from": "u",
     "out": "exit",
-    "to": "dot",
+    "to": "n1",
     "in": "enter"
    },
    {
-    "from": "sq",
-    "out": "result",
-    "to": "dot",
-    "in": "x"
+    "from": "n1",
+    "out": "exit",
+    "to": "n2",
+    "in": "enter"
    },
    {
-    "from": "dot",
+    "from": "n2",
     "out": "exit",
-    "to": "say",
+    "to": "w",
     "in": "enter"
+   },
+   {
+    "from": "n1",
+    "out": "suma",
+    "to": "w",
+    "in": "value"
    }
   ]
  },
- "user": [],
- "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n\n    static void Draw() {\n    }\n}\n",
- "warnings": [],
- "errors": [
+ "user": [
   {
-   "node": "dot",
-   "message": "nieznany typ węzła „user.Lib.Dot”"
+   "id": "user.node.Licznik",
+   "title": "Licznik kroków",
+   "category": "Kod: Licznik",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Licznik",
+   "sig": "class Licznik",
+   "doc": "Liczy kroki.",
+   "params": [
+    {
+     "type": "int",
+     "name": "krok",
+     "port": "krok"
+    },
+    {
+     "type": "int",
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "outs": [
+    {
+     "name": "suma",
+     "port": "suma"
+    },
+    {
+     "name": "ponadDziesiec",
+     "port": "ponadDziesiec"
+    },
+    {
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "krok",
+     "type": "int",
+     "def": "0"
+    },
+    {
+     "name": "value_",
+     "type": "int",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "suma",
+     "type": "int"
+    },
+    {
+     "name": "ponadDziesiec",
+     "type": "bool"
+    },
+    {
+     "name": "value_",
+     "type": "int"
+    }
+   ]
   },
   {
-   "node": "sq",
-   "message": "nieznany typ węzła „user.Lib.Sq”"
-  },
-  {
-   "node": "say",
-   "message": "nieznany typ węzła „user.Lib.Say”"
+   "id": "user.node.Wlasny",
+   "title": "Wlasny",
+   "category": "Kod: Wlasny",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Wlasny",
+   "sig": "class Wlasny",
+   "doc": "",
+   "params": [],
+   "outs": [
+    {
+     "name": "x",
+     "port": "x"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "int"
+    }
+   ]
   }
- ]
+ ],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static Licznik n1 = new Licznik();\n    static Licznik n2 = new Licznik();\n\n    static void Update() {\n        n1.krok = 2;\n        n1.Run();\n        n2.Run();\n        Console.WriteLine(n1.suma);\n    }\n}\n",
+ "warnings": [],
+ "errors": []
 }

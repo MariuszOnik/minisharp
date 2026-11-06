@@ -383,6 +383,41 @@ ok(say.inputs.map((p) => p.name).join() === "enter,value_,result_", "parameter n
   const lone = G.generate(build((N) => { N("u", "event.Update"); N("s", "user.Game.x.set"); }), catF, { embed: false });
   ok(lone.warnings.some((w) => w.node === "s"), "a set node not on a flow is reported like Ustaw zmienną");
 }
+// nodes with memory: a class with [In] / [Out] fields and Run()
+const NODELIB = `// Liczy kroki.
+// @node Licznik kroków
+[Order(1)]
+class Licznik : Node {
+    [In] public int krok = 1;
+    [Out] public int suma;
+    [Out] public bool ponadDziesiec;
+    [In, Out] public int value;
+    public override void Run() { suma += krok; ponadDziesiec = suma > 10; }
+}
+class BezRun { [In] public int a; }
+abstract class Abs : Node { [In] public int a; }
+class Wlasny { [Out] public int x; public void Run() { x++; } }
+`;
+const un3 = G.userNodes([{ name: "Nodes.cs", text: NODELIB }]);
+ok(un3.map((d) => d.id).join() === "user.node.Licznik,user.node.Wlasny", "node classes: [In]/[Out] fields and Run() (own or from Node); not abstract, not without Run", un3.map((d) => d.id));
+{
+  const L = un3[0];
+  ok(L.title === "Licznik kroków" && L.doc === "Liczy kroki." && L.kind === "nodeobj" && L.category === "Kod: Licznik", "title and comment above the class (attribute lines skipped)", L);
+  ok(L.inputs.map((p) => p.name).join() === "enter,krok,value_" && L.outputs.map((p) => p.name).join() === "exit,suma,ponadDziesiec,value_",
+     "ports: flow, the [In] fields, the [Out] fields; a field named value gets value_", [L.inputs.map((p) => p.name), L.outputs.map((p) => p.name)]);
+  const cat3 = G.buildCatalog(help, un3);
+  const g = build((N, F) => {
+    N("u", "event.Update"); N("n1", "user.node.Licznik", { defaults: { krok: "2" } }); N("n2", "user.node.Licznik"); N("w", "api.Console.WriteLine/1");
+    F("u", "exit", "n1", "enter"); F("n1", "exit", "n2", "enter"); F("n2", "exit", "w", "enter"); F("n1", "suma", "w", "value");
+  });
+  const out = G.generate(g, cat3, { embed: false });
+  ok(out.code.includes("    static Licznik n1 = new Licznik();\n    static Licznik n2 = new Licznik();\n"), "every node has its own object (a field of the graph's class)", out.code);
+  ok(out.code.includes("        n1.krok = 2;\n        n1.Run();\n        n2.Run();\n        Console.WriteLine(n1.suma);"),
+     "flow: typed or wired inputs are set, then Run(); an output is the object's field", out.code);
+  ok(out.warnings.length === 0 && out.errors.length === 0, "no notes", out.warnings.concat(out.errors));
+  const inst = G.generate(build((N, F, gr) => { gr.instance = true; N("m", "event.Method", { name: "Krok" }); N("n1", "user.node.Licznik"); F("m", "exit", "n1", "enter"); }), cat3, { embed: false });
+  ok(inst.code.includes("    Licznik n1 = new Licznik();") && inst.code.includes("        n1.Run();"), "in a class with objects every object has its own node objects", inst.code);
+}
 const catU = G.buildCatalog(help, un);
 ok(catU.types.has("user.Lib.Dot") && catU.types.has("api.Gfx.Rect"), "the catalog holds both the API and the project's nodes");
 ok(G.searchCatalog(catU, "kropk")[0].id === "user.Lib.Dot" && G.searchCatalog(catU, "dot")[0].id === "user.Lib.Dot", "palette search finds them by title and by name", G.searchCatalog(catU, "kropk").slice(0, 2).map((d) => d.id));
@@ -565,6 +600,13 @@ else {
 `;
     const proj = (name, files) => { const dir = path.join(tmp, name); fs.mkdirSync(dir); for (const [n, t] of Object.entries(files)) fs.writeFileSync(path.join(dir, n), t); return dir; };
     const shot = (name, files) => { const dir = proj(name, files), p = path.join(tmp, name + ".ppm"); const res = run([dir, "--frames", "5", "--ppm", p]); ok(res.status === 0 && fs.existsSync(p), `${name}: the project runs`, res.stdout + res.stderr); return fs.existsSync(p) ? fs.readFileSync(p) : Buffer.alloc(0); };
+    {   // a node with memory keeps its state between frames; Node comes from MiniSharp itself
+      const cat3 = G.buildCatalog(help, G.userNodes([{ name: "Nodes.cs", text: NODELIB }]));
+      const gn = build((N, F) => { N("u", "event.Update"); N("n1", "user.node.Licznik", { defaults: { krok: "2" } }); N("w", "api.Console.WriteLine/1");
+        F("u", "exit", "n1", "enter"); F("n1", "exit", "w", "enter"); F("n1", "suma", "w", "value"); });
+      const res = run([proj("nodes", { "Nodes.cs": NODELIB, "Graph.cs": G.generate(gn, cat3).code }), "--frames", "3"]);
+      ok(res.status === 0 && res.stdout.trim().split(/\r?\n/).join() === "2,4,6", "a node keeps its memory between frames (2, 4, 6)", res.stdout + res.stderr);
+    }
     const x = shot("own_graph", { "Lib.cs": lib, "Game.cs": genCode }), y = shot("own_hand", { "Lib.cs": lib, "Game.cs": hand });
     ok(x.length > 1000 && x.equals(y), "own nodes: the picture from the graph equals the hand-written one (calls into Lib.cs)");
   }
