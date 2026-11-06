@@ -242,6 +242,31 @@ static void* nw(P* p, size_t sz) { return arena_alloc(p->c->A, sz); }
 static Expr* mkexpr(P* p, int k, int line) { Expr* e = (Expr*)nw(p, sizeof(Expr)); e->k = k; e->line = line; return e; }
 static Stmt* mkstmt(P* p, int k, int line) { Stmt* s = (Stmt*)nw(p, sizeof(Stmt)); s->k = k; s->line = line; return s; }
 
+/* ---------- source spans: every node remembers the text [s0, s1) it was parsed from ---------- */
+static const char* prev_end(P* p) { Token* t = &p->t[p->pos > 0 ? p->pos - 1 : 0]; return t->start + t->len; }
+static Expr* espan(P* p, Expr* e, int tok) { e->s0 = p->t[tok].start; e->s1 = prev_end(p); return e; }
+static Stmt* sspan(P* p, Stmt* s, int tok) { s->s0 = p->t[tok].start; s->s1 = prev_end(p); return s; }
+/* A wrapper gives the node it returns the span of all tokens its parse function read. The outermost wrapper wins,
+   so '(a + b)' keeps its parentheses; that text parses to the same tree, which is all the span promises. */
+static Expr* parse_expr_(P* p);
+static Expr* parse_ternary_(P* p);
+static Expr* parse_coalesce_(P* p);
+static Expr* parse_binary_(P* p, int minprec);
+static Expr* parse_unary_(P* p);
+static Expr* parse_arg_(P* p);
+static Stmt* parse_stmt_(P* p);
+static Stmt* parse_block_(P* p);
+static Stmt* parse_simple_(P* p);
+static Expr* parse_expr(P* p) { int st = p->pos; return espan(p, parse_expr_(p), st); }
+static Expr* parse_ternary(P* p) { int st = p->pos; return espan(p, parse_ternary_(p), st); }
+static Expr* parse_coalesce(P* p) { int st = p->pos; return espan(p, parse_coalesce_(p), st); }
+static Expr* parse_binary(P* p, int minprec) { int st = p->pos; return espan(p, parse_binary_(p, minprec), st); }
+static Expr* parse_unary(P* p) { int st = p->pos; return espan(p, parse_unary_(p), st); }
+static Expr* parse_arg(P* p) { int st = p->pos; return espan(p, parse_arg_(p), st); }
+static Stmt* parse_stmt(P* p) { int st = p->pos; return sspan(p, parse_stmt_(p), st); }
+static Stmt* parse_block(P* p) { int st = p->pos; return sspan(p, parse_block_(p), st); }
+static Stmt* parse_simple(P* p) { int st = p->pos; return sspan(p, parse_simple_(p), st); }
+
 static int is_type_kw(int k) { return k == TK_KINT || k == TK_KFLOAT || k == TK_KBOOL || k == TK_KSTRING || k == TK_KCHAR || k == TK_VOID; }
 
 static TypeNode* parse_type(P* p);
@@ -316,7 +341,7 @@ static Expr* parse_unary(P* p);
 static int looks_like_decl(P* p);
 static TypeNode* parse_type(P* p);
 
-static Expr* parse_arg(P* p) {
+static Expr* parse_arg_(P* p) {
     Token* t = peek(p);
     if (!accept(p, TK_OUT)) return parse_expr(p);
     Expr* e = mkexpr(p, E_OUT, t->line);
@@ -385,16 +410,17 @@ static Expr* parse_new(P* p, int line) {
             while (!at(p, TK_RBRACE)) {
                 items = (Expr**)arena_grow(p->c->A, items, n, &cap, sizeof(Expr*));
                 Token* it = peek(p);
+                int ist = p->pos;
                 if (accept(p, TK_LBRACE)) {                 /* { key, value } */
                     Expr* pr = mkexpr(p, E_PAIR, it->line);
                     pr->a = parse_expr(p); expect(p, TK_COMMA); pr->b = parse_expr(p);
                     expect(p, TK_RBRACE);
-                    items[n++] = pr;
+                    items[n++] = espan(p, pr, ist);
                 } else if (accept(p, TK_LBRACK)) {          /* [key] = value */
                     Expr* pr = mkexpr(p, E_PAIR, it->line);
                     pr->a = parse_expr(p); expect(p, TK_RBRACK); expect(p, TK_ASSIGN); pr->b = parse_expr(p);
                     pr->prefix = 1;
-                    items[n++] = pr;
+                    items[n++] = espan(p, pr, ist);
                 } else items[n++] = parse_expr(p);
                 if (!accept(p, TK_COMMA)) break;
             }
@@ -438,7 +464,13 @@ array:;
     return e;
 }
 
+static Expr* parse_primary_(P* p);
 static Expr* parse_primary(P* p) {
+    int st = p->pos, paren = at(p, TK_LPAREN);
+    Expr* e = parse_primary_(p);
+    return paren ? e : espan(p, e, st);
+}
+static Expr* parse_primary_(P* p) {
     Token* t = next(p);
     Expr* e;
     switch (t->kind) {
@@ -477,6 +509,7 @@ static Expr* parse_primary(P* p) {
 }
 
 static Expr* parse_postfix(P* p) {
+    int st = p->pos;
     Expr* e = parse_primary(p);
     for (;;) {
         Token* t = peek(p);
@@ -504,11 +537,12 @@ static Expr* parse_postfix(P* p) {
             u->op = t->kind; u->a = e; u->prefix = 0;
             e = u;
         } else break;
+        espan(p, e, st);
     }
     return e;
 }
 
-static Expr* parse_unary(P* p) {
+static Expr* parse_unary_(P* p) {
     Token* t = peek(p);
     if (t->kind == TK_MINUS || t->kind == TK_BANG || t->kind == TK_PLUS || t->kind == TK_TILDE) {
         next(p);
@@ -568,7 +602,8 @@ static int binprec(int k) {
     }
 }
 
-static Expr* parse_binary(P* p, int minprec) {
+static Expr* parse_binary_(P* p, int minprec) {
+    int st = p->pos;
     Expr* left = parse_unary(p);
     for (;;) {
         Token* t = peek(p);
@@ -580,22 +615,22 @@ static Expr* parse_binary(P* p, int minprec) {
             Expr* e = mkexpr(p, k == TK_IS ? E_IS : E_AS, t->line);
             e->a = left;
             if (k == TK_IS && at(p, TK_IDENT) && peek(p)->len == 3 && !memcmp(peek(p)->start, "not", 3)) { next(p); e->op = 1; }
-            if (k == TK_IS && accept(p, TK_NULL)) { left = e; continue; }
+            if (k == TK_IS && accept(p, TK_NULL)) { left = espan(p, e, st); continue; }
             e->tn = parse_type(p);
             if (k == TK_IS && !e->op && at(p, TK_IDENT)) { Token* id = next(p); e->name = id->start; e->nlen = id->len; }
-            left = e;
+            left = espan(p, e, st);
             continue;
         }
         Expr* right = parse_binary(p, prec + 1);
         Expr* e = mkexpr(p, (k == TK_AND || k == TK_OR) ? E_LOGIC : E_BINARY, t->line);
         e->op = k; e->a = left; e->b = right;
-        left = e;
+        left = espan(p, e, st);
     }
     return left;
 }
 
 /* a ?? b (right to left, between || and ?:) */
-static Expr* parse_coalesce(P* p) {
+static Expr* parse_coalesce_(P* p) {
     Expr* left = parse_binary(p, 1);
     if (!at(p, TK_QQ)) return left;
     Token* t = next(p);
@@ -605,7 +640,7 @@ static Expr* parse_coalesce(P* p) {
     return e;
 }
 
-static Expr* parse_ternary(P* p) {
+static Expr* parse_ternary_(P* p) {
     Expr* cond = parse_coalesce(p);
     if (at(p, TK_QUESTION)) {
         Token* t = next(p);
@@ -622,7 +657,9 @@ static Expr* parse_ternary(P* p) {
 static Stmt* parse_block(P* p);
 
 /* x => ..., (x, y) => ..., (int x) => ..., () => ...; the body is an expression or a block */
-static Expr* parse_lambda(P* p) {
+static Expr* parse_lambda_(P* p);
+static Expr* parse_lambda(P* p) { int st = p->pos; return espan(p, parse_lambda_(p), st); }
+static Expr* parse_lambda_(P* p) {
     Token* t = peek(p);
     Expr* e = mkexpr(p, E_LAMBDA, t->line);
     int cap = 0;
@@ -670,7 +707,7 @@ static int at_lambda(P* p) {
     return 0;
 }
 
-static Expr* parse_expr(P* p) {
+static Expr* parse_expr_(P* p) {
     if (at_lambda(p)) return parse_lambda(p);
     Expr* left = parse_ternary(p);
     int ntok, k = optok(p, &ntok);
@@ -688,7 +725,7 @@ static Expr* parse_expr(P* p) {
 /* ---------- statements ---------- */
 static Stmt* parse_stmt(P* p);
 
-static Stmt* parse_block(P* p) {
+static Stmt* parse_block_(P* p) {
     Token* t = expect(p, TK_LBRACE);
     Stmt* b = mkstmt(p, S_BLOCK, t->line);
     int cap = 0;
@@ -717,15 +754,17 @@ static Stmt* parse_var_decl(P* p) {
         if (!s->tn) fail(p->c, t->line, "'var' cannot declare several variables at once");
         Stmt* n = mkstmt(p, S_VAR, peek(p)->line);
         n->tn = s->tn;
+        int nst = p->pos;
         Token* nid = expect(p, TK_IDENT);
         n->name = nid->start; n->nlen = nid->len;
         if (accept(p, TK_ASSIGN)) n->e = parse_expr(p);
+        sspan(p, n, nst);
         last->els = n; last = n;
     }
     return s;
 }
 
-static Stmt* parse_simple(P* p) {
+static Stmt* parse_simple_(P* p) {
     /* declaration or expression, without the trailing ';' */
     if (looks_like_decl(p)) return parse_var_decl(p);
     Token* t = peek(p);
@@ -734,7 +773,7 @@ static Stmt* parse_simple(P* p) {
     return s;
 }
 
-static Stmt* parse_stmt(P* p) {
+static Stmt* parse_stmt_(P* p) {
     Token* t = peek(p);
     Stmt* s;
     switch (t->kind) {
@@ -804,6 +843,7 @@ static Stmt* parse_stmt(P* p) {
                     if (u->kind == TK_EOF) fail(p->c, t->line, "'switch' opened here is never closed with '}'");
                     fail(p->c, u->line, "expected 'case' or 'default', found '%.*s'", u->len, u->start);
                 }
+                int secst = p->pos;
                 Stmt* sec = mkstmt(p, S_CASE, peek(p)->line);
                 int lcap = 0;
                 /* stacked labels share one section: case 1: case 2: ... */
@@ -821,6 +861,7 @@ static Stmt* parse_stmt(P* p) {
                     sec->list = (Stmt**)arena_grow(p->c->A, sec->list, sec->n, &bcap, sizeof(Stmt*));
                     sec->list[sec->n++] = parse_stmt(p);
                 }
+                sspan(p, sec, secst);
                 s->list = (Stmt**)arena_grow(p->c->A, s->list, s->n, &scap, sizeof(Stmt*));
                 s->list[s->n++] = sec;
             }
@@ -894,6 +935,7 @@ static void parse_method_rest(P* p, MethodDecl* m) {
         body->list = (Stmt**)nw(p, sizeof(Stmt*));
         body->list[0] = one; body->n = 1;
         m->body = body;
+        m->exprBody = 1;
         return;
     }
     m->body = parse_block(p);
@@ -919,6 +961,7 @@ static void parse_class(P* p, ClassDecl* cd) {
     while (!at(p, TK_RBRACE)) {
         if (at(p, TK_EOF)) fail(p->c, cd->line, "%s '%.*s' is never closed with '}'", what, cd->nlen, cd->name);
         int isStatic = 0, kind = cd->isInterface ? MK_ABSTRACT : MK_NONE;
+        int mst = p->pos;
         Token* mod = peek(p);
         for (;;) {
             Token* m = peek(p);
@@ -948,6 +991,7 @@ static void parse_class(P* p, ClassDecl* cd) {
             memset(m, 0, sizeof *m);
             m->line = t->line; m->isCtor = 1; m->name = t->start; m->nlen = t->len;
             parse_method_rest(p, m);
+            m->s0 = p->t[mst].start; m->s1 = prev_end(p);
             continue;
         }
         if (t->kind == TK_CLASS || t->kind == TK_INTERFACE) fail(p->c, t->line, "nested classes are not supported");
@@ -959,6 +1003,7 @@ static void parse_class(P* p, ClassDecl* cd) {
             memset(m, 0, sizeof *m);
             m->line = name->line; m->isStatic = isStatic; m->ret = tn; m->name = name->start; m->nlen = name->len; m->kind = kind;
             parse_method_rest(p, m);
+            m->s0 = p->t[mst].start; m->s1 = prev_end(p);
             continue;
         }
         if (at(p, TK_LBRACE) || at(p, TK_ARROW))
@@ -966,6 +1011,7 @@ static void parse_class(P* p, ClassDecl* cd) {
         if (cd->isInterface) fail(p->c, name->line, "interfaces can only have methods (no fields)");
         if (kind != MK_NONE) fail(p->c, name->line, "a field cannot be virtual, override or abstract");
         if (tn->base == TK_VOID && tn->dims == 0) fail(p->c, name->line, "a field cannot be 'void'");
+        int ffirst = cd->nfields;
         for (;;) {
             cd->fields = (FieldDecl*)arena_grow(p->c->A, cd->fields, cd->nfields, &fcap, sizeof(FieldDecl));
             FieldDecl* f = &cd->fields[cd->nfields++];
@@ -975,6 +1021,7 @@ static void parse_class(P* p, ClassDecl* cd) {
             name = expect(p, TK_IDENT);
         }
         expect(p, TK_SEMI);
+        for (int i = ffirst; i < cd->nfields; i++) { cd->fields[i].s0 = p->t[mst].start; cd->fields[i].s1 = prev_end(p); }  /* 'int a, b;' share one span */
     }
     next(p);
     p->inInterface = 0;
@@ -997,7 +1044,7 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
             continue;
         }
         if (nsDepth > 0 && accept(&p, TK_RBRACE)) { nsDepth--; continue; }
-        int isAbstract = 0;
+        int isAbstract = 0, cst = p.pos;
         for (;;) {
             if (accept(&p, TK_PUBLIC) || accept(&p, TK_PRIVATE) || accept(&p, TK_STATIC) || accept(&p, TK_SEALED)) {}
             else if (accept(&p, TK_ABSTRACT)) isAbstract = 1;
@@ -1012,6 +1059,7 @@ ProgramAST* ms_parse(ParseCtx* c, Token* toks, int ntok) {
         memset(cd, 0, sizeof *cd);
         cd->isAbstract = isAbstract; cd->isInterface = t->kind == TK_INTERFACE;
         parse_class(&p, cd);
+        cd->s0 = toks[cst].start; cd->s1 = prev_end(&p);
     }
     if (nsDepth > 0) fail(c, peek(&p)->line, "expected '}' to close the namespace but reached end of file");
     prog->nlambdas = p.nlambdas;

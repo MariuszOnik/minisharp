@@ -46,6 +46,8 @@ check project_hooks "$($BIN tests/project_hooks --frames 2 2>&1)" tests/expected
 for t in project project_err project_rt project_twomain; do
     check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
 done
+# every AST span (class, member, statement, expression) reparses to the same tree: the graph editor patches code by spans
+check spans "$($BIN --spans tests/*.cs examples/*.cs examples/*/*.cs tests/project*/*.cs 2>&1 | tail -1 | sed 's/: [0-9]* checked in [0-9]* files//')" tests/expected/spans.txt
 for f in tests/errors/*.cs; do
     n=$(basename "$f" .cs)
     check "error/$n" "$($BIN "$f" 2>&1 >/dev/null)" "tests/errors/$n.expected"

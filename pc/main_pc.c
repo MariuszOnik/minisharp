@@ -14,6 +14,7 @@
 #include "../src/repl.h"
 #include "../src/project.h"
 #include "../src/codeindex.h"
+#include "astcheck.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -99,6 +100,18 @@ int main(int argc, char** argv) {
 #endif
     if (argc == 2 && !strcmp(argv[1], "--repl")) return repl_main();
     if (argc == 3 && !strcmp(argv[1], "--ci")) return ci_main(argv[2]);
+    if (argc >= 3 && !strcmp(argv[1], "--spans")) {     /* every AST span must reparse to the same tree */
+        int bad = 0, checked = 0;
+        for (int i = 2; i < argc; i++) {
+            char* text = read_file(argv[i]);
+            if (!text) { fprintf(stderr, "cannot read %s\n", argv[i]); return 2; }
+            bad |= ms_check_spans(argv[i], text, &checked);
+            free(text);
+        }
+        printf("spans: %d checked in %d files%s", checked, argc - 2, bad ? ", FAILED" : ", all ok");
+        putchar(10);
+        return bad;
+    }
     if (argc < 2) { fprintf(stderr, "usage: %s file.cs [--frames N] [--ppm out.ppm] [--check] [--dis]\n", argv[0]); return 2; }
     int frames = 60, check = 0, dis = 0; const char* ppm = NULL;
     for (int i = 2; i < argc; i++) {

@@ -66,6 +66,7 @@ struct Expr {
     TypeNode* tn;
     int prefix;                     /* ++x vs x++ ; for E_NEWARR: has initializer list; E_MEMBER: a?.name */
     struct Param* params; int nparams; struct Stmt* body;      /* E_LAMBDA */
+    const char *s0, *s1;            /* source text [s0, s1) this node was parsed from (NULL: made up by the parser) */
 };
 
 enum { S_BLOCK, S_VAR, S_EXPR, S_IF, S_WHILE, S_DO, S_FOR, S_RETURN, S_BREAK, S_CONTINUE,
@@ -80,6 +81,7 @@ struct Stmt {
     Expr* e; Expr* step;
     Stmt *body, *els, *init;
     Expr** labels; int nlabels; int isDefault;
+    const char *s0, *s1;            /* source text incl. ';' (NULL: made up by the parser, e.g. the body of '=> expr') */
 };
 
 typedef struct Param { TypeNode* tn; const char* name; int nlen; } Param;
@@ -91,14 +93,17 @@ typedef struct {
     Param* params; int nparams;
     Stmt* body;                             /* NULL for abstract and interface methods */
     Expr* baseCall;                         /* constructor: ': base(args)' as an E_CALL, or NULL */
+    int exprBody;                           /* written as '=> expr;' (body is a made-up block with one statement) */
+    const char *s0, *s1;                    /* source text from the first modifier to the closing '}' or ';' */
 } MethodDecl;
-typedef struct { int line, isStatic; TypeNode* tn; const char* name; int nlen; Expr* init; } FieldDecl;
+typedef struct { int line, isStatic; TypeNode* tn; const char* name; int nlen; Expr* init; const char *s0, *s1; } FieldDecl;
 typedef struct {
     int line; const char* name; int nlen;
     int isAbstract, isInterface;
     TypeNode** bases; int nbases;           /* ': Base, IFoo, IBar' (which one is the class is decided later) */
     FieldDecl* fields; int nfields;
     MethodDecl* methods; int nmethods;
+    const char *s0, *s1;                    /* source text from the first modifier to the closing '}' */
 } ClassDecl;
 typedef struct { ClassDecl* classes; int nclasses; int nlambdas; } ProgramAST;
 
