@@ -62,6 +62,11 @@ check graph_kinds "$($BIN tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds
 check graph_kinds_dump "$($BIN --graph tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds_dump.txt
 check graph_kinds_layout "$($BIN --graph-layout tests/graph_kinds.cs 2>&1)" tests/expected/graph_kinds_layout.txt
 check graph_ship "$($BIN --graph examples/Kosmos/Ship.cs 2>&1)" tests/expected/graph_ship.txt
+check graph_edit "$($BIN --graph-edit tests/graph_edit.cs tests/graph_edit.txt 2>&1)" tests/expected/graph_edit.txt
+GE=$(mktemp -d)
+$BIN --graph-edit tests/graph_edit.cs tests/graph_edit.txt | sed '1,/^----$/d' > "$GE/edited.cs"
+check graph_edit_run "$($BIN "$GE/edited.cs" 2>&1)" tests/expected/graph_edit_run.txt
+rm -rf "$GE"
 GL=$(mktemp -d)
 { cat examples/loch.cs; $BIN --graph-layout examples/loch.cs; } > "$GL/loch.cs"
 if [ "$($BIN --graph examples/loch.cs)" = "$($BIN --graph "$GL/loch.cs" | sed 's/ placed$//')" ] && $BIN --graph "$GL/loch.cs" | grep -q ' placed$'; then

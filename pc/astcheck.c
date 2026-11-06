@@ -329,3 +329,84 @@ int ms_graph_tool(const char* src, const char* which, int layoutOnly) {
     if (!found) { fprintf(stderr, "no method %s\n", which ? which : "(none in the file)"); return 1; }
     return 0;
 }
+
+/* `--graph-edit file.cs script.txt`: applies graph actions one by one and prints the resulting source.
+   Script lines (keys are node keys of the graph as it is at that moment, see --graph):
+     method Class.Method      set KEY INPUT text      insert KEY PORT text (PORT: next true false body cN)
+     delete KEY               move KEY X Y            open KEY INPUT / close KEY INPUT      dump
+   A failed action prints "error: ..." and the script goes on. */
+static char* edit_step(char* src, const char* method, const char* line, MsBuf* log) {
+    Arena A = { 0 };
+    char err[256] = "";
+    ProgramAST* pr = parse_text(&A, src, err, sizeof err);
+    if (!pr) { ms_buf_add(log, "error: the code does not parse\n", -1); arena_free(&A); return src; }
+    const char* dot = strchr(method, '.');
+    Graph* g = dot ? gr_build(pr, src, method, (int)(dot - method), dot + 1, (int)strlen(dot + 1)) : NULL;
+    if (!g) { ms_buf_add(log, "error: no such method\n", -1); arena_free(&A); return src; }
+    char cmd[16] = "", key[48] = "", a1[48] = "";
+    int off = 0;
+    sscanf(line, "%15s %47s %n", cmd, key, &off);
+    const char* rest = off ? line + off : "";
+    int node = gr_find(g, key);
+    char* out = NULL;
+    MsPatch p = { 0, 0, NULL };
+    int ok = 0;
+    if (!strcmp(cmd, "dump")) { gr_dump(g, log); gr_free(g); arena_free(&A); return src; }
+    if (node < 0) snprintf(err, sizeof err, "no node %s", key);
+    else if (!strcmp(cmd, "set") || !strcmp(cmd, "insert")) {
+        int o2 = 0;
+        sscanf(rest, "%47s %n", a1, &o2);
+        const char* text = rest + o2;
+        if (!strcmp(cmd, "set")) ok = gr_set_input(g, node, atoi(a1), text, &p, err, sizeof err);
+        else {
+            int port = !strcmp(a1, "next") ? 0 : !strcmp(a1, "true") || !strcmp(a1, "body") ? 1 : !strcmp(a1, "false") ? 2 : a1[0] == 'c' ? 1 + atoi(a1 + 1) : -1;
+            ok = gr_insert(g, node, port, text, &p, err, sizeof err);
+        }
+        if (ok) out = gr_apply(g, &p, err, sizeof err);
+    } else if (!strcmp(cmd, "delete")) {
+        ok = gr_delete(g, node, &p, err, sizeof err);
+        if (ok) out = gr_apply(g, &p, err, sizeof err);
+    } else if (!strcmp(cmd, "move")) {
+        float x = 0, y = 0;
+        sscanf(rest, "%f %f", &x, &y);
+        out = gr_move(g, node, x, y);
+    } else if (!strcmp(cmd, "open") || !strcmp(cmd, "close")) out = gr_fold(g, node, atoi(rest), !strcmp(cmd, "open"));
+    else snprintf(err, sizeof err, "unknown command %s", cmd);
+    ms_patch_free(&p);
+    gr_free(g);
+    arena_free(&A);
+    if (!out) {
+        ms_buf_add(log, "error: ", -1); ms_buf_add(log, err[0] ? err : "failed", -1); ms_buf_add(log, "\n", 1);
+        return src;
+    }
+    free(src);
+    return out;
+}
+
+int ms_graph_edit_tool(const char* src0, const char* script) {
+    char* src = (char*)malloc(strlen(src0) + 1);
+    if (!src) return 1;
+    strcpy(src, src0);
+    char method[160] = "";
+    MsBuf log = { 0 };
+    const char* p = script;
+    while (*p) {
+        const char* e = strchr(p, '\n');
+        int len = e ? (int)(e - p) : (int)strlen(p);
+        char line[512];
+        if (len > 511) len = 511;
+        memcpy(line, p, (size_t)len); line[len] = 0;
+        if (len && line[len - 1] == '\r') line[--len] = 0;
+        p = e ? e + 1 : p + len;
+        if (!len || line[0] == '#') continue;
+        ms_buf_add(&log, "> ", -1); ms_buf_add(&log, line, -1); ms_buf_add(&log, "\n", 1);
+        if (!strncmp(line, "method ", 7)) { snprintf(method, sizeof method, "%.150s", line + 7); continue; }
+        src = edit_step(src, method, line, &log);
+    }
+    if (log.p) fputs(log.p, stdout);
+    fputs("----\n", stdout);
+    fputs(src, stdout);
+    ms_buf_free(&log);
+    free(src);
+    return 0;
+}

@@ -199,7 +199,10 @@ Pliki z `// @graph {json}` są zwykłym C#, więc migracja to usunięcie tej lin
    graf każdej metody w każdym pliku ma dokładnie jeden węzeł na instrukcję (w `--spans`), `tests/graph_kinds.cs` (wszystkie rodzaje instrukcji,
    `@layout` z pozycją, złym rodzajem, `=open`, `=closed`), zapis i odczyt układu `loch.cs` daje te same pozycje.
    Równolegle: prototyp rysowania na 3DS na danych z `--graph` (najpierw sztuczne, potem prawdziwe).
-4. Akcje → łatki + `--graph-edit`.
+4. ✔ Akcje → łatki (`src/graphedit.c`): zmiana wejścia (nawiasy same, gdy wejście jest składnikiem działania), wstaw po węźle / jako pierwszą
+   w gałęzi (klamry same przy ciele bez `{ }`, nowe `else`, metoda `=>` zamienia się w blok), usuń (jedyne ciało `if` zostaje `{ }`),
+   przesuń, rozwiń/zwiń. `gr_apply` przenosi pozycje po miejscu w tekście: węzeł, którego kod się tylko przesunął, zostaje na miejscu;
+   nowy staje pod poddrzewem poprzednika i rozsuwa niższe. Test: `--graph-edit plik.cs skrypt.txt` (`tests/graph_edit.*`), wynik się kompiluje i działa.
 5. Edytor grafu na 3DS (dotyk: przesuwanie, wybór węzła, paleta po nazwie, klawiatura do tekstu wejść).
 6. Później: FSM jako drugi rodzaj grafu, sceny/inspektor, wasm w przeglądarce.
 

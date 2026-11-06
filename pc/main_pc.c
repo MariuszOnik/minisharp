@@ -107,6 +107,14 @@ int main(int argc, char** argv) {
         free(text);
         return r;
     }
+    if (argc == 4 && !strcmp(argv[1], "--graph-edit")) {     /* --graph-edit file.cs script.txt */
+        char* text = read_file(argv[2]);
+        char* script = read_file(argv[3]);
+        if (!text || !script) { fprintf(stderr, "cannot read %s\n", text ? argv[3] : argv[2]); return 2; }
+        int r = ms_graph_edit_tool(text, script);
+        free(text); free(script);
+        return r;
+    }
     if (argc == 3 && !strcmp(argv[1], "--print")) {     /* the file printed again by the AST printer */
         char* text = read_file(argv[2]);
         if (!text) { fprintf(stderr, "cannot read %s\n", argv[2]); return 2; }

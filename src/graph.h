@@ -46,7 +46,11 @@ typedef struct {
 /* Graph of method cls.method in a parsed program (src = its text, also searched for the @layout comment).
    method may be the class name for the constructor. NULL if there is no such method (or out of memory). */
 Graph* gr_build(ProgramAST* prog, const char* src, const char* cls, int clen, const char* method, int mlen);
+/* the same with the layout given here instead of read from src (items NULL: read it; nitems 0: none) */
+Graph* gr_build_ex(ProgramAST* prog, const char* src, const char* cls, int clen, const char* method, int mlen,
+                   const GLayoutItem* items, int nitems);
 void gr_free(Graph* g);
+int gr_find(Graph* g, const char* key);       /* node with this key, or -1 */
 
 /* label of a flow output port: "next", "true", "false", "body", "case 3", "default" */
 void gr_port_label(Graph* g, int node, int port, char* out, int outlen);
@@ -57,5 +61,26 @@ void gr_input_text(Graph* g, GInput* in, char* out, int max);
 void gr_layout_line(Graph* g, MsBuf* out);
 /* readable dump of the graph (used by `minisharp --graph` and tests) */
 void gr_dump(Graph* g, MsBuf* out);
+
+/* ---------- editing (graphedit.c): every action is a change of the code text ---------- */
+typedef struct { int start, end; char* text; } MsPatch;     /* replace src[start, end) with text (malloc'd) */
+void ms_patch_free(MsPatch* p);
+char* ms_patch_apply(const char* src, const MsPatch* p);    /* new text (malloc'd) */
+
+/* Actions give a patch of the code; 0 and a message in err when the action is not possible here. */
+int gr_set_input(Graph* g, int node, int input, const char* text, MsPatch* out, char* err, int errlen);
+/* inserts statements on a flow port: port 0 = right after the node, port >= 1 = first in that branch */
+int gr_insert(Graph* g, int node, int port, const char* stmts, MsPatch* out, char* err, int errlen);
+int gr_delete(Graph* g, int node, MsPatch* out, char* err, int errlen);
+
+/* Applies a code patch to the graph's source and carries this method's node positions and open/closed inputs
+   over to the new code (nodes keep their place when their code only moved). Returns the new source with an
+   updated @layout comment (malloc'd), or NULL and err when the new code does not parse. */
+char* gr_apply(Graph* g, const MsPatch* p, char* err, int errlen);
+/* layout-only changes: the new source (malloc'd) with this method's @layout line rewritten */
+char* gr_move(Graph* g, int node, float x, float y);
+char* gr_fold(Graph* g, int node, int input, int open);
+/* g's source with its current positions written into the @layout comment (malloc'd) */
+char* gr_save_layout(Graph* g);
 
 #endif

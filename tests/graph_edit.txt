@@ -1,0 +1,28 @@
+method Edit.Main
+# operand slot: 2 * (1 + 1); a full slot (the variable's value) needs no parentheses
+open 0 0
+set 0.a0 1 1 + 1
+dump
+set 1 0 hp * 4 > 30
+# the only statement of an if: deleting it leaves { }, inserting after it adds braces
+delete 1.t0
+insert 1 true hp += 2
+insert 1.t0 next hp -= 1
+insert 1 false hp = 0
+# empty loop body ';'
+insert 2 body hp--
+set 3 0 int i = 1
+insert 4 c0 a += 10
+insert 4 c1 a = -a
+open 5 0
+close 5 0
+move 3 120 40
+# errors
+set 0 0 1 +
+insert 0 next ) junk (
+delete e
+delete 0.a0
+insert 4 c9 x()
+method Edit.Twice
+insert 0 next Console.WriteLine("twice")
+insert e next v++

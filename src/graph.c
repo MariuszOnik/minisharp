@@ -466,6 +466,11 @@ void gr_layout_line(Graph* g, MsBuf* out) {
 
 /* ---------- public ---------- */
 Graph* gr_build(ProgramAST* prog, const char* src, const char* cls, int clen, const char* method, int mlen) {
+    return gr_build_ex(prog, src, cls, clen, method, mlen, NULL, 0);
+}
+
+Graph* gr_build_ex(ProgramAST* prog, const char* src, const char* cls, int clen, const char* method, int mlen,
+                   const GLayoutItem* items, int nitems) {
     ClassDecl* cd = NULL; MethodDecl* m = NULL;
     for (int i = 0; i < prog->nclasses && !m; i++) {
         ClassDecl* c = &prog->classes[i];
@@ -478,7 +483,13 @@ Graph* gr_build(ProgramAST* prog, const char* src, const char* cls, int clen, co
     if (!g) return NULL;
     g->src = src; g->cls = cd; g->m = m;
     fmt(g->name, sizeof g->name, "%.*s.%.*s", clen, cls, mlen, method);
-    read_layout(g);
+    if (!items) read_layout(g);
+    else if (nitems > 0) {
+        g->lay = (GLayoutItem*)malloc((size_t)nitems * sizeof(GLayoutItem));
+        if (!g->lay) { free(g); return NULL; }
+        memcpy(g->lay, items, (size_t)nitems * sizeof(GLayoutItem));
+        g->nlay = g->laycap = nitems;
+    }
     int e = add_node(g, GN_ENTRY, NULL, NULL, "e", -1, 0);
     if (e >= 0) {
         GNode* n = &g->n[e];
@@ -557,4 +568,9 @@ void gr_dump(Graph* g, MsBuf* out) {
             ms_buf_add(out, s, -1);
         }
     }
+}
+
+int gr_find(Graph* g, const char* key) {
+    for (int i = 0; i < g->nn; i++) if (!strcmp(g->n[i].key, key)) return i;
+    return -1;
 }

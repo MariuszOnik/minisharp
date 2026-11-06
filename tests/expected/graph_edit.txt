@@ -1,0 +1,93 @@
+> method Edit.Main
+> open 0 0
+> set 0.a0 1 1 + 1
+> dump
+graph Edit.Main (14 nodes)
+n0 e entry "static void Main()" @0,0 116x17 placed
+n1 0 var "int a" <- n0.next @0,25 38x27 placed
+    a <- n2
+n2 0.a0 val "*" -> n1.a @-82,38 68x37 placed
+    a: 2
+    b: (1 + 1)
+n3 1 if "if" <- n1.next @0,60 80x37 placed
+    cond: hp > 5
+n4 1.t0 inc "hp--" <- n3.true @28,105 32x17 placed
+n5 2 while "while" <- n3.next @0,130 92x37 placed
+    cond: hp > 100
+n6 3 for "for" <- n5.next @0,175 98x57 placed
+    init: int i = 0
+    cond: i < 2
+    step: i++
+n7 3.b0 set "a +=" <- n6.body @28,240 56x27 placed
+    value: i
+n8 4 switch "switch" <- n6.next @0,275 98x37 placed
+    value: a % 2
+n9 4.c0_0 inc "a++" <- n8.case 0 @28,320 26x17 placed
+n10 4.c0_1 break "break" <- n9.next @28,345 38x17 placed
+n11 4.c1_0 break "break" <- n8.default @28,370 38x17 placed
+n12 5 call "Console.WriteLine" <- n8.next @0,395 110x27 placed
+    a1 <- n13
+n13 5.a0 val "+" -> n12.a1 @-148,395 134x37 placed
+    a: a + " " + hp + " "
+    b: Twice(a)
+> set 1 0 hp * 4 > 30
+> delete 1.t0
+> insert 1 true hp += 2
+> insert 1.t0 next hp -= 1
+> insert 1 false hp = 0
+> insert 2 body hp--
+> set 3 0 int i = 1
+> insert 4 c0 a += 10
+> insert 4 c1 a = -a
+> open 5 0
+> close 5 0
+> move 3 120 40
+> set 0 0 1 +
+error: not a value: 1 +
+> insert 0 next ) junk (
+error: this is not a statement: ) junk (
+> delete e
+error: the method itself is deleted in the code
+> delete 0.a0
+error: a value is replaced by typing a new one into its input
+> insert 4 c9 x()
+error: no such port
+> method Edit.Twice
+> insert 0 next Console.WriteLine("twice")
+> insert e next v++
+----
+// Graph actions -> code changes (tests/graph_edit.txt; expected: tests/expected/graph_edit*.txt)
+class Edit {
+    static int hp = 10;
+
+    static int Twice(int v) {
+        v++;
+        return v * 2;
+        Console.WriteLine("twice");
+    }
+
+    static void Main() {
+        int a = 2 * (1 + 1);
+        if (hp * 4 > 30) {
+            hp += 2;
+            hp -= 1;
+        } else {
+            hp = 0;
+        }
+        while (hp > 100) {
+            hp--;
+        }
+        for (int i = 1; i < 2; i++) a += i;
+        switch (a % 2) {
+            case 0: a += 10;
+            a++; break;
+            default: a = -a;
+            break;
+        }
+        Console.WriteLine(a + " " + hp + " " + Twice(a));
+    }
+}
+/* @layout
+Edit.Main e:entry:0,0 0:var:0,25 0.a0:val:-82,38 1:if:0,60 1.t0:set:28,105 1.t1:set:28,140 1.f0:set:28,175 2:while:0,270 2.b0:inc:28,315 3:for:120,40 3.b0:set:28,405 4:switch:0,440 4.c0_0:set:28,485 4.c0_1:inc:28,520 4.c0_2:break:28,545 4.c1_0:set:28,570 4.c1_1:break:28,605 5:call:0,630 0.a0=open 5.a0=closed
+Edit.Twice e:entry:0,0 0:inc:0,25 1:ret:0,50 2:call:0,85
+*/
