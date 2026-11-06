@@ -29,6 +29,7 @@ function Build-Pc {
 
 # A file in games/<Name>/ or examples/<Name>/ belongs to project <Name>: the whole folder is compiled
 function Get-ProjectDir([string]$path) {
+    if (Test-Path $path -PathType Container) { return (Resolve-Path $path).Path }   # a folder is a project
     $dir = Split-Path -Parent (Resolve-Path $path)
     $parent = Split-Path -Leaf (Split-Path -Parent $dir)
     $top = Split-Path -Parent (Split-Path -Parent $dir)
