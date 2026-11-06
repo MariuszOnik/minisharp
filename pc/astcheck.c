@@ -201,3 +201,51 @@ int ms_check_spans(const char* file, const char* src, int* checked) {
     if (k.failed) printf("%s: %d of %d spans wrong\n", file, k.failed, k.checked);
     return k.failed ? 1 : 0;
 }
+
+/* ---------- printer round trip ---------- */
+#include "../src/printer.h"
+
+static ProgramAST* parse_text(Arena* A, const char* src, char* err, int errlen) {
+    jmp_buf jb;
+    ParseCtx c = { A, &jb, err, errlen };
+    if (setjmp(jb)) return NULL;
+    int n; Token* t = ms_lex(&c, src, &n);
+    return ms_parse(&c, t, n);
+}
+
+int ms_print_file(const char* src, char* out_err, int errlen, char** out) {
+    Arena A = { 0 };
+    *out = NULL;
+    ProgramAST* pr = parse_text(&A, src, out_err, errlen);
+    if (!pr) { arena_free(&A); return 1; }
+    MsBuf b = { 0 };
+    ms_print_program(&b, pr);
+    arena_free(&A);
+    *out = b.p;
+    return b.oom;
+}
+
+int ms_check_print(const char* file, const char* src) {
+    Arena A = { 0 }, B = { 0 };
+    char err[256];
+    ProgramAST* pr = parse_text(&A, src, err, sizeof err);
+    if (!pr) { printf("%s: %s\n", file, err); arena_free(&A); return 1; }
+    MsBuf p1 = { 0 }, p2 = { 0 };
+    ms_print_program(&p1, pr);
+    int bad = 0;
+    ProgramAST* re = parse_text(&B, p1.p, err, sizeof err);
+    if (!re) { printf("%s: printed code does not parse: %s\n", file, err); bad = 1; }
+    else if (re->nclasses != pr->nclasses) { printf("%s: printed code has %d classes, not %d\n", file, re->nclasses, pr->nclasses); bad = 1; }
+    else {
+        for (int i = 0; i < pr->nclasses; i++)
+            if (!eq_class(&re->classes[i], &pr->classes[i])) {
+                printf("%s: printed class '%.*s' parses to a different tree\n", file, pr->classes[i].nlen, pr->classes[i].name);
+                bad = 1;
+            }
+        ms_print_program(&p2, re);
+        if (!bad && (!p2.p || strcmp(p1.p, p2.p))) { printf("%s: printing the printed code changes it\n", file); bad = 1; }
+    }
+    ms_buf_free(&p1); ms_buf_free(&p2);
+    arena_free(&A); arena_free(&B);
+    return bad;
+}

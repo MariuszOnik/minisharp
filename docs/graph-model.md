@@ -186,7 +186,7 @@ Pliki z `// @graph {json}` są zwykłym C#, więc migracja to usunięcie tej lin
 ## 9. Kolejność pracy
 
 1. ✔ Zakresy w AST + test 1 (zakresy) na wszystkich plikach: `minisharp --spans pliki.cs...` (test `spans` w `run_tests.sh`; 13 289 zakresów w 58 plikach). Narzędzie: `pc/astcheck.c`.
-2. Drukarka + test 2.
+2. ✔ Drukarka (`src/printer.c`, `minisharp --print plik.cs`) + test 2: każdy plik wydrukowany na nowo parsuje się do tego samego drzewa i drukuje się tak samo; 12 programów wydrukowanych na nowo daje ten sam wynik co oryginał (`print/*` w `run_tests.sh`).
 3. `gr_build`, `--graph` (tekstowy zrzut), automatyczny układ, `@layout` + testy 3–4.
    Równolegle: prototyp rysowania na 3DS na danych z `--graph` (najpierw sztuczne, potem prawdziwe).
 4. Akcje → łatki + `--graph-edit`.

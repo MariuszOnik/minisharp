@@ -46,8 +46,17 @@ check project_hooks "$($BIN tests/project_hooks --frames 2 2>&1)" tests/expected
 for t in project project_err project_rt project_twomain; do
     check "$t" "$($BIN tests/$t 2>&1)" tests/expected/$t.txt
 done
-# every AST span (class, member, statement, expression) reparses to the same tree: the graph editor patches code by spans
+# every AST span (class, member, statement, expression) reparses to the same tree (the graph editor patches code by spans),
+# and every file printed by the AST printer parses to the same tree
 check spans "$($BIN --spans tests/*.cs examples/*.cs examples/*/*.cs tests/project*/*.cs 2>&1 | tail -1 | sed 's/: [0-9]* checked in [0-9]* files//')" tests/expected/spans.txt
+# the AST printer: a reprinted program behaves exactly like the original
+PR=$(mktemp -d)
+for t in basics features2 math2 dict inherit lambdas listfunc exprbody help_examples namespace; do
+    $BIN --print tests/$t.cs > "$PR/$t.cs" && check "print/$t" "$($BIN "$PR/$t.cs" 2>&1)" tests/expected/$t.txt
+done
+$BIN --print tests/coroutines.cs > "$PR/coroutines.cs" && check print/coroutines "$($BIN "$PR/coroutines.cs" --frames 40 2>&1)" tests/expected/coroutines.txt
+$BIN --print examples/loch.cs > "$PR/loch.cs" && check print/loch_bot "$($BIN "$PR/loch.cs" --frames 6000 --press "$(cat tests/loch_press.txt)" 2>&1)" tests/expected/loch_bot.txt
+rm -rf "$PR"
 for f in tests/errors/*.cs; do
     n=$(basename "$f" .cs)
     check "error/$n" "$($BIN "$f" 2>&1 >/dev/null)" "tests/errors/$n.expected"
