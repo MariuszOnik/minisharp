@@ -1,62 +1,36 @@
 {
  "graph": {
-  "className": "Ball",
-  "variables": [
-   {
-    "name": "x",
-    "type": "float",
-    "init": "200"
-   }
-  ],
+  "className": "Game",
+  "variables": [],
   "nodes": [
    {
-    "id": "m",
+    "id": "a",
     "type": "event.Method",
     "x": 0,
     "y": 0,
     "data": {
-     "name": "Tick"
+     "name": "Go"
     }
    },
    {
-    "id": "s",
-    "type": "var.set",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "x"
-    }
-   },
-   {
-    "id": "add",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "b": "1"
-     }
-    }
-   },
-   {
-    "id": "gx",
-    "type": "var.get",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "x"
-    }
-   },
-   {
-    "id": "u",
-    "type": "event.Update",
+    "id": "b",
+    "type": "event.Method",
     "x": 0,
     "y": 100,
+    "data": {
+     "name": "Go"
+    }
+   },
+   {
+    "id": "w1",
+    "type": "api.Audio.StopAll",
+    "x": 0,
+    "y": 0,
     "data": {}
    },
    {
-    "id": "w",
-    "type": "api.Audio.StopAll",
+    "id": "w2",
+    "type": "api.Console.WriteLine/0",
     "x": 0,
     "y": 0,
     "data": {}
@@ -64,35 +38,22 @@
   ],
   "edges": [
    {
-    "from": "m",
+    "from": "a",
     "out": "exit",
-    "to": "s",
+    "to": "w1",
     "in": "enter"
    },
    {
-    "from": "gx",
-    "out": "value",
-    "to": "add",
-    "in": "a"
-   },
-   {
-    "from": "add",
-    "out": "result",
-    "to": "s",
-    "in": "value"
-   },
-   {
-    "from": "u",
+    "from": "b",
     "out": "exit",
-    "to": "w",
+    "to": "w2",
     "in": "enter"
    }
-  ],
-  "instance": false
+  ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Ball {\n    static float x = 200;\n\n    static void Update() {\n        Audio.StopAll();\n    }\n\n    // Do wywołania z kodu: Ball.Tick();\n    static void Tick() {\n        x += 1;\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    // Do wywołania z kodu: Game.Go();\n    static void Go() {\n        Audio.StopAll();\n        Console.WriteLine();\n    }\n}\n",
  "warnings": [],
  "errors": []
 }

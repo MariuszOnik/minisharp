@@ -286,6 +286,10 @@ ok(gen(build((N) => N("d", "event.Draw"))).warnings.length === 0, "a Draw-only g
   ok(gen(inUpdate).warnings.some((w) => w.node === "c" && /rysuje w Update/.test(w.message)), "warning: drawing in Update is wiped by Draw's Gfx.Clear");
   const inDraw = build((N, F) => { N("d", "event.Draw"); N("c", "api.Gfx.Circle"); F("d", "exit", "c", "enter"); });
   ok(!gen(inDraw).warnings.some((w) => /rysuje/.test(w.message)), "drawing in Draw: no warning");
+  const ordered = build((N, F, gr) => { gr.order = -5; N("u", "event.Update"); });
+  ok(gen(ordered).code.includes("\n[Order(-5)]\nclass Game {"), "graph.order -5 -> [Order(-5)] above the class");
+  const noOrder = build((N, F, gr) => { gr.order = 2.5; N("u", "event.Update"); });
+  ok(!gen(noOrder).code.includes("[Order"), "a non-integer order is ignored");
   const screen = build((N, F) => { N("u", "event.Update"); N("s", "api.Gfx.Screen"); F("u", "exit", "s", "enter"); });
   ok(!gen(screen).warnings.some((w) => /rysuje/.test(w.message)), "Gfx.Screen in Update is not drawing");
 }

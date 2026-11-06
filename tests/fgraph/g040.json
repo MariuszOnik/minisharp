@@ -1,13 +1,7 @@
 {
  "graph": {
   "className": "Game",
-  "variables": [
-   {
-    "name": "n",
-    "type": "int",
-    "init": "0"
-   }
-  ],
+  "variables": [],
   "nodes": [
    {
     "id": "m",
@@ -15,7 +9,7 @@
     "x": 0,
     "y": 0,
     "data": {
-     "name": "n"
+     "name": "1x"
     }
    }
   ],
@@ -23,12 +17,12 @@
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static int n = 0;\n\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n",
  "warnings": [],
  "errors": [
   {
    "node": "m",
-   "message": "„n” jest też nazwą zmiennej grafu"
+   "message": "„Metoda” bez poprawnej nazwy"
   }
  ]
 }

@@ -885,9 +885,20 @@ function toggleInstance() {
   onGraphChange(g);
   setStatus(g.instance ? "Klasa z obiektami: robisz je w kodzie (var o = new Klasa(); o.Metoda();). Start, Update i Draw tu nie działają, użyj węzłów „Metoda”." : "Klasa statyczna: metody wołasz jako Klasa.Metoda().", "");
 }
+function setOrder() {
+  const g = graphEditor.getGraph();
+  const v = prompt("Kolejność (jak DefaultExecutionOrder w Unity): mniejsza liczba = Start, Update i Draw tego grafu idą przed innymi plikami. Domyślnie 0, np. -10 albo 5:", String(g.order || 0));
+  if (v === null) return;
+  const n = parseInt(v.trim() || "0", 10);
+  if (!Number.isInteger(n)) { setStatus("Kolejność to liczba całkowita, np. -10, 0, 5.", "err"); return; }
+  if (n) g.order = n; else delete g.order;
+  onGraphChange(g);
+}
 function graphMenu() {
   const inst = graphEditor && graphEditor.getGraph().instance;
+  const ord = (graphEditor && graphEditor.getGraph().order) || 0;
   return [
+    { label: `Kolejność: ${ord}`, note: "mniejsza = Update i Draw tego grafu wcześniej (jak w Unity)", fn: setOrder },
     { label: inst ? "Zmień na klasę statyczną" : "Zmień na klasę z obiektami", note: inst ? "zmienne i metody znów static" : "szablon dla new Klasa(), własny stan obiektu", fn: toggleInstance },
     { label: "Pokaż wygenerowany kod", note: "karta Kod, tylko do czytania", fn: () => showView("code") },
     { label: "Zamień na zwykły kod", note: "odłącz graf, dalej edytujesz kod ręcznie", fn: detachGraph },

@@ -1139,6 +1139,11 @@ void fg_generate(const JVal* graph, const FCatalog* cat, int embed, FGenResult* 
     }
     MsBuf code = { 0 };
     ms_buf_add(&code, "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\n", -1);
+    {   /* graph.order -> [Order(n)] (Number.isInteger: a JSON number without a fraction) */
+        const JVal* o = json_get(graph, "order");
+        double ov = o && o->t == JS_NUM ? strtod(o->s, NULL) : 0;
+        if (ov > -1e9 && ov < 1e9 && ov != 0 && ov == (double)(long)ov) { char* a = sfmt("[Order(%ld)]\n", (long)ov); ms_buf_add(&code, a, -1); free(a); }
+    }
     char* cls = sfmt("class %s {\n", g->className); ms_buf_add(&code, cls, -1); free(cls);
     if (nf) { ms_buf_add(&code, fields.p, -1); ms_buf_add(&code, "\n\n", 2); }
     if (bodyLines) { ms_buf_add(&code, body.p, -1); ms_buf_add(&code, "\n", 1); }

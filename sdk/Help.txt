@@ -17,6 +17,9 @@ Jeśli jest Update, program działa jako gra; START wraca do menu.
 Projekt to folder: wszystkie pliki .cs w nim kompilują się razem i klasy widzą się nawzajem.
 Obrazki i dźwięki są szukane w folderze projektu.
 Każda klasa może mieć własne static void Main(), Update() i Draw(), tak jak skrypty na scenie w Unity: program woła je wszystkie, w kolejności klas w projekcie (pliki po nazwie, klasy od góry). Tak działają też pliki z grafem.
+Kolejność ustawisz jak DefaultExecutionOrder w Unity: [Order(-10)] w linii nad class. Mniejsza liczba idzie wcześniej, domyślnie 0; przy równych zostaje kolejność plików.
+[Order(-10)]
+class Wejscie { static void Update() { /* czyta przyciski przed innymi */ } }
 Dobrze jest pisać na początku każdego pliku: namespace NazwaProjektu;
 
 ## Graf 1: edytor
@@ -27,7 +30,7 @@ Połącz: przeciągnij z portu do portu albo dotknij jednego portu, potem drugie
 Usuń połączenie: dotknij przewodu, potem Usuń (albo X). Albo przeciągnij przewód z podłączonego wejścia w puste miejsce. Cofnij wraca o krok.
 Węzeł: przesuwasz za nagłówek; dotknij wartości w węźle, żeby ją wpisać (tekst dostanie cudzysłów sam). + Węzeł (albo A): paleta z wyszukiwaniem, np. circle, held, jeśli, dodaj.
 L/R: przybliż / oddal. Y: cały graf na ekranie. Gałka albo przeciągnięcie tła: przesuń widok.
-Więcej: zmienne grafu, nazwa klasy, klasa z obiektami, następna uwaga, zapisz.
+Więcej: zmienne grafu, nazwa klasy, klasa z obiektami, kolejność (jak [Order] w kodzie), następna uwaga, zapisz.
 Uwagi: pomarańczowa ramka i lista na górnym ekranie to podpowiedzi generatora, np. węzeł niepodłączony do żadnego zdarzenia.
 Każda zmiana od razu zapisuje kod pliku, więc Kod, potem Uruchom działa od razu.
 Rysuj tylko w Draw: to, co narysujesz w Update, zniknie (Draw zwykle zaczyna od Gfx.Clear). Kolor tła ustaw raz: Gfx.Background w Start, wtedy Gfx.Clear nie jest potrzebne.
@@ -59,7 +62,7 @@ Ustaw zmienną zmienia tylko zmienne własnego grafu. Pole innej klasy zmienisz 
 static void DodajPunkty(int n) { Game.wynik += n; }
 Klasa z obiektami (Więcej): graf staje się klasą bez static, z której robisz obiekty, każdy z własnymi zmiennymi:
 var b = new Ball(); b.Skok();
-Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie. Tło ustaw raz, Gfx.Background(kolor) w Main: ekran czyści się nim sam przed każdą klatką, więc żaden Draw nie potrzebuje Gfx.Clear (Clear w późniejszym pliku zmazałby to, co narysowały wcześniejsze).
+Update i Draw może mieć każdy plik, także graf: program woła je wszystkie, pliki po nazwie, chyba że ustawisz kolejność (Więcej > Kolejność, w kodzie [Order(n)]). Tło ustaw raz, Gfx.Background(kolor) w Main: ekran czyści się nim sam przed każdą klatką, więc żaden Draw nie potrzebuje Gfx.Clear (Clear w późniejszym pliku zmazałby to, co narysowały wcześniejsze).
 
 ## Kurs 1: pierwszy program
 Ten kurs prowadzi od zera do małej gry. Cała gra jest w przykładzie kurs.cs (uruchom ją z menu, a potem otwórz w edytorze).

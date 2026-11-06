@@ -4,56 +4,25 @@
   "variables": [],
   "nodes": [
    {
-    "id": "a",
+    "id": "m",
     "type": "event.Method",
     "x": 0,
     "y": 0,
     "data": {
-     "name": "Go"
+     "name": ""
     }
-   },
-   {
-    "id": "b",
-    "type": "event.Method",
-    "x": 0,
-    "y": 100,
-    "data": {
-     "name": "Go"
-    }
-   },
-   {
-    "id": "w1",
-    "type": "api.Audio.StopAll",
-    "x": 0,
-    "y": 0,
-    "data": {}
-   },
-   {
-    "id": "w2",
-    "type": "api.Console.WriteLine/0",
-    "x": 0,
-    "y": 0,
-    "data": {}
    }
   ],
-  "edges": [
-   {
-    "from": "a",
-    "out": "exit",
-    "to": "w1",
-    "in": "enter"
-   },
-   {
-    "from": "b",
-    "out": "exit",
-    "to": "w2",
-    "in": "enter"
-   }
-  ]
+  "edges": []
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    // Do wywołania z kodu: Game.Go();\n    static void Go() {\n        Audio.StopAll();\n        Console.WriteLine();\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n",
  "warnings": [],
- "errors": []
+ "errors": [
+  {
+   "node": "m",
+   "message": "„Metoda” bez poprawnej nazwy"
+  }
+ ]
 }

@@ -10,6 +10,7 @@
  *
  * Graph (plain JSON):
  *   { className: "Game", instance: false,                              // instance: true = a class to make objects from (no "static")
+ *     order: 0,                                                        // [Order(n)]: its Start/Update/Draw run before higher numbers
  *     variables: [{ name: "x", type: "float", init: "200" }],          // become "static" fields (or instance fields)
  *     nodes: [{ id: "n1", type: "event.Update", x: 40, y: 40, data: {} }, ...],
  *     edges: [{ from: "n1", out: "exit", to: "n2", in: "enter" }, ...] }
@@ -474,7 +475,9 @@ function generate(graph, catalog, opts) {
     if (!IDENT.test(v.name || "")) { fail(null, `niepoprawna nazwa zmiennej „${v.name}”`); continue; }
     fields.push(`    ${stat}${v.type || "float"} ${v.name}${v.init !== undefined && v.init !== "" ? " = " + v.init : ""};`);
   }
-  const out = ["// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.", `class ${className} {`];
+  const out = ["// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów."];
+  if (Number.isInteger(graph.order) && graph.order) out.push(`[Order(${graph.order})]`);   // like DefaultExecutionOrder in Unity
+  out.push(`class ${className} {`);
   if (fields.length) out.push(...fields, "");
   out.push(...body, "}");
   let code = out.join("\n") + "\n";

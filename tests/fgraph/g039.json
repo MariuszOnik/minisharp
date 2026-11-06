@@ -9,7 +9,7 @@
     "x": 0,
     "y": 0,
     "data": {
-     "name": ""
+     "name": "Update"
     }
    }
   ],
@@ -22,7 +22,7 @@
  "errors": [
   {
    "node": "m",
-   "message": "„Metoda” bez poprawnej nazwy"
+   "message": "„Update” to wejście programu: użyj węzła Start, Update albo Draw"
   }
  ]
 }

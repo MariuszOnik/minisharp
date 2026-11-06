@@ -1,13 +1,7 @@
 {
  "graph": {
   "className": "Game",
-  "variables": [
-   {
-    "name": "x",
-    "type": "float",
-    "init": "0"
-   }
-  ],
+  "variables": [],
   "nodes": [
    {
     "id": "u",
@@ -22,22 +16,8 @@
     "x": 0,
     "y": 0,
     "data": {
-     "name": "x"
+     "name": "ghost"
     }
-   },
-   {
-    "id": "a",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {}
-   },
-   {
-    "id": "b",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {}
    }
   ],
   "edges": [
@@ -46,35 +26,17 @@
     "out": "exit",
     "to": "s",
     "in": "enter"
-   },
-   {
-    "from": "a",
-    "out": "result",
-    "to": "b",
-    "in": "a"
-   },
-   {
-    "from": "b",
-    "out": "result",
-    "to": "a",
-    "in": "a"
-   },
-   {
-    "from": "b",
-    "out": "result",
-    "to": "s",
-    "in": "value"
    }
   ]
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static float x = 0;\n\n    static void Update() {\n        x = 0 + 0 + 0;\n    }\n}\n",
- "warnings": [],
- "errors": [
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        ghost = 0;\n    }\n}\n",
+ "warnings": [
   {
-   "node": "b",
-   "message": "cykl w połączeniach wartości (węzeł „Dodaj (+)”)"
+   "node": "s",
+   "message": "zmienna „ghost” nie jest zadeklarowana w grafie"
   }
- ]
+ ],
+ "errors": []
 }

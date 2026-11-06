@@ -88,11 +88,21 @@
     "in": "enter"
    }
   ],
-  "instance": false
+  "instance": true
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Ball {\n    static float x = 200;\n\n    static void Update() {\n        Audio.StopAll();\n    }\n\n    // Do wywołania z kodu: Ball.Tick();\n    static void Tick() {\n        x += 1;\n    }\n}\n",
- "warnings": [],
- "errors": []
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Ball {\n    float x = 200;\n\n    // Do wywołania z kodu: var o = new Ball(); o.Tick();\n    void Tick() {\n        x += 1;\n    }\n}\n",
+ "warnings": [
+  {
+   "node": "w",
+   "message": "węzeł „Audio.StopAll” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu"
+  }
+ ],
+ "errors": [
+  {
+   "node": "u",
+   "message": "w klasie z obiektami nie działa „Co klatkę (Update)” (Main, Update i Draw są statyczne): użyj węzła „Metoda” i wywołaj ją z kodu"
+  }
+ ]
 }

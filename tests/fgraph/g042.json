@@ -1,11 +1,11 @@
 {
  "graph": {
-  "className": "Ball",
+  "className": "Game",
   "variables": [
    {
-    "name": "x",
-    "type": "float",
-    "init": "200"
+    "name": "n",
+    "type": "int",
+    "init": "0"
    }
   ],
   "nodes": [
@@ -15,94 +15,20 @@
     "x": 0,
     "y": 0,
     "data": {
-     "name": "Tick"
+     "name": "n"
     }
-   },
-   {
-    "id": "s",
-    "type": "var.set",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "x"
-    }
-   },
-   {
-    "id": "add",
-    "type": "op.add",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "defaults": {
-      "b": "1"
-     }
-    }
-   },
-   {
-    "id": "gx",
-    "type": "var.get",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "x"
-    }
-   },
-   {
-    "id": "u",
-    "type": "event.Update",
-    "x": 0,
-    "y": 100,
-    "data": {}
-   },
-   {
-    "id": "w",
-    "type": "api.Audio.StopAll",
-    "x": 0,
-    "y": 0,
-    "data": {}
    }
   ],
-  "edges": [
-   {
-    "from": "m",
-    "out": "exit",
-    "to": "s",
-    "in": "enter"
-   },
-   {
-    "from": "gx",
-    "out": "value",
-    "to": "add",
-    "in": "a"
-   },
-   {
-    "from": "add",
-    "out": "result",
-    "to": "s",
-    "in": "value"
-   },
-   {
-    "from": "u",
-    "out": "exit",
-    "to": "w",
-    "in": "enter"
-   }
-  ],
-  "instance": true
+  "edges": []
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Ball {\n    float x = 200;\n\n    // Do wywołania z kodu: var o = new Ball(); o.Tick();\n    void Tick() {\n        x += 1;\n    }\n}\n",
- "warnings": [
-  {
-   "node": "w",
-   "message": "węzeł „Audio.StopAll” nie jest połączony z żadnym zdarzeniem, więc nie trafi do kodu"
-  }
- ],
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static int n = 0;\n\n}\n",
+ "warnings": [],
  "errors": [
   {
-   "node": "u",
-   "message": "w klasie z obiektami nie działa „Co klatkę (Update)” (Main, Update i Draw są statyczne): użyj węzła „Metoda” i wywołaj ją z kodu"
+   "node": "m",
+   "message": "„n” jest też nazwą zmiennej grafu"
   }
  ]
 }

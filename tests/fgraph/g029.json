@@ -9,34 +9,14 @@
     "x": 0,
     "y": 0,
     "data": {}
-   },
-   {
-    "id": "s",
-    "type": "var.set",
-    "x": 0,
-    "y": 0,
-    "data": {
-     "name": "ghost"
-    }
    }
   ],
-  "edges": [
-   {
-    "from": "u",
-    "out": "exit",
-    "to": "s",
-    "in": "enter"
-   }
-  ]
+  "edges": [],
+  "order": 2.5
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        ghost = 0;\n    }\n}\n",
- "warnings": [
-  {
-   "node": "s",
-   "message": "zmienna „ghost” nie jest zadeklarowana w grafie"
-  }
- ],
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n}\n",
+ "warnings": [],
  "errors": []
 }

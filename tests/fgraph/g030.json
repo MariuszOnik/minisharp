@@ -12,12 +12,10 @@
    },
    {
     "id": "s",
-    "type": "var.set",
+    "type": "api.Gfx.Screen",
     "x": 0,
     "y": 0,
-    "data": {
-     "name": "1bad"
-    }
+    "data": {}
    }
   ],
   "edges": [
@@ -31,12 +29,7 @@
  },
  "user": [],
  "embed": false,
- "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n    }\n}\n",
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Gfx.Screen(0);\n    }\n}\n",
  "warnings": [],
- "errors": [
-  {
-   "node": "s",
-   "message": "„Ustaw zmienną” bez poprawnej nazwy"
-  }
- ]
+ "errors": []
 }

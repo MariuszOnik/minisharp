@@ -819,16 +819,16 @@ static void next_issue(void) {
 }
 
 static void more_menu(void) {
-    static const char* ITEMS[] = { "Zmienne grafu", "Dopasuj widok", "Następna uwaga", "Nazwa klasy", "Klasa z obiektami", "Zapisz" };
+    static const char* ITEMS[] = { "Zmienne grafu", "Dopasuj widok", "Następna uwaga", "Nazwa klasy", "Klasa z obiektami", "Kolejność", "Zapisz" };
     int sel = 0;
     while (aptMainLoop()) {
         plat3ds_input();
         u32 k = plat3ds_down();
         if (k & (KEY_B | KEY_START)) return;
-        if ((k & KEY_DOWN) && sel < 5) sel++;
+        if ((k & KEY_DOWN) && sel < 6) sel++;
         if ((k & KEY_UP) && sel > 0) sel--;
         int pick = (k & KEY_A) ? sel : -1;
-        for (int i = 0; i < 6; i++) if (ui_tapped(0, 4 + i * 36, 320, 34)) pick = i;
+        for (int i = 0; i < 7; i++) if (ui_tapped(0, 4 + i * 33, 320, 31)) pick = i;
         if (pick == 0) { variables_screen(); return; }
         if (pick == 1) { fit(); return; }
         if (pick == 2) { next_issue(); return; }
@@ -850,17 +850,35 @@ static void more_menu(void) {
             changed();
             return;
         }
-        if (pick == 5) { if (H->save()) note(0x60E060, "Zapisano"); return; }
+        if (pick == 5) {
+            char buf[16];
+            snprintf(buf, sizeof buf, "%d", (int)json_number(json_get(G, "order"), 0));
+            if (ui_prompt("Kolejność", "Jak DefaultExecutionOrder w Unity: mniejsza liczba = Start, Update i Draw tego grafu "
+                          "idą przed innymi plikami. Domyślnie 0, np. -10 albo 5.", buf, sizeof buf)) {
+                trim(buf);
+                char* end; long n = strtol(buf[0] ? buf : "0", &end, 10);
+                if (*end) note(0xFF6060, "Kolejność to liczba całkowita, np. -10, 0, 5.");
+                else {
+                    if (n) json_set(G, "order", json_num((double)n));
+                    else for (int q = 0; q < G->n; q++) if (!strcmp(G->keys[q], "order")) { json_remove_at(G, q); break; }
+                    changed();
+                }
+            }
+            kbd_reset();
+            return;
+        }
+        if (pick == 6) { if (H->save()) note(0x60E060, "Zapisano"); return; }
 
         ui_frame_begin(0x101418, 0x0C0C0C);
         draw_top();
         plat_screen(1);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             char label[80];
-            if (i == 4) snprintf(label, sizeof label, "Klasa z obiektami: %s", json_truthy(json_get(G, "instance")) ? "tak" : "nie");
+            if (i == 5) snprintf(label, sizeof label, "Kolejność: %d", (int)json_number(json_get(G, "order"), 0));
+            else if (i == 4) snprintf(label, sizeof label, "Klasa z obiektami: %s", json_truthy(json_get(G, "instance")) ? "tak" : "nie");
             else if (i == 3) snprintf(label, sizeof label, "Nazwa klasy: %.40s", sget(G, "className")[0] ? sget(G, "className") : "Game");
             else snprintf(label, sizeof label, "%s", ITEMS[i]);
-            ui_button(0, 4 + i * 36, 320, 34, label, i == sel ? 0x2D4A80 : 0x34405A);
+            ui_button(0, 4 + i * 33, 320, 31, label, i == sel ? 0x2D4A80 : 0x34405A);
         }
         ui_frame_end();
     }
