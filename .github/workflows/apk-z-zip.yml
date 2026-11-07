@@ -1,0 +1,64 @@
+name: APK z paczki zip
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/apk-z-zip.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Rozpakuj paczke minisharp-apk-files.zip
+        run: |
+          zip=$(find . -name 'minisharp-apk-files.zip' -not -path './.git/*' | head -n1)
+          if [ -z "$zip" ]; then
+            echo "::error::Nie ma minisharp-apk-files.zip w tej galezi repo. Wgraj go przez Add file > Upload files."
+            exit 1
+          fi
+          echo "Znaleziono: $zip"
+          unzip -q -o "$zip" -d .
+          ls android
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Wersja webowa do aplikacji
+        run: |
+          pip install ziglang==0.17.0
+          sh android/prepare-assets.sh
+
+      - name: Buduj APK
+        run: gradle -p android assembleDebug --stacktrace
+
+      - name: Nazwij plik
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk MiniSharp.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MiniSharp-apk
+          path: MiniSharp.apk
+
+      - name: Wydanie android-latest (do pobrania na telefonie)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest MiniSharp.apk \
+            --target "$GITHUB_SHA" \
+            --title "MiniSharp na Androida (ostatni build)" \
+            --notes "Pobierz MiniSharp.apk i otworz go na telefonie (Android zapyta raz o zgode na instalacje z tego zrodla)."
