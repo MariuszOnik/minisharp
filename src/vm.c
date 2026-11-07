@@ -165,6 +165,7 @@ VM* vm_new(Program* p) {
     VM* vm = (VM*)calloc(1, sizeof(VM));
     if (!vm) return NULL;
     vm->p = p;
+    ms_background = 0;                  /* a new program starts on black (Gfx.Background) */
     vm->stack = (Value*)calloc(MS_STACK, sizeof(Value));
     vm->statics = (Value*)calloc(p->nstatics ? p->nstatics : 1, sizeof(Value));
     if (!vm->stack || !vm->statics) { vm_free(vm); return NULL; }

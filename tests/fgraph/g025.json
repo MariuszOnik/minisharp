@@ -1,0 +1,21 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "d",
+    "type": "event.Draw",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": []
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Draw() {\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

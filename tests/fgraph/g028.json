@@ -1,0 +1,22 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [],
+  "order": -5
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\n[Order(-5)]\nclass Game {\n    static void Update() {\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

@@ -1,0 +1,108 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [
+   {
+    "name": "x",
+    "type": "float",
+    "init": "0"
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "init": "1"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "init": "2"
+   },
+   {
+    "name": "c",
+    "type": "float",
+    "init": "3"
+   },
+   {
+    "name": "d",
+    "type": "float",
+    "init": "4"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "s",
+    "type": "var.set",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "x"
+    }
+   },
+   {
+    "id": "a",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "a"
+    }
+   },
+   {
+    "id": "n",
+    "type": "op.neg",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "m",
+    "type": "op.mul",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "2"
+     }
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "s",
+    "in": "enter"
+   },
+   {
+    "from": "a",
+    "out": "value",
+    "to": "n",
+    "in": "a"
+   },
+   {
+    "from": "n",
+    "out": "result",
+    "to": "m",
+    "in": "a"
+   },
+   {
+    "from": "m",
+    "out": "result",
+    "to": "s",
+    "in": "value"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static float x = 0;\n    static float a = 1;\n    static float b = 2;\n    static float c = 3;\n    static float d = 4;\n\n    static void Update() {\n        x = -a * 2;\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

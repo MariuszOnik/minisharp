@@ -149,6 +149,7 @@ EXPORT("web_input") void web_input(uint32_t held, uint32_t pressed, int touching
 /* one frame: Update, coroutines, Draw. 1 = go on, 0 = finished (App.Quit), -2 = runtime error */
 EXPORT("web_frame") int web_frame(void) {
     if (!g_vm) return 0;
+    ms_clear_frame();                       /* like the console: every frame starts on Gfx.Background */
     js_screen(0);
     int ok = vm_call(g_vm, g_prog->entryUpdate);
     if (ok) ok = vm_tick_coroutines(g_vm);

@@ -1,0 +1,35 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "d",
+    "type": "event.Draw",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "c",
+    "type": "api.Gfx.Circle",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "d",
+    "out": "exit",
+    "to": "c",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Draw() {\n        Gfx.Circle(0, 0, 0, 0);\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

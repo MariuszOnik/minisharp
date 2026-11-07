@@ -1,0 +1,35 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "s",
+    "type": "api.Gfx.Screen",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "s",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Gfx.Screen(0);\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

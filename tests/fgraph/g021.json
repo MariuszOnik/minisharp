@@ -1,0 +1,72 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Main",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "i",
+    "type": "if",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "load",
+    "type": "api.Gfx.LoadImage",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "w",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "i",
+    "in": "enter"
+   },
+   {
+    "from": "i",
+    "out": "true",
+    "to": "load",
+    "in": "enter"
+   },
+   {
+    "from": "i",
+    "out": "exit",
+    "to": "w",
+    "in": "enter"
+   },
+   {
+    "from": "load",
+    "out": "result",
+    "to": "w",
+    "in": "value"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Main() {\n        if (false) {\n            var loadImage = Gfx.LoadImage(\"\");\n        }\n        Console.WriteLine(loadImage);\n    }\n}\n",
+ "warnings": [
+  {
+   "node": "load",
+   "message": "wartość z węzła „Gfx.LoadImage” jest użyta poza blokiem, w którym powstała"
+  }
+ ],
+ "errors": []
+}

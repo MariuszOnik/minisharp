@@ -126,6 +126,9 @@ void plat3ds_begin_frame(u32 clearTop, u32 clearBottom) {
     C2D_TextBufClear(g_textbuf);
     C2D_TargetClear(g_top, clearTop);
     C2D_TargetClear(g_bot, clearBottom);
+    /* a target is only shown when a scene began on it this frame: without this, a game that draws only on the
+       top screen left the last picture of the editor (its keyboard) on the bottom one */
+    C2D_SceneBegin(g_bot);
     plat_screen(0);
 }
 

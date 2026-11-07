@@ -370,6 +370,7 @@ void ms_print_program(MsBuf* b, ProgramAST* prog) {
     for (int c = 0; c < prog->nclasses; c++) {
         ClassDecl* cd = &prog->classes[c];
         if (c) putc_(b, '\n');
+        if (cd->order) { char o[40]; snprintf(o, sizeof o, "[Order(%d)]\n", cd->order); puts_(b, o); }
         if (cd->isAbstract) puts_(b, "abstract ");
         puts_(b, cd->isInterface ? "interface " : "class ");
         put(b, cd->name, cd->nlen);
@@ -378,6 +379,8 @@ void ms_print_program(MsBuf* b, ProgramAST* prog) {
         for (int i = 0; i < cd->nfields; i++) {
             FieldDecl* f = &cd->fields[i];
             indent(b, 1);
+            if (f->attrs & FA_IN) puts_(b, "[In] ");
+            if (f->attrs & FA_OUT) puts_(b, "[Out] ");
             if (f->isStatic) puts_(b, "static ");
             ms_print_type(b, f->tn); putc_(b, ' '); put(b, f->name, f->nlen);
             if (f->init) { puts_(b, " = "); expr(b, f->init, P_ASSIGN, 1); }

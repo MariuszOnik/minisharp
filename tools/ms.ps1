@@ -29,6 +29,7 @@ function Build-Pc {
 
 # A file in games/<Name>/ or examples/<Name>/ belongs to project <Name>: the whole folder is compiled
 function Get-ProjectDir([string]$path) {
+    if (Test-Path $path -PathType Container) { return (Resolve-Path $path).Path }   # a folder is a project
     $dir = Split-Path -Parent (Resolve-Path $path)
     $parent = Split-Path -Leaf (Split-Path -Parent $dir)
     $top = Split-Path -Parent (Split-Path -Parent $dir)
@@ -107,6 +108,15 @@ switch ($Action) {
         $env:Path = "$devkitPro\msys2\usr\bin;$devkitPro\devkitARM\bin;$devkitPro\tools\bin;$env:Path"
         & "$devkitPro\msys2\usr\bin\make.exe" -C $root 'MAKE=/d/devkitPro/msys2/usr/bin/make'
         if ($LASTEXITCODE -ne 0) { throw 'make failed' }
+        # every build is kept: builds/MiniSharp_<branch>_<commit>_<date>.3dsx (a "+" after the commit: uncommitted changes)
+        $branch = (& git -C $root rev-parse --abbrev-ref HEAD).Trim()
+        $sha = (& git -C $root rev-parse --short HEAD).Trim()
+        if (& git -C $root status --porcelain --untracked-files=no) { $sha += '+' }
+        $keep = Join-Path $root 'builds'
+        New-Item -ItemType Directory -Force $keep | Out-Null
+        $name = "MiniSharp_${branch}_${sha}_$(Get-Date -Format 'yyyyMMdd-HHmm').3dsx" -replace '[\\/:]', '-'
+        Copy-Item (Join-Path $root 'MiniSharp.3dsx') (Join-Path $keep $name)
+        Write-Host "Kept builds\$name"
         Upload (Join-Path $root 'MiniSharp.3dsx') '3ds'
     }
     default { throw "unknown action '$Action' (check, deploy, preview, log, app)" }

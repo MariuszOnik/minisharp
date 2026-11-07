@@ -1,0 +1,124 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [
+   {
+    "name": "hp",
+    "type": "int",
+    "init": "10"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "i",
+    "type": "if",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "h",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "hp"
+    }
+   },
+   {
+    "id": "lt",
+    "type": "cmp.lt",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "5"
+     }
+    }
+   },
+   {
+    "id": "t",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value": "\"low\""
+     }
+    }
+   },
+   {
+    "id": "f",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value": "\"ok\""
+     }
+    }
+   },
+   {
+    "id": "after",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value": "\"done\""
+     }
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "i",
+    "in": "enter"
+   },
+   {
+    "from": "h",
+    "out": "value",
+    "to": "lt",
+    "in": "a"
+   },
+   {
+    "from": "lt",
+    "out": "result",
+    "to": "i",
+    "in": "cond"
+   },
+   {
+    "from": "i",
+    "out": "true",
+    "to": "t",
+    "in": "enter"
+   },
+   {
+    "from": "i",
+    "out": "false",
+    "to": "f",
+    "in": "enter"
+   },
+   {
+    "from": "i",
+    "out": "exit",
+    "to": "after",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static int hp = 10;\n\n    static void Update() {\n        if (hp < 5) {\n            Console.WriteLine(\"low\");\n        } else {\n            Console.WriteLine(\"ok\");\n        }\n        Console.WriteLine(\"done\");\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

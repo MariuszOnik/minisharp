@@ -1,0 +1,18 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [],
+  "edges": []
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n",
+ "warnings": [
+  {
+   "node": null,
+   "message": "graf nie ma żadnego węzła zdarzenia (Start, Update, Draw albo Metoda), więc nic się nie wykona"
+  }
+ ],
+ "errors": []
+}

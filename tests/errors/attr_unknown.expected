@@ -1,0 +1,1 @@
+compile error: line 1: attribute [Serializable] is not supported (only [Order(n)] before a class, [In] and [Out] before a field)

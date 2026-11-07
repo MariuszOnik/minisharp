@@ -1,0 +1,115 @@
+{
+ "files": [
+  {
+   "name": "Nodes.cs",
+   "text": "// Liczy kroki.\n// @node Licznik kroków\n[Order(1)]\nclass Licznik : Node {\n    [In] public int krok = 1;\n    [Out] public int suma;\n    [Out] public bool ponadDziesiec;\n    [In, Out] public int value;\n    public override void Run() { suma += krok; ponadDziesiec = suma > 10; }\n}\nclass BezRun { [In] public int a; }\nabstract class Abs : Node { [In] public int a; }\nclass Wlasny { [Out] public int x; public void Run() { x++; } }\n"
+  }
+ ],
+ "defs": [
+  {
+   "id": "user.node.Licznik",
+   "title": "Licznik kroków",
+   "category": "Kod: Licznik",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Licznik",
+   "sig": "class Licznik",
+   "doc": "Liczy kroki.",
+   "params": [
+    {
+     "type": "int",
+     "name": "krok",
+     "port": "krok"
+    },
+    {
+     "type": "int",
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "outs": [
+    {
+     "name": "suma",
+     "port": "suma"
+    },
+    {
+     "name": "ponadDziesiec",
+     "port": "ponadDziesiec"
+    },
+    {
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "krok",
+     "type": "int",
+     "def": "0"
+    },
+    {
+     "name": "value_",
+     "type": "int",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "suma",
+     "type": "int"
+    },
+    {
+     "name": "ponadDziesiec",
+     "type": "bool"
+    },
+    {
+     "name": "value_",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.node.Wlasny",
+   "title": "Wlasny",
+   "category": "Kod: Wlasny",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Wlasny",
+   "sig": "class Wlasny",
+   "doc": "",
+   "params": [],
+   "outs": [
+    {
+     "name": "x",
+     "port": "x"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "int"
+    }
+   ]
+  }
+ ]
+}

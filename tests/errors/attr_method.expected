@@ -1,0 +1,1 @@
+compile error: line 2: [In] and [Out] go before a field (a port of a node), not before a method

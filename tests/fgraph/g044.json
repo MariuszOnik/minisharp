@@ -1,0 +1,110 @@
+{
+ "graph": {
+  "className": "Graph",
+  "variables": [
+   {
+    "name": "n",
+    "type": "int",
+    "init": "0"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "m1",
+    "type": "event.Method",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "Tick"
+    }
+   },
+   {
+    "id": "m2",
+    "type": "event.Method",
+    "x": 0,
+    "y": 100,
+    "data": {
+     "name": "Alpha"
+    }
+   },
+   {
+    "id": "d",
+    "type": "event.Draw",
+    "x": 0,
+    "y": 200,
+    "data": {}
+   },
+   {
+    "id": "s",
+    "type": "var.set",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "n"
+    }
+   },
+   {
+    "id": "add",
+    "type": "op.add",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "1"
+     }
+    }
+   },
+   {
+    "id": "g",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "n"
+    }
+   },
+   {
+    "id": "w",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value": "\"a\""
+     }
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "m1",
+    "out": "exit",
+    "to": "s",
+    "in": "enter"
+   },
+   {
+    "from": "g",
+    "out": "value",
+    "to": "add",
+    "in": "a"
+   },
+   {
+    "from": "add",
+    "out": "result",
+    "to": "s",
+    "in": "value"
+   },
+   {
+    "from": "m2",
+    "out": "exit",
+    "to": "w",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Graph {\n    static int n = 0;\n\n    static void Draw() {\n    }\n\n    // Do wywołania z kodu: Graph.Alpha();\n    static void Alpha() {\n        Console.WriteLine(\"a\");\n    }\n\n    // Do wywołania z kodu: Graph.Tick();\n    static void Tick() {\n        n += 1;\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

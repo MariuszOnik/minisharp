@@ -55,11 +55,11 @@ static int eq_method(MethodDecl* a, MethodDecl* b) {
 }
 
 static int eq_field(FieldDecl* a, FieldDecl* b) {
-    return a->isStatic == b->isStatic && eq_type(a->tn, b->tn) && eq_name(a->name, a->nlen, b->name, b->nlen) && eq_expr(a->init, b->init);
+    return a->isStatic == b->isStatic && a->attrs == b->attrs && eq_type(a->tn, b->tn) && eq_name(a->name, a->nlen, b->name, b->nlen) && eq_expr(a->init, b->init);
 }
 
 static int eq_class(ClassDecl* a, ClassDecl* b) {
-    if (!eq_name(a->name, a->nlen, b->name, b->nlen) || a->isAbstract != b->isAbstract || a->isInterface != b->isInterface) return 0;
+    if (!eq_name(a->name, a->nlen, b->name, b->nlen) || a->isAbstract != b->isAbstract || a->isInterface != b->isInterface || a->order != b->order) return 0;
     if (a->nbases != b->nbases || a->nfields != b->nfields || a->nmethods != b->nmethods) return 0;
     for (int i = 0; i < a->nbases; i++) if (!eq_type(a->bases[i], b->bases[i])) return 0;
     for (int i = 0; i < a->nfields; i++) if (!eq_field(&a->fields[i], &b->fields[i])) return 0;

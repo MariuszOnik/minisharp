@@ -17,6 +17,8 @@
 
 static int nameq(const char* a, const char* b, int blen) { return (int)strlen(a) == blen && !memcmp(a, b, blen); }
 
+const void* help_api_entries(int* count) { *count = (int)(sizeof ms_help / sizeof ms_help[0]); return ms_help; }
+
 const char* help_signature(const char* cls, int clen, const char* name, int nlen, int* overloads) {
     const char* sig = NULL;
     *overloads = 0;

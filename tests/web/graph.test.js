@@ -16,6 +16,30 @@ fs.unlinkSync(helpFile);
 const G = require(path.join(root, "web", "graph.js"));
 const catalog = G.buildCatalog(help);
 
+// MS_DUMP_GRAPHS=dir: every generate() and userNodes() call of these tests is written to dir as a fixture,
+// and the C port (src/fgraph.c, `minisharp --fgraph-check dir`) must give the same results for each.
+if (process.env.MS_DUMP_GRAPHS) {
+  const dir = process.env.MS_DUMP_GRAPHS;
+  fs.mkdirSync(dir, { recursive: true });
+  let k = 0;
+  const save = (name, obj) => fs.writeFileSync(path.join(dir, name), JSON.stringify(obj, null, 1) + "\n");
+  save("catalog.json", catalog.list.map((d) => ({ id: d.id, title: d.title, category: d.category, kind: d.kind, callee: d.callee, ret: d.ret,
+    params: d.params, inputs: d.inputs, outputs: d.outputs })));
+  const generate = G.generate, userNodes = G.userNodes;
+  G.generate = (graph, cat, opts) => {
+    const before = JSON.stringify(graph);
+    const r = generate(graph, cat, opts);
+    save(`g${String(++k).padStart(3, "0")}.json`, { graph: JSON.parse(before), user: cat.list.filter((d) => d.user),
+      embed: !(opts && opts.embed === false), code: r.code, warnings: r.warnings, errors: r.errors });
+    return r;
+  };
+  G.userNodes = (files) => {
+    const r = userNodes(files);
+    save(`u${String(++k).padStart(3, "0")}.json`, { files, defs: r });
+    return r;
+  };
+}
+
 let pass = 0, fail = 0;
 function ok(cond, msg, extra) { (cond ? pass++ : fail++); console.log((cond ? "PASS " : "FAIL ") + msg + (cond ? "" : "  -> " + (typeof extra === "string" ? "\n" + extra : JSON.stringify(extra)))); }
 const same = (actual, expected, msg) => ok(actual === expected, msg, "--- got:\n" + actual + "\n--- expected:\n" + expected);
@@ -258,6 +282,18 @@ same(expr((N, F) => { N("m", "op.mul", { defaults: { a: "x + 1", b: "2" } }); F(
 ok(gen(G.emptyGraph()).warnings.some((w) => /zdarzenia/.test(w.message)), "warning: no event node at all");
 ok(gen(build((N) => N("d", "event.Draw"))).warnings.length === 0, "a Draw-only graph is fine for the generator (Update may live in another file)");
 {
+  const inUpdate = build((N, F) => { N("u", "event.Update"); N("c", "api.Gfx.Circle"); F("u", "exit", "c", "enter"); });
+  ok(gen(inUpdate).warnings.some((w) => w.node === "c" && /rysuje w Update/.test(w.message)), "warning: drawing in Update is wiped by Draw's Gfx.Clear");
+  const inDraw = build((N, F) => { N("d", "event.Draw"); N("c", "api.Gfx.Circle"); F("d", "exit", "c", "enter"); });
+  ok(!gen(inDraw).warnings.some((w) => /rysuje/.test(w.message)), "drawing in Draw: no warning");
+  const ordered = build((N, F, gr) => { gr.order = -5; N("u", "event.Update"); });
+  ok(gen(ordered).code.includes("\n[Order(-5)]\nclass Game {"), "graph.order -5 -> [Order(-5)] above the class");
+  const noOrder = build((N, F, gr) => { gr.order = 2.5; N("u", "event.Update"); });
+  ok(!gen(noOrder).code.includes("[Order"), "a non-integer order is ignored");
+  const screen = build((N, F) => { N("u", "event.Update"); N("s", "api.Gfx.Screen"); F("u", "exit", "s", "enter"); });
+  ok(!gen(screen).warnings.some((w) => /rysuje/.test(w.message)), "Gfx.Screen in Update is not drawing");
+}
+{
   const g = build((N, F) => { N("u", "event.Update"); N("s", "var.set", { name: "ghost" }); F("u", "exit", "s", "enter"); });
   ok(gen(g).warnings.some((w) => /ghost/.test(w.message)), "warning: undeclared variable");
 }
@@ -322,6 +358,66 @@ ok(sq.inputs.map((p) => p.name).join() === "enter,v" && sq.outputs.map((p) => p.
 ok(dot.outputs.map((p) => p.name).join() === "exit", "a void method has no result port");
 const say = un.find((d) => d.id === "user.Lib.Say");
 ok(say.inputs.map((p) => p.name).join() === "enter,value_,result_", "parameter names that clash with port names get a trailing _", say.inputs.map((p) => p.name));
+{
+  const FIELDS = `class Game {
+    // Pozycja gracza.
+    public static float x = 200, y;
+    public static readonly int max = 3;
+    const int Limit = 5;
+    // @node hide
+    static int ukryte;
+    int inst;
+    static void Skok() { }
+}
+`;
+  const uf = G.userNodes([{ name: "Game.cs", text: FIELDS }]);
+  ok(uf.map((d) => d.id).join() === "user.Game.x.get,user.Game.x.set,user.Game.y.get,user.Game.y.set,user.Game.max.get,user.Game.Limit.get,user.Game.Skok",
+     "static fields: get and set nodes (const and readonly: get only; not hidden or instance fields), in the order of the code", uf.map((d) => d.id));
+  ok(uf[0].doc === "Pozycja gracza." && uf[0].title === "Game.x" && uf[1].title === "Ustaw Game.x" && uf[1].category === "Kod: Game", "titles, category and the comment above", uf.slice(0, 2));
+  const catF = G.buildCatalog(help, uf);
+  const g = build((N, F) => { N("u", "event.Update"); N("set", "user.Game.x.set"); N("get", "user.Game.max.get"); N("sety", "user.Game.y.set", { defaults: { value: "1.5f" } });
+    F("u", "exit", "set", "enter"); F("get", "value", "set", "value"); F("set", "exit", "sety", "enter"); });
+  const out = G.generate(g, catF, { embed: false });
+  ok(out.code.includes("        Game.x = Game.max;\n        Game.y = 1.5f;"), "set node: Game.x = <value>; get node: Game.max", out.code);
+  ok(out.warnings.length === 0 && out.errors.length === 0, "no notes", out.warnings.concat(out.errors));
+  const lone = G.generate(build((N) => { N("u", "event.Update"); N("s", "user.Game.x.set"); }), catF, { embed: false });
+  ok(lone.warnings.some((w) => w.node === "s"), "a set node not on a flow is reported like Ustaw zmienną");
+}
+// nodes with memory: a class with [In] / [Out] fields and Run()
+const NODELIB = `// Liczy kroki.
+// @node Licznik kroków
+[Order(1)]
+class Licznik : Node {
+    [In] public int krok = 1;
+    [Out] public int suma;
+    [Out] public bool ponadDziesiec;
+    [In, Out] public int value;
+    public override void Run() { suma += krok; ponadDziesiec = suma > 10; }
+}
+class BezRun { [In] public int a; }
+abstract class Abs : Node { [In] public int a; }
+class Wlasny { [Out] public int x; public void Run() { x++; } }
+`;
+const un3 = G.userNodes([{ name: "Nodes.cs", text: NODELIB }]);
+ok(un3.map((d) => d.id).join() === "user.node.Licznik,user.node.Wlasny", "node classes: [In]/[Out] fields and Run() (own or from Node); not abstract, not without Run", un3.map((d) => d.id));
+{
+  const L = un3[0];
+  ok(L.title === "Licznik kroków" && L.doc === "Liczy kroki." && L.kind === "nodeobj" && L.category === "Kod: Licznik", "title and comment above the class (attribute lines skipped)", L);
+  ok(L.inputs.map((p) => p.name).join() === "enter,krok,value_" && L.outputs.map((p) => p.name).join() === "exit,suma,ponadDziesiec,value_",
+     "ports: flow, the [In] fields, the [Out] fields; a field named value gets value_", [L.inputs.map((p) => p.name), L.outputs.map((p) => p.name)]);
+  const cat3 = G.buildCatalog(help, un3);
+  const g = build((N, F) => {
+    N("u", "event.Update"); N("n1", "user.node.Licznik", { defaults: { krok: "2" } }); N("n2", "user.node.Licznik"); N("w", "api.Console.WriteLine/1");
+    F("u", "exit", "n1", "enter"); F("n1", "exit", "n2", "enter"); F("n2", "exit", "w", "enter"); F("n1", "suma", "w", "value");
+  });
+  const out = G.generate(g, cat3, { embed: false });
+  ok(out.code.includes("    static Licznik n1 = new Licznik();\n    static Licznik n2 = new Licznik();\n"), "every node has its own object (a field of the graph's class)", out.code);
+  ok(out.code.includes("        n1.krok = 2;\n        n1.Run();\n        n2.Run();\n        Console.WriteLine(n1.suma);"),
+     "flow: typed or wired inputs are set, then Run(); an output is the object's field", out.code);
+  ok(out.warnings.length === 0 && out.errors.length === 0, "no notes", out.warnings.concat(out.errors));
+  const inst = G.generate(build((N, F, gr) => { gr.instance = true; N("m", "event.Method", { name: "Krok" }); N("n1", "user.node.Licznik"); F("m", "exit", "n1", "enter"); }), cat3, { embed: false });
+  ok(inst.code.includes("    Licznik n1 = new Licznik();") && inst.code.includes("        n1.Run();"), "in a class with objects every object has its own node objects", inst.code);
+}
 const catU = G.buildCatalog(help, un);
 ok(catU.types.has("user.Lib.Dot") && catU.types.has("api.Gfx.Rect"), "the catalog holds both the API and the project's nodes");
 ok(G.searchCatalog(catU, "kropk")[0].id === "user.Lib.Dot" && G.searchCatalog(catU, "dot")[0].id === "user.Lib.Dot", "palette search finds them by title and by name", G.searchCatalog(catU, "kropk").slice(0, 2).map((d) => d.id));
@@ -504,6 +600,13 @@ else {
 `;
     const proj = (name, files) => { const dir = path.join(tmp, name); fs.mkdirSync(dir); for (const [n, t] of Object.entries(files)) fs.writeFileSync(path.join(dir, n), t); return dir; };
     const shot = (name, files) => { const dir = proj(name, files), p = path.join(tmp, name + ".ppm"); const res = run([dir, "--frames", "5", "--ppm", p]); ok(res.status === 0 && fs.existsSync(p), `${name}: the project runs`, res.stdout + res.stderr); return fs.existsSync(p) ? fs.readFileSync(p) : Buffer.alloc(0); };
+    {   // a node with memory keeps its state between frames; Node comes from MiniSharp itself
+      const cat3 = G.buildCatalog(help, G.userNodes([{ name: "Nodes.cs", text: NODELIB }]));
+      const gn = build((N, F) => { N("u", "event.Update"); N("n1", "user.node.Licznik", { defaults: { krok: "2" } }); N("w", "api.Console.WriteLine/1");
+        F("u", "exit", "n1", "enter"); F("n1", "exit", "w", "enter"); F("n1", "suma", "w", "value"); });
+      const res = run([proj("nodes", { "Nodes.cs": NODELIB, "Graph.cs": G.generate(gn, cat3).code }), "--frames", "3"]);
+      ok(res.status === 0 && res.stdout.trim().split(/\r?\n/).join() === "2,4,6", "a node keeps its memory between frames (2, 4, 6)", res.stdout + res.stderr);
+    }
     const x = shot("own_graph", { "Lib.cs": lib, "Game.cs": genCode }), y = shot("own_hand", { "Lib.cs": lib, "Game.cs": hand });
     ok(x.length > 1000 && x.equals(y), "own nodes: the picture from the graph equals the hand-written one (calls into Lib.cs)");
   }

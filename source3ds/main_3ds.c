@@ -183,7 +183,7 @@ void run_file(const char* name) {
             plat3ds_input();
             if (plat3ds_down() & KEY_START) break;
             C3D_FrameBegin(C3D_FRAME_SYNCDRAW);
-            plat3ds_begin_frame(plat3ds_color(0), plat3ds_color(0));
+            plat3ds_begin_frame(plat3ds_color(ms_background), plat3ds_color(ms_background));   /* Gfx.Background */
             u64 t0 = svcGetSystemTick();
             ok = vm_call(vm, p->entryUpdate);
             if (ok) ok = vm_tick_coroutines(vm);    /* after Update, before Draw, like Unity */

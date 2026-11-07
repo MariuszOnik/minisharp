@@ -2125,12 +2125,15 @@ static void collect(C* c, ProgramAST* ast) {
  * the program calls all of them, in the order of the classes in the project (files by name, classes top to bottom).
  * With more than one, a small function made here does the calls, so the hosts keep calling a single entry. */
 static int entry_point(C* c, const char* name) {
-    int fns[256], n = 0;
+    int fns[256], ords[256], n = 0;
     for (int i = 0; i < c->nclasses; i++) {
         CMethod* m = find_own_method(c, i, name, (int)strlen(name));
         if (!m || !m->isStatic || m->np != 0 || m->ret->k != T_VOID) continue;
         if (n == 256) cfail(c, m->decl->line, "too many classes with 'static void %s()' (at most 256)", name);
-        fns[n++] = m->func;
+        /* [Order(n)] on the class: smaller numbers first; equal ones keep the order of the classes (files by name) */
+        int ord = c->classes[i].decl ? c->classes[i].decl->order : 0, k = n++;
+        while (k > 0 && ords[k - 1] > ord) { fns[k] = fns[k - 1]; ords[k] = ords[k - 1]; k--; }
+        fns[k] = m->func; ords[k] = ord;
     }
     if (n == 0) return -1;
     if (n == 1) return fns[0];
@@ -2151,6 +2154,19 @@ static int entry_point(C* c, const char* name) {
     return fi;
 }
 
+/* Graph nodes with memory derive from Node. Unless the program has its own class Node (an A* graph node, say),
+   one is added to the parsed program; it is parsed on its own, so the program's text and lines stay as they are. */
+static void add_node_class(C* c, ProgramAST* ast) {
+    for (int i = 0; i < ast->nclasses; i++) if (ast->classes[i].nlen == 4 && !memcmp(ast->classes[i].name, "Node", 4)) return;
+    static const char NODE_CLASS[] = "abstract class Node { public virtual void Run() { } }";
+    int n;
+    Token* t = ms_lex(&c->pc, NODE_CLASS, &n);
+    ProgramAST* extra = ms_parse(&c->pc, t, n);
+    int cap = ast->nclasses;
+    ast->classes = (ClassDecl*)arena_grow(&c->A, ast->classes, ast->nclasses, &cap, sizeof(ClassDecl));
+    ast->classes[ast->nclasses++] = extra->classes[0];
+}
+
 static Program* compile(const char* src, char* err, int errlen, char* replDecls, int replDeclsCap) {
     C* c = (C*)calloc(1, sizeof(C));
     if (!c) { snprintf(err, errlen, "out of memory"); return NULL; }
@@ -2169,6 +2185,7 @@ static Program* compile(const char* src, char* err, int errlen, char* replDecls,
     int ntok;
     Token* toks = ms_lex(&c->pc, src, &ntok);
     ProgramAST* ast = ms_parse(&c->pc, toks, ntok);
+    add_node_class(c, ast);
     collect(c, ast);
     if (replDecls) {
         int ci = find_class(c, "Repl", 4);

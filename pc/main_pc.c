@@ -15,6 +15,7 @@
 #include "../src/project.h"
 #include "../src/codeindex.h"
 #include "astcheck.h"
+#include "fgcheck.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,6 +108,8 @@ int main(int argc, char** argv) {
         free(text);
         return r;
     }
+    if (argc == 3 && !strcmp(argv[1], "--fgraph-check")) return ms_fgraph_check(argv[2]);
+    if (argc == 3 && !strcmp(argv[1], "--fgraph")) return ms_fgraph_print(argv[2]);
     if (argc == 4 && !strcmp(argv[1], "--graph-edit")) {     /* --graph-edit file.cs script.txt */
         char* text = read_file(argv[2]);
         char* script = read_file(argv[3]);
@@ -181,6 +184,7 @@ int main(int argc, char** argv) {
     if (ok && p->entryUpdate >= 0) {
         for (int f = 0; f < frames && ok; f++) {
             pc_begin_frame();
+            ms_clear_frame();                   /* like the console: every frame starts on Gfx.Background */
             ok = vm_call(vm, p->entryUpdate);
             if (ok) ok = vm_tick_coroutines(vm);    /* after Update, before Draw, like Unity */
             if (ok && p->entryDraw >= 0) ok = vm_call(vm, p->entryDraw);

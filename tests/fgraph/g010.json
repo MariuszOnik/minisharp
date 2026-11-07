@@ -1,0 +1,181 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [
+   {
+    "name": "a",
+    "type": "float",
+    "init": "0"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "init": "0"
+   },
+   {
+    "name": "c",
+    "type": "float",
+    "init": "0"
+   },
+   {
+    "name": "d",
+    "type": "float",
+    "init": "0"
+   }
+  ],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "i",
+    "type": "if",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "a",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "a"
+    }
+   },
+   {
+    "id": "b",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "b"
+    }
+   },
+   {
+    "id": "c",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "c"
+    }
+   },
+   {
+    "id": "d",
+    "type": "var.get",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "d"
+    }
+   },
+   {
+    "id": "e1",
+    "type": "cmp.eq",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "l1",
+    "type": "cmp.lt",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "and",
+    "type": "logic.and",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "not",
+    "type": "logic.not",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "t",
+    "type": "api.Audio.StopAll",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "i",
+    "in": "enter"
+   },
+   {
+    "from": "a",
+    "out": "value",
+    "to": "e1",
+    "in": "a"
+   },
+   {
+    "from": "b",
+    "out": "value",
+    "to": "e1",
+    "in": "b"
+   },
+   {
+    "from": "c",
+    "out": "value",
+    "to": "l1",
+    "in": "a"
+   },
+   {
+    "from": "d",
+    "out": "value",
+    "to": "l1",
+    "in": "b"
+   },
+   {
+    "from": "e1",
+    "out": "result",
+    "to": "and",
+    "in": "a"
+   },
+   {
+    "from": "l1",
+    "out": "result",
+    "to": "and",
+    "in": "b"
+   },
+   {
+    "from": "and",
+    "out": "result",
+    "to": "not",
+    "in": "a"
+   },
+   {
+    "from": "not",
+    "out": "result",
+    "to": "i",
+    "in": "cond"
+   },
+   {
+    "from": "i",
+    "out": "true",
+    "to": "t",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static float a = 0;\n    static float b = 0;\n    static float c = 0;\n    static float d = 0;\n\n    static void Update() {\n        if (!(a == b && c < d)) {\n            Audio.StopAll();\n        }\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

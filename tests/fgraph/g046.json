@@ -1,0 +1,28 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Method",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "1x"
+    }
+   }
+  ],
+  "edges": []
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n}\n",
+ "warnings": [],
+ "errors": [
+  {
+   "node": "m",
+   "message": "„Metoda” bez poprawnej nazwy"
+  }
+ ]
+}

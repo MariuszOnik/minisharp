@@ -1,0 +1,96 @@
+{
+ "files": [
+  {
+   "name": "Lib.cs",
+   "text": "class Lib {\n    static float Sq(float v) { return v * v; }\n    static void Dot(float x, float y) { Gfx.Circle(x, y, 5, Color.White); }\n}\n"
+  }
+ ],
+ "defs": [
+  {
+   "id": "user.Lib.Sq",
+   "title": "Lib.Sq",
+   "category": "Kod: Lib",
+   "kind": "call",
+   "user": true,
+   "file": "Lib.cs",
+   "callee": "Lib.Sq",
+   "ret": "float",
+   "params": [
+    {
+     "type": "float",
+     "name": "v",
+     "port": "v"
+    }
+   ],
+   "sig": "float Sq(float v)",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "v",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "result",
+     "type": "float"
+    }
+   ]
+  },
+  {
+   "id": "user.Lib.Dot",
+   "title": "Lib.Dot",
+   "category": "Kod: Lib",
+   "kind": "call",
+   "user": true,
+   "file": "Lib.cs",
+   "callee": "Lib.Dot",
+   "ret": "void",
+   "params": [
+    {
+     "type": "float",
+     "name": "x",
+     "port": "x"
+    },
+    {
+     "type": "float",
+     "name": "y",
+     "port": "y"
+    }
+   ],
+   "sig": "void Dot(float x, float y)",
+   "doc": "",
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "float",
+     "def": "0"
+    },
+    {
+     "name": "y",
+     "type": "float",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    }
+   ]
+  }
+ ]
+}

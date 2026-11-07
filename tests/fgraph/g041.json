@@ -1,0 +1,144 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "m",
+    "type": "event.Method",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "name": "Krok"
+    }
+   },
+   {
+    "id": "n1",
+    "type": "user.node.Licznik",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "m",
+    "out": "exit",
+    "to": "n1",
+    "in": "enter"
+   }
+  ],
+  "instance": true
+ },
+ "user": [
+  {
+   "id": "user.node.Licznik",
+   "title": "Licznik kroków",
+   "category": "Kod: Licznik",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Licznik",
+   "sig": "class Licznik",
+   "doc": "Liczy kroki.",
+   "params": [
+    {
+     "type": "int",
+     "name": "krok",
+     "port": "krok"
+    },
+    {
+     "type": "int",
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "outs": [
+    {
+     "name": "suma",
+     "port": "suma"
+    },
+    {
+     "name": "ponadDziesiec",
+     "port": "ponadDziesiec"
+    },
+    {
+     "name": "value",
+     "port": "value_"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    },
+    {
+     "name": "krok",
+     "type": "int",
+     "def": "0"
+    },
+    {
+     "name": "value_",
+     "type": "int",
+     "def": "0"
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "suma",
+     "type": "int"
+    },
+    {
+     "name": "ponadDziesiec",
+     "type": "bool"
+    },
+    {
+     "name": "value_",
+     "type": "int"
+    }
+   ]
+  },
+  {
+   "id": "user.node.Wlasny",
+   "title": "Wlasny",
+   "category": "Kod: Wlasny",
+   "kind": "nodeobj",
+   "user": true,
+   "file": "Nodes.cs",
+   "callee": "Wlasny",
+   "sig": "class Wlasny",
+   "doc": "",
+   "params": [],
+   "outs": [
+    {
+     "name": "x",
+     "port": "x"
+    }
+   ],
+   "inputs": [
+    {
+     "name": "enter",
+     "flow": true
+    }
+   ],
+   "outputs": [
+    {
+     "name": "exit",
+     "flow": true
+    },
+    {
+     "name": "x",
+     "type": "int"
+    }
+   ]
+  }
+ ],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    Licznik n1 = new Licznik();\n\n    // Do wywołania z kodu: var o = new Game(); o.Krok();\n    void Krok() {\n        n1.Run();\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

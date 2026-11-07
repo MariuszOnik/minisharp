@@ -73,6 +73,7 @@ function docAbove(text, idx) {
   while (end > 0) {
     const prevEnd = end - 1, ls = text.lastIndexOf("\n", prevEnd - 1) + 1;
     const line = text.slice(ls, prevEnd).trim();
+    if (line.startsWith("[")) { end = ls; continue; }          // an attribute line: look above it
     if (!line.startsWith("//")) break;
     lines.unshift(line.replace(/^\/\/\/?\s?/, "").replace(/<\/?\w+>/g, "").trim());
     end = ls;
@@ -95,13 +96,17 @@ function parseMembers(body, cls, text, bodyStart) {
     const chunk = piece.replace(/\s+/g, " ").trim();
     if (!chunk) continue;
     const docLines = text ? docAbove(text, at) : [];
-    const mods = [];
+    const mods = [], attrs = [];
     let rest = chunk, mm;
+    while ((mm = /^\[([^\]]*)\]\s*/.exec(rest))) {           // [In], [Out, In], [Order(2)]: names only
+      for (const a of mm[1].split(",")) attrs.push(a.trim().replace(/\s*\(.*$/, ""));
+      rest = rest.slice(mm[0].length);
+    }
     while ((mm = /^(\w+)\s+/.exec(rest)) && MODS.has(mm[1])) { mods.push(mm[1]); rest = rest.slice(mm[0].length); }
     const isStatic = mods.includes("static") || mods.includes("const");
     let m = new RegExp("^(" + TYPE + ")\\s+([A-Za-z_]\\w*)\\s*\\((.*?)\\)").exec(rest);
     if (m && !(KW.has(m[1]) && !TYPEKW.has(m[1]))) {
-      members.push({ name: m[2], kind: "method", type: m[1], params: m[3], isStatic, cls, docLines });
+      members.push({ name: m[2], kind: "method", type: m[1], params: m[3], isStatic, cls, docLines, attrs });
       continue;
     }
     if (new RegExp("^" + cls + "\\s*\\(").test(rest)) continue;            // constructor
@@ -109,7 +114,7 @@ function parseMembers(body, cls, text, bodyStart) {
     if (m && !(KW.has(m[1]) && !TYPEKW.has(m[1]))) {
       for (const part of splitTop(m[2])) {
         const n = /^([A-Za-z_]\w*)\s*(?:=|$)/.exec(part);
-        if (n) members.push({ name: n[1], kind: "field", type: m[1], params: "", isStatic, cls, docLines });
+        if (n) members.push({ name: n[1], kind: "field", type: m[1], params: "", isStatic, cls, docLines, readOnly: mods.includes("const") || mods.includes("readonly"), attrs });
       }
     }
   }
@@ -124,8 +129,10 @@ function parseClasses(text) {
     let depth = 1, i = bodyStart;
     for (; i < masked.length && depth; i++) { if (masked[i] === "{") depth++; else if (masked[i] === "}") depth--; }
     const bodyEnd = depth ? masked.length : i - 1;
+    const before = masked.slice(0, m.index);
+    const head = before.slice(Math.max(before.lastIndexOf(";"), before.lastIndexOf("{"), before.lastIndexOf("}")) + 1);
     out.push({
-      name: m[2], kind: m[1],
+      name: m[2], kind: m[1], isAbstract: /\babstract\b/.test(head), docLines: docAbove(text, m.index),
       bases: (m[3] || "").split(",").map((s) => baseName(s)).filter(Boolean),
       bodyStart, bodyEnd, members: parseMembers(masked.slice(bodyStart, bodyEnd), m[2], text, bodyStart),
     });

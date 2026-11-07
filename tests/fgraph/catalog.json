@@ -1,0 +1,4996 @@
+[
+ {
+  "id": "event.Main",
+  "title": "Start (Main)",
+  "category": "Zdarzenia",
+  "kind": "event",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "event.Update",
+  "title": "Co klatkę (Update)",
+  "category": "Zdarzenia",
+  "kind": "event",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "event.Draw",
+  "title": "Rysowanie (Draw)",
+  "category": "Zdarzenia",
+  "kind": "event",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "event.Method",
+  "title": "Metoda (wołana z kodu)",
+  "category": "Zdarzenia",
+  "kind": "event",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "if",
+  "title": "Jeśli (if)",
+  "category": "Sterowanie",
+  "kind": "if",
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "cond",
+    "type": "bool",
+    "def": "false"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "true",
+    "flow": true
+   },
+   {
+    "name": "false",
+    "flow": true
+   },
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "for",
+  "title": "Powtórz (for)",
+  "category": "Sterowanie",
+  "kind": "for",
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "first",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "last",
+    "type": "int",
+    "def": "10"
+   },
+   {
+    "name": "step",
+    "type": "int",
+    "def": "1"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "body",
+    "flow": true
+   },
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "index",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "while",
+  "title": "Dopóki (while)",
+  "category": "Sterowanie",
+  "kind": "while",
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "cond",
+    "type": "bool",
+    "def": "false"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "body",
+    "flow": true
+   },
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "var.set",
+  "title": "Ustaw zmienną",
+  "category": "Zmienne",
+  "kind": "setvar",
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "value",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "var.get",
+  "title": "Pobierz zmienną",
+  "category": "Zmienne",
+  "kind": "getvar",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "lit",
+  "title": "Wartość",
+  "category": "Zmienne",
+  "kind": "lit",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "op.add",
+  "title": "Dodaj (+)",
+  "category": "Matematyka",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "op.sub",
+  "title": "Odejmij (-)",
+  "category": "Matematyka",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "op.mul",
+  "title": "Pomnóż (*)",
+  "category": "Matematyka",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "1"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "1"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "op.div",
+  "title": "Podziel (/)",
+  "category": "Matematyka",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "1"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "1"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "op.mod",
+  "title": "Reszta (%)",
+  "category": "Matematyka",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "1"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "1"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "cmp.lt",
+  "title": "Mniejsze (<)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "cmp.le",
+  "title": "Mniejsze lub równe (<=)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "cmp.gt",
+  "title": "Większe (>)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "cmp.ge",
+  "title": "Większe lub równe (>=)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "cmp.eq",
+  "title": "Równe (==)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "cmp.ne",
+  "title": "Różne (!=)",
+  "category": "Porównania",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "logic.and",
+  "title": "I (&&)",
+  "category": "Logika",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "false"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "false"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "logic.or",
+  "title": "Lub (||)",
+  "category": "Logika",
+  "kind": "binary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "false"
+   },
+   {
+    "name": "b",
+    "type": "",
+    "def": "false"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "logic.not",
+  "title": "Nie (!)",
+  "category": "Logika",
+  "kind": "unary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "bool",
+    "def": "false"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "op.neg",
+  "title": "Przeciwna (-)",
+  "category": "Matematyka",
+  "kind": "unary",
+  "inputs": [
+   {
+    "name": "a",
+    "type": "",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "result",
+    "type": ""
+   }
+  ]
+ },
+ {
+  "id": "api.new.Coroutine",
+  "title": "new Coroutine",
+  "category": "Coroutine",
+  "kind": "new",
+  "callee": "new Coroutine",
+  "params": [],
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "Coroutine"
+   }
+  ]
+ },
+ {
+  "id": "api.new.WaitForSeconds",
+  "title": "new WaitForSeconds",
+  "category": "WaitForSeconds",
+  "kind": "new",
+  "callee": "new WaitForSeconds",
+  "params": [
+   {
+    "type": "float",
+    "name": "seconds"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "seconds",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "WaitForSeconds"
+   }
+  ]
+ },
+ {
+  "id": "api.new.WaitForSecondsRealtime",
+  "title": "new WaitForSecondsRealtime",
+  "category": "WaitForSecondsRealtime",
+  "kind": "new",
+  "callee": "new WaitForSecondsRealtime",
+  "params": [
+   {
+    "type": "float",
+    "name": "seconds"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "seconds",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "WaitForSecondsRealtime"
+   }
+  ]
+ },
+ {
+  "id": "api.new.WaitForEndOfFrame",
+  "title": "new WaitForEndOfFrame",
+  "category": "WaitForEndOfFrame",
+  "kind": "new",
+  "callee": "new WaitForEndOfFrame",
+  "params": [],
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "WaitForEndOfFrame"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.PI",
+  "title": "Math.PI",
+  "category": "Math",
+  "kind": "const",
+  "callee": "Math.PI",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.E",
+  "title": "Math.E",
+  "category": "Math",
+  "kind": "const",
+  "callee": "Math.E",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.PI",
+  "title": "Mathf.PI",
+  "category": "Mathf",
+  "kind": "const",
+  "callee": "Mathf.PI",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Deg2Rad",
+  "title": "Mathf.Deg2Rad",
+  "category": "Mathf",
+  "kind": "const",
+  "callee": "Mathf.Deg2Rad",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Rad2Deg",
+  "title": "Mathf.Rad2Deg",
+  "category": "Mathf",
+  "kind": "const",
+  "callee": "Mathf.Rad2Deg",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Epsilon",
+  "title": "Mathf.Epsilon",
+  "category": "Mathf",
+  "kind": "const",
+  "callee": "Mathf.Epsilon",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.A",
+  "title": "Btn.A",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.A",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.B",
+  "title": "Btn.B",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.B",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.X",
+  "title": "Btn.X",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.X",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Y",
+  "title": "Btn.Y",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Y",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.L",
+  "title": "Btn.L",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.L",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.R",
+  "title": "Btn.R",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.R",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.ZL",
+  "title": "Btn.ZL",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.ZL",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.ZR",
+  "title": "Btn.ZR",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.ZR",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Up",
+  "title": "Btn.Up",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Up",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Down",
+  "title": "Btn.Down",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Down",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Left",
+  "title": "Btn.Left",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Left",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Right",
+  "title": "Btn.Right",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Right",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Btn.Select",
+  "title": "Btn.Select",
+  "category": "Btn",
+  "kind": "const",
+  "callee": "Btn.Select",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Black",
+  "title": "Color.Black",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Black",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.White",
+  "title": "Color.White",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.White",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Red",
+  "title": "Color.Red",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Red",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Green",
+  "title": "Color.Green",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Green",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Blue",
+  "title": "Color.Blue",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Blue",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Yellow",
+  "title": "Color.Yellow",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Yellow",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Cyan",
+  "title": "Color.Cyan",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Cyan",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Magenta",
+  "title": "Color.Magenta",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Magenta",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Orange",
+  "title": "Color.Orange",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Orange",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.Gray",
+  "title": "Color.Gray",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.Gray",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Color.DarkGray",
+  "title": "Color.DarkGray",
+  "category": "Color",
+  "kind": "const",
+  "callee": "Color.DarkGray",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Screen.Top",
+  "title": "Screen.Top",
+  "category": "Screen",
+  "kind": "const",
+  "callee": "Screen.Top",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Screen.Bottom",
+  "title": "Screen.Bottom",
+  "category": "Screen",
+  "kind": "const",
+  "callee": "Screen.Bottom",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Screen.TopWidth",
+  "title": "Screen.TopWidth",
+  "category": "Screen",
+  "kind": "const",
+  "callee": "Screen.TopWidth",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Screen.BottomWidth",
+  "title": "Screen.BottomWidth",
+  "category": "Screen",
+  "kind": "const",
+  "callee": "Screen.BottomWidth",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Screen.Height",
+  "title": "Screen.Height",
+  "category": "Screen",
+  "kind": "const",
+  "callee": "Screen.Height",
+  "inputs": [],
+  "outputs": [
+   {
+    "name": "value",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Coroutines.StartCoroutine",
+  "title": "Coroutines.StartCoroutine",
+  "category": "Coroutines",
+  "kind": "call",
+  "callee": "StartCoroutine",
+  "ret": "Coroutine",
+  "params": [
+   {
+    "type": "IEnumerator",
+    "name": "routine"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "routine",
+    "type": "IEnumerator",
+    "def": "null"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "Coroutine"
+   }
+  ]
+ },
+ {
+  "id": "api.Coroutines.StopCoroutine",
+  "title": "Coroutines.StopCoroutine",
+  "category": "Coroutines",
+  "kind": "call",
+  "callee": "StopCoroutine",
+  "ret": "void",
+  "params": [
+   {
+    "type": "Coroutine",
+    "name": "routine"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "routine",
+    "type": "Coroutine",
+    "def": "null"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Coroutines.StopAllCoroutines",
+  "title": "Coroutines.StopAllCoroutines",
+  "category": "Coroutines",
+  "kind": "call",
+  "callee": "StopAllCoroutines",
+  "ret": "void",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Console.WriteLine/1",
+  "title": "Console.WriteLine (1)",
+  "category": "Console",
+  "kind": "call",
+  "callee": "Console.WriteLine",
+  "ret": "void",
+  "params": [
+   {
+    "type": "object",
+    "name": "value"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "value",
+    "type": "object",
+    "def": "\"\""
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Console.WriteLine/0",
+  "title": "Console.WriteLine (0)",
+  "category": "Console",
+  "kind": "call",
+  "callee": "Console.WriteLine",
+  "ret": "void",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Console.Write",
+  "title": "Console.Write",
+  "category": "Console",
+  "kind": "call",
+  "callee": "Console.Write",
+  "ret": "void",
+  "params": [
+   {
+    "type": "object",
+    "name": "value"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "value",
+    "type": "object",
+    "def": "\"\""
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Sin",
+  "title": "Math.Sin",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Sin",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Cos",
+  "title": "Math.Cos",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Cos",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Tan",
+  "title": "Math.Tan",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Tan",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Atan2",
+  "title": "Math.Atan2",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Atan2",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Sqrt",
+  "title": "Math.Sqrt",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Sqrt",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Pow",
+  "title": "Math.Pow",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Pow",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "b"
+   },
+   {
+    "type": "float",
+    "name": "e"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "e",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Floor",
+  "title": "Math.Floor",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Floor",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Ceiling",
+  "title": "Math.Ceiling",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Ceiling",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Round",
+  "title": "Math.Round",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Round",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Abs",
+  "title": "Math.Abs",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Abs",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Min",
+  "title": "Math.Min",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Min",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "a"
+   },
+   {
+    "type": "int",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Max",
+  "title": "Math.Max",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Max",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "a"
+   },
+   {
+    "type": "int",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Clamp",
+  "title": "Math.Clamp",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Clamp",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "v"
+   },
+   {
+    "type": "int",
+    "name": "min"
+   },
+   {
+    "type": "int",
+    "name": "max"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "min",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "max",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Asin",
+  "title": "Math.Asin",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Asin",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Acos",
+  "title": "Math.Acos",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Acos",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Atan",
+  "title": "Math.Atan",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Atan",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Exp",
+  "title": "Math.Exp",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Exp",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Log",
+  "title": "Math.Log",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Log",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Log10",
+  "title": "Math.Log10",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Log10",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Truncate",
+  "title": "Math.Truncate",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Truncate",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Math.Sign",
+  "title": "Math.Sign",
+  "category": "Math",
+  "kind": "call",
+  "callee": "Math.Sign",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Sin",
+  "title": "Mathf.Sin",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Sin",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Cos",
+  "title": "Mathf.Cos",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Cos",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Tan",
+  "title": "Mathf.Tan",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Tan",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Asin",
+  "title": "Mathf.Asin",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Asin",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Acos",
+  "title": "Mathf.Acos",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Acos",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Atan",
+  "title": "Mathf.Atan",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Atan",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Atan2",
+  "title": "Mathf.Atan2",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Atan2",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Sqrt",
+  "title": "Mathf.Sqrt",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Sqrt",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Pow",
+  "title": "Mathf.Pow",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Pow",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "b"
+   },
+   {
+    "type": "float",
+    "name": "e"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "e",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Exp",
+  "title": "Mathf.Exp",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Exp",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Log",
+  "title": "Mathf.Log",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Log",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Log10",
+  "title": "Mathf.Log10",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Log10",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Floor",
+  "title": "Mathf.Floor",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Floor",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Ceil",
+  "title": "Mathf.Ceil",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Ceil",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Round",
+  "title": "Mathf.Round",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Round",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.FloorToInt",
+  "title": "Mathf.FloorToInt",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.FloorToInt",
+  "ret": "int",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.CeilToInt",
+  "title": "Mathf.CeilToInt",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.CeilToInt",
+  "ret": "int",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.RoundToInt",
+  "title": "Mathf.RoundToInt",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.RoundToInt",
+  "ret": "int",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Abs",
+  "title": "Mathf.Abs",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Abs",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Min",
+  "title": "Mathf.Min",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Min",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "a"
+   },
+   {
+    "type": "int",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Max",
+  "title": "Mathf.Max",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Max",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "a"
+   },
+   {
+    "type": "int",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Clamp",
+  "title": "Mathf.Clamp",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Clamp",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "v"
+   },
+   {
+    "type": "int",
+    "name": "min"
+   },
+   {
+    "type": "int",
+    "name": "max"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "min",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "max",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Clamp01",
+  "title": "Mathf.Clamp01",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Clamp01",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Sign",
+  "title": "Mathf.Sign",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Sign",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Lerp",
+  "title": "Mathf.Lerp",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Lerp",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   },
+   {
+    "type": "float",
+    "name": "b"
+   },
+   {
+    "type": "float",
+    "name": "t"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.LerpUnclamped",
+  "title": "Mathf.LerpUnclamped",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.LerpUnclamped",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   },
+   {
+    "type": "float",
+    "name": "b"
+   },
+   {
+    "type": "float",
+    "name": "t"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.InverseLerp",
+  "title": "Mathf.InverseLerp",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.InverseLerp",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   },
+   {
+    "type": "float",
+    "name": "b"
+   },
+   {
+    "type": "float",
+    "name": "v"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "v",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.MoveTowards",
+  "title": "Mathf.MoveTowards",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.MoveTowards",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "current"
+   },
+   {
+    "type": "float",
+    "name": "target"
+   },
+   {
+    "type": "float",
+    "name": "maxDelta"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "current",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "target",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "maxDelta",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.SmoothStep",
+  "title": "Mathf.SmoothStep",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.SmoothStep",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "from"
+   },
+   {
+    "type": "float",
+    "name": "to"
+   },
+   {
+    "type": "float",
+    "name": "t"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "from",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "to",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Repeat",
+  "title": "Mathf.Repeat",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Repeat",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "t"
+   },
+   {
+    "type": "float",
+    "name": "length"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "length",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.PingPong",
+  "title": "Mathf.PingPong",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.PingPong",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "t"
+   },
+   {
+    "type": "float",
+    "name": "length"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "t",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "length",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.Approximately",
+  "title": "Mathf.Approximately",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.Approximately",
+  "ret": "bool",
+  "params": [
+   {
+    "type": "float",
+    "name": "a"
+   },
+   {
+    "type": "float",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "a",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "api.Mathf.DeltaAngle",
+  "title": "Mathf.DeltaAngle",
+  "category": "Mathf",
+  "kind": "call",
+  "callee": "Mathf.DeltaAngle",
+  "ret": "float",
+  "params": [
+   {
+    "type": "float",
+    "name": "current"
+   },
+   {
+    "type": "float",
+    "name": "target"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "current",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "target",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Random.Next",
+  "title": "Random.Next",
+  "category": "Random",
+  "kind": "call",
+  "callee": "Random.Next",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "max"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "max",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Random.Range",
+  "title": "Random.Range",
+  "category": "Random",
+  "kind": "call",
+  "callee": "Random.Range",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "min"
+   },
+   {
+    "type": "int",
+    "name": "max"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "min",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "max",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Random.Float",
+  "title": "Random.Float",
+  "category": "Random",
+  "kind": "call",
+  "callee": "Random.Float",
+  "ret": "float",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Random.Seed",
+  "title": "Random.Seed",
+  "category": "Random",
+  "kind": "call",
+  "callee": "Random.Seed",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "seed"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "seed",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Screen",
+  "title": "Gfx.Screen",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Screen",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "screen"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "screen",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Clear",
+  "title": "Gfx.Clear",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Clear",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Background",
+  "title": "Gfx.Background",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Background",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Rect",
+  "title": "Gfx.Rect",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Rect",
+  "ret": "void",
+  "params": [
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "w"
+   },
+   {
+    "type": "float",
+    "name": "h"
+   },
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "w",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "h",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Circle",
+  "title": "Gfx.Circle",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Circle",
+  "ret": "void",
+  "params": [
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "r"
+   },
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "r",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Line",
+  "title": "Gfx.Line",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Line",
+  "ret": "void",
+  "params": [
+   {
+    "type": "float",
+    "name": "x1"
+   },
+   {
+    "type": "float",
+    "name": "y1"
+   },
+   {
+    "type": "float",
+    "name": "x2"
+   },
+   {
+    "type": "float",
+    "name": "y2"
+   },
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "x1",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y1",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "x2",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y2",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Text/4",
+  "title": "Gfx.Text (4)",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Text",
+  "ret": "void",
+  "params": [
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "string",
+    "name": "text"
+   },
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "text",
+    "type": "string",
+    "def": "\"\""
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Text/5",
+  "title": "Gfx.Text (5)",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Text",
+  "ret": "void",
+  "params": [
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "string",
+    "name": "text"
+   },
+   {
+    "type": "float",
+    "name": "scale"
+   },
+   {
+    "type": "int",
+    "name": "color"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "text",
+    "type": "string",
+    "def": "\"\""
+   },
+   {
+    "name": "scale",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "color",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Rgb",
+  "title": "Gfx.Rgb",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Rgb",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "r"
+   },
+   {
+    "type": "int",
+    "name": "g"
+   },
+   {
+    "type": "int",
+    "name": "b"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "r",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "g",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "b",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.LoadImage",
+  "title": "Gfx.LoadImage",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.LoadImage",
+  "ret": "int",
+  "params": [
+   {
+    "type": "string",
+    "name": "path"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "path",
+    "type": "string",
+    "def": "\"\""
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.ImageWidth",
+  "title": "Gfx.ImageWidth",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.ImageWidth",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.ImageHeight",
+  "title": "Gfx.ImageHeight",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.ImageHeight",
+  "ret": "int",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Image/3",
+  "title": "Gfx.Image (3)",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Image",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.Image/4",
+  "title": "Gfx.Image (4)",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.Image",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "scale"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "scale",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.ImageEx",
+  "title": "Gfx.ImageEx",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.ImageEx",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "float",
+    "name": "scaleX"
+   },
+   {
+    "type": "float",
+    "name": "scaleY"
+   },
+   {
+    "type": "float",
+    "name": "angle"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "scaleX",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "scaleY",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "angle",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.ImagePart",
+  "title": "Gfx.ImagePart",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.ImagePart",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "int",
+    "name": "sx"
+   },
+   {
+    "type": "int",
+    "name": "sy"
+   },
+   {
+    "type": "int",
+    "name": "sw"
+   },
+   {
+    "type": "int",
+    "name": "sh"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "sx",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sy",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sw",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sh",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Gfx.ImagePartEx",
+  "title": "Gfx.ImagePartEx",
+  "category": "Gfx",
+  "kind": "call",
+  "callee": "Gfx.ImagePartEx",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "image"
+   },
+   {
+    "type": "float",
+    "name": "x"
+   },
+   {
+    "type": "float",
+    "name": "y"
+   },
+   {
+    "type": "int",
+    "name": "sx"
+   },
+   {
+    "type": "int",
+    "name": "sy"
+   },
+   {
+    "type": "int",
+    "name": "sw"
+   },
+   {
+    "type": "int",
+    "name": "sh"
+   },
+   {
+    "type": "float",
+    "name": "scaleX"
+   },
+   {
+    "type": "float",
+    "name": "scaleY"
+   },
+   {
+    "type": "float",
+    "name": "angle"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "image",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "x",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "y",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "sx",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sy",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sw",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "sh",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "scaleX",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "scaleY",
+    "type": "float",
+    "def": "0"
+   },
+   {
+    "name": "angle",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.Load",
+  "title": "Audio.Load",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.Load",
+  "ret": "int",
+  "params": [
+   {
+    "type": "string",
+    "name": "path"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "path",
+    "type": "string",
+    "def": "\"\""
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.Play/1",
+  "title": "Audio.Play (1)",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.Play",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "sound"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "sound",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.Play/2",
+  "title": "Audio.Play (2)",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.Play",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "sound"
+   },
+   {
+    "type": "float",
+    "name": "volume"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "sound",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "volume",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.PlayLoop/1",
+  "title": "Audio.PlayLoop (1)",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.PlayLoop",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "sound"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "sound",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.PlayLoop/2",
+  "title": "Audio.PlayLoop (2)",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.PlayLoop",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "sound"
+   },
+   {
+    "type": "float",
+    "name": "volume"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "sound",
+    "type": "int",
+    "def": "0"
+   },
+   {
+    "name": "volume",
+    "type": "float",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.Stop",
+  "title": "Audio.Stop",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.Stop",
+  "ret": "void",
+  "params": [
+   {
+    "type": "int",
+    "name": "sound"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "sound",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Audio.StopAll",
+  "title": "Audio.StopAll",
+  "category": "Audio",
+  "kind": "call",
+  "callee": "Audio.StopAll",
+  "ret": "void",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ },
+ {
+  "id": "api.Input.Held",
+  "title": "Input.Held",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.Held",
+  "ret": "bool",
+  "params": [
+   {
+    "type": "int",
+    "name": "button"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "button",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.Pressed",
+  "title": "Input.Pressed",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.Pressed",
+  "ret": "bool",
+  "params": [
+   {
+    "type": "int",
+    "name": "button"
+   }
+  ],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   },
+   {
+    "name": "button",
+    "type": "int",
+    "def": "0"
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.Touching",
+  "title": "Input.Touching",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.Touching",
+  "ret": "bool",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "bool"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.TouchX",
+  "title": "Input.TouchX",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.TouchX",
+  "ret": "int",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.TouchY",
+  "title": "Input.TouchY",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.TouchY",
+  "ret": "int",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.StickX",
+  "title": "Input.StickX",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.StickX",
+  "ret": "float",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Input.StickY",
+  "title": "Input.StickY",
+  "category": "Input",
+  "kind": "call",
+  "callee": "Input.StickY",
+  "ret": "float",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "float"
+   }
+  ]
+ },
+ {
+  "id": "api.Time.Millis",
+  "title": "Time.Millis",
+  "category": "Time",
+  "kind": "call",
+  "callee": "Time.Millis",
+  "ret": "int",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.Time.Fps",
+  "title": "Time.Fps",
+  "category": "Time",
+  "kind": "call",
+  "callee": "Time.Fps",
+  "ret": "int",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   },
+   {
+    "name": "result",
+    "type": "int"
+   }
+  ]
+ },
+ {
+  "id": "api.App.Quit",
+  "title": "App.Quit",
+  "category": "App",
+  "kind": "call",
+  "callee": "App.Quit",
+  "ret": "void",
+  "params": [],
+  "inputs": [
+   {
+    "name": "enter",
+    "flow": true
+   }
+  ],
+  "outputs": [
+   {
+    "name": "exit",
+    "flow": true
+   }
+  ]
+ }
+]

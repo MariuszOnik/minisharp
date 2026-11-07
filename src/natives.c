@@ -132,6 +132,9 @@ static Value n_rseed(VM* vm, Value* a) { (void)vm; rng_state = (uint32_t)a[0].as
 /* ---- Gfx ---- */
 static Value n_screen(VM* vm, Value* a) { (void)vm; plat_screen(a[0].as.i ? 1 : 0); return vnone(); }
 static Value n_clear(VM* vm, Value* a) { (void)vm; plat_clear(col(a[0])); return vnone(); }
+uint32_t ms_background;
+void ms_clear_frame(void) { plat_screen(1); plat_clear(ms_background); plat_screen(0); plat_clear(ms_background); }
+static Value n_background(VM* vm, Value* a) { (void)vm; ms_background = col(a[0]); return vnone(); }
 static Value n_rect(VM* vm, Value* a) { (void)vm; plat_rect(a[0].as.f, a[1].as.f, a[2].as.f, a[3].as.f, col(a[4])); return vnone(); }
 static Value n_circle(VM* vm, Value* a) { (void)vm; plat_circle(a[0].as.f, a[1].as.f, a[2].as.f, col(a[3])); return vnone(); }
 static Value n_line(VM* vm, Value* a) { (void)vm; plat_line(a[0].as.f, a[1].as.f, a[2].as.f, a[3].as.f, 1.0f, col(a[4])); return vnone(); }
@@ -399,6 +402,7 @@ const NativeDef ms_natives[] = {
 
     {"Gfx", "Screen", 1, {I}, VD, n_screen},
     {"Gfx", "Clear", 1, {I}, VD, n_clear},
+    {"Gfx", "Background", 1, {I}, VD, n_background},
     {"Gfx", "Rect", 5, {F, F, F, F, I}, VD, n_rect},
     {"Gfx", "Circle", 4, {F, F, F, I}, VD, n_circle},
     {"Gfx", "Line", 5, {F, F, F, F, I}, VD, n_line},

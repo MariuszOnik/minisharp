@@ -1,0 +1,61 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "u",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "i",
+    "type": "if",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "t",
+    "type": "api.Input.Touching",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "p",
+    "type": "api.Audio.StopAll",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   }
+  ],
+  "edges": [
+   {
+    "from": "u",
+    "out": "exit",
+    "to": "i",
+    "in": "enter"
+   },
+   {
+    "from": "t",
+    "out": "result",
+    "to": "i",
+    "in": "cond"
+   },
+   {
+    "from": "i",
+    "out": "false",
+    "to": "p",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        if (!Input.Touching()) {\n            Audio.StopAll();\n        }\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

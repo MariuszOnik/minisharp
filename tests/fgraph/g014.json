@@ -1,0 +1,217 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "d",
+    "type": "event.Draw",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "fi",
+    "type": "for",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "last": "10"
+     }
+    }
+   },
+   {
+    "id": "fj",
+    "type": "for",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "last": "5"
+     }
+    }
+   },
+   {
+    "id": "r",
+    "type": "api.Gfx.Rect",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "w": "24",
+      "h": "24"
+     }
+    }
+   },
+   {
+    "id": "ix",
+    "type": "op.mul",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "30"
+     }
+    }
+   },
+   {
+    "id": "ix2",
+    "type": "op.add",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "10"
+     }
+    }
+   },
+   {
+    "id": "jx",
+    "type": "op.mul",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "30"
+     }
+    }
+   },
+   {
+    "id": "jx2",
+    "type": "op.add",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "10"
+     }
+    }
+   },
+   {
+    "id": "rgb",
+    "type": "api.Gfx.Rgb",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "200"
+     }
+    }
+   },
+   {
+    "id": "ri",
+    "type": "op.mul",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "25"
+     }
+    }
+   },
+   {
+    "id": "gj",
+    "type": "op.mul",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "b": "50"
+     }
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "d",
+    "out": "exit",
+    "to": "fi",
+    "in": "enter"
+   },
+   {
+    "from": "fi",
+    "out": "body",
+    "to": "fj",
+    "in": "enter"
+   },
+   {
+    "from": "fj",
+    "out": "body",
+    "to": "r",
+    "in": "enter"
+   },
+   {
+    "from": "fi",
+    "out": "index",
+    "to": "ix",
+    "in": "a"
+   },
+   {
+    "from": "ix",
+    "out": "result",
+    "to": "ix2",
+    "in": "a"
+   },
+   {
+    "from": "ix2",
+    "out": "result",
+    "to": "r",
+    "in": "x"
+   },
+   {
+    "from": "fj",
+    "out": "index",
+    "to": "jx",
+    "in": "a"
+   },
+   {
+    "from": "jx",
+    "out": "result",
+    "to": "jx2",
+    "in": "a"
+   },
+   {
+    "from": "jx2",
+    "out": "result",
+    "to": "r",
+    "in": "y"
+   },
+   {
+    "from": "fi",
+    "out": "index",
+    "to": "ri",
+    "in": "a"
+   },
+   {
+    "from": "fj",
+    "out": "index",
+    "to": "gj",
+    "in": "a"
+   },
+   {
+    "from": "ri",
+    "out": "result",
+    "to": "rgb",
+    "in": "r"
+   },
+   {
+    "from": "gj",
+    "out": "result",
+    "to": "rgb",
+    "in": "g"
+   },
+   {
+    "from": "rgb",
+    "out": "result",
+    "to": "r",
+    "in": "color"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Draw() {\n        for (int i = 0; i < 10; i++) {\n            for (int j = 0; j < 5; j++) {\n                Gfx.Rect(i * 30 + 10, j * 30 + 10, 24, 24, Gfx.Rgb(i * 25, j * 50, 200));\n            }\n        }\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

@@ -1,0 +1,59 @@
+{
+ "graph": {
+  "className": "Game",
+  "variables": [],
+  "nodes": [
+   {
+    "id": "u1",
+    "type": "event.Update",
+    "x": 0,
+    "y": 100,
+    "data": {}
+   },
+   {
+    "id": "u2",
+    "type": "event.Update",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "a",
+    "type": "api.Audio.StopAll",
+    "x": 0,
+    "y": 0,
+    "data": {}
+   },
+   {
+    "id": "b",
+    "type": "api.Console.WriteLine/1",
+    "x": 0,
+    "y": 0,
+    "data": {
+     "defaults": {
+      "value": "\"b\""
+     }
+    }
+   }
+  ],
+  "edges": [
+   {
+    "from": "u1",
+    "out": "exit",
+    "to": "b",
+    "in": "enter"
+   },
+   {
+    "from": "u2",
+    "out": "exit",
+    "to": "a",
+    "in": "enter"
+   }
+  ]
+ },
+ "user": [],
+ "embed": false,
+ "code": "// Wygenerowano z grafu. Zmiany w tym pliku nie wrócą do grafu, edytuj go w edytorze grafów.\nclass Game {\n    static void Update() {\n        Audio.StopAll();\n        Console.WriteLine(\"b\");\n    }\n}\n",
+ "warnings": [],
+ "errors": []
+}

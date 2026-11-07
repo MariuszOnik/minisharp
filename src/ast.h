@@ -96,14 +96,16 @@ typedef struct {
     int exprBody;                           /* written as '=> expr;' (body is a made-up block with one statement) */
     const char *s0, *s1;                    /* source text from the first modifier to the closing '}' or ';' */
 } MethodDecl;
-typedef struct { int line, isStatic; TypeNode* tn; const char* name; int nlen; Expr* init; const char *s0, *s1; } FieldDecl;
+enum { FA_IN = 1, FA_OUT = 2, FA_ORDER = 4 };   /* attributes: [In] / [Out] on a field, [Order(n)] on a class */
+typedef struct { int line, isStatic; TypeNode* tn; const char* name; int nlen; Expr* init; const char *s0, *s1; int attrs, readOnly; } FieldDecl;   /* readOnly: const or readonly */
 typedef struct {
     int line; const char* name; int nlen;
     int isAbstract, isInterface;
     TypeNode** bases; int nbases;           /* ': Base, IFoo, IBar' (which one is the class is decided later) */
     FieldDecl* fields; int nfields;
     MethodDecl* methods; int nmethods;
-    const char *s0, *s1;                    /* source text from the first modifier to the closing '}' */
+    const char *s0, *s1;                    /* source text from the first attribute or modifier to the closing '}' */
+    int order;                              /* [Order(n)]: its Main/Update/Draw run before the ones of higher numbers (0 by default) */
 } ClassDecl;
 typedef struct { ClassDecl* classes; int nclasses; int nlambdas; } ProgramAST;
 
